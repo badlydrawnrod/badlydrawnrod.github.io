@@ -7,7 +7,8 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 
-  <title>404 Page not found - Badly Drawn Rod</title>
+  <title>Overview of all pages with the tag #cmake - Badly Drawn Rod</title>
+  <meta name="description" content="Overview of all pages with the tag #cmake, such as: How to find the CMake targets for a vcpkg package">
   <meta name="author" content="Badly Drawn Rod"/><script type="application/ld+json">
 {
     "@context": "http://schema.org",
@@ -29,13 +30,13 @@
 }
 </script>
 
-<meta property="og:title" content="404 Page not found" />
+<meta property="og:title" content="cmake" />
 <meta property="og:image" content="https://badlydrawnrod.github.io/img/dadatar.png" />
-<meta property="og:url" content="https://badlydrawnrod.github.io/404.html" />
+<meta property="og:url" content="https://badlydrawnrod.github.io/tags/cmake/" />
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="Badly Drawn Rod" />
 
-  <meta name="twitter:title" content="404 Page not found" />
+  <meta name="twitter:title" content="cmake" />
   <meta name="twitter:image" content="https://badlydrawnrod.github.io/img/dadatar.png" />
   <meta name="twitter:card" content="summary" />
   <meta name="twitter:site" content="@badlydrawnrod" />
@@ -115,32 +116,154 @@
 
 
     
-    
-  <div role="main" class="container main-content">
-    <div class="text-center">
-      <h1 class="error-emoji"></h1>
-      <p class="error-text">Whoops, this page doesn&#39;t exist. Move along. (404 error)</p>
-    </div>
-  </div>
-<script>
-  var errorEmojiContainer = document.getElementsByClassName('error-emoji')[0];
-  var emojiArray = [
-    '\\(o_o)/', '(o^^)o', '(˚Δ˚)b', '(^-^*)', '(≥o≤)', '(^_^)b', '(·_·)',
-    '(=\'X\'=)', '(>_<)', '(;-;)', '\\(^Д^)/',
-  ];
-  var errorEmoji = emojiArray[Math.floor(Math.random() * emojiArray.length)];
-  errorEmojiContainer.appendChild(document.createTextNode(errorEmoji));
-</script>
 
+
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+<div class="pswp__bg"></div>
+
+<div class="pswp__scroll-wrap">
+    
+    <div class="pswp__container">
+      <div class="pswp__item"></div>
+      <div class="pswp__item"></div>
+      <div class="pswp__item"></div>
+    </div>
+    
+    <div class="pswp__ui pswp__ui--hidden">
+    <div class="pswp__top-bar">
       
-    <div class="page-meta">
-  
-  
-  
+      <div class="pswp__counter"></div>
+      <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+      <button class="pswp__button pswp__button--share" title="Share"></button>
+      <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+      <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+      
+      
+      <div class="pswp__preloader">
+        <div class="pswp__preloader__icn">
+          <div class="pswp__preloader__cut">
+            <div class="pswp__preloader__donut"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+      <div class="pswp__share-tooltip"></div>
+    </div>
+    <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+    </button>
+    <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+    </button>
+    <div class="pswp__caption">
+      <div class="pswp__caption__center"></div>
+    </div>
+    </div>
+    </div>
 </div>
 
 
   
+  
+  
+
+
+
+
+
+
+  
+
+  <header class="header-section ">
+    
+    <div class="intro-header no-img">
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+            <div class="tags-heading">
+              
+                <h1>cmake</h1>
+              
+              
+                <hr class="small">
+              
+              
+              
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+
+    
+  <div class="container" role="main">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        
+        <div class="posts-list">
+          
+            <article class="post-preview">
+    <a href="https://badlydrawnrod.github.io/posts/cmake-target-packages-from-vcpkg/">
+        <h2 class="post-title">How to find the CMake targets for a vcpkg package</h2>
+        
+        
+        
+    </a>
+
+    <p class="post-meta">
+        <span class="post-meta">
+  
+  
+  <i class="fas fa-calendar"></i>&nbsp;Posted on May 18, 2020
+  
+  
+    &nbsp;|&nbsp;<i class="fas fa-clock"></i>&nbsp;2&nbsp;minutes
+  
+  
+    &nbsp;|&nbsp;<i class="fas fa-book"></i>&nbsp;221&nbsp;words
+  
+  
+    
+      &nbsp;|&nbsp;<i class="fas fa-user"></i>&nbsp;Badly Drawn Rod
+    
+  
+  
+</span>
+
+
+    </p>
+    <div class="post-entry">
+        
+        <h1 id="problem">Problem</h1>
+<p>When you install a package with <code>vcpkg</code> it tells you the <strong>CMake</strong> targets. But if you didn&rsquo;t make a note of them at the time, how do you find out what they are?</p>
+<p>And what if you want the <strong>CMake</strong> targets for a package&rsquo;s dependencies?</p>
+        <a href="https://badlydrawnrod.github.io/posts/cmake-target-packages-from-vcpkg/" class="post-read-more">[Read More]</a>
+        
+    </div>
+
+    
+    <div class="blog-tags">
+        
+        <a href="https://badlydrawnrod.github.io/tags/howto/">howto</a>&nbsp;
+        
+        <a href="https://badlydrawnrod.github.io/tags/cmake/">cmake</a>&nbsp;
+        
+        <a href="https://badlydrawnrod.github.io/tags/vcpkg/">vcpkg</a>&nbsp;
+        
+    </div>
+    
+
+</article>
+          
+        </div>
+        
+      </div>
+    </div>
+  </div>
+
+      
 <footer>
   <div class="container">
     <div class="row">
@@ -173,7 +296,7 @@
               </li>
           
           <li>
-            <a href="" title="RSS">
+            <a href="/tags/cmake/index.xml" title="RSS">
               <span class="fa-stack fa-lg">
                 <i class="fas fa-circle fa-stack-2x"></i>
                 <i class="fas fa-rss fa-stack-1x fa-inverse"></i>
