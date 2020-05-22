@@ -5,17 +5,27 @@
     <link>https://badlydrawnrod.github.io/tags/howto/</link>
     <description>Recent content in howto on Badly Drawn Rod</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Mon, 18 May 2020 21:27:46 +0100</lastBuildDate>
+    <lastBuildDate>Tue, 19 May 2020 21:57:44 +0100</lastBuildDate>
     
 	<atom:link href="https://badlydrawnrod.github.io/tags/howto/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
+      <title>How to use Emscripten with CMake on Windows</title>
+      <link>https://badlydrawnrod.github.io/posts/2020/05/19/emcmake-with-emscripten/</link>
+      <pubDate>Tue, 19 May 2020 21:57:44 +0100</pubDate>
+      
+      <guid>https://badlydrawnrod.github.io/posts/2020/05/19/emcmake-with-emscripten/</guid>
+      <description>&lt;h1 id=&#34;problem&#34;&gt;Problem&lt;/h1&gt;
+&lt;p&gt;You&amp;rsquo;ve installed &lt;strong&gt;Emscripten&lt;/strong&gt; on Windows, but you can&amp;rsquo;t get it to work with &lt;strong&gt;CMake&lt;/strong&gt;.&lt;/p&gt;</description>
+    </item>
+    
+    <item>
       <title>How to find the CMake targets for a vcpkg package</title>
-      <link>https://badlydrawnrod.github.io/posts/cmake-target-packages-from-vcpkg/</link>
+      <link>https://badlydrawnrod.github.io/posts/2020/05/18/cmake-target-packages-from-vcpkg/</link>
       <pubDate>Mon, 18 May 2020 21:27:46 +0100</pubDate>
       
-      <guid>https://badlydrawnrod.github.io/posts/cmake-target-packages-from-vcpkg/</guid>
+      <guid>https://badlydrawnrod.github.io/posts/2020/05/18/cmake-target-packages-from-vcpkg/</guid>
       <description>&lt;h1 id=&#34;problem&#34;&gt;Problem&lt;/h1&gt;
 &lt;p&gt;When you install a package with &lt;code&gt;vcpkg&lt;/code&gt; it tells you the &lt;strong&gt;CMake&lt;/strong&gt; targets. But if you didn&amp;rsquo;t make a note of them at the time, how do you find out what they are?&lt;/p&gt;
 &lt;p&gt;And what if you want the &lt;strong&gt;CMake&lt;/strong&gt; targets for a package&amp;rsquo;s dependencies?&lt;/p&gt;</description>

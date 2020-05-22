@@ -7,8 +7,9 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 
-  <title>About me - Badly Drawn Rod</title>
-  <meta name="description" content="Who is Badly Drawn Rod?">
+  <title>How to use Emscripten with CMake on Windows - Badly Drawn Rod</title>
+  <meta name="description" content="Problem
+You&rsquo;ve installed Emscripten on Windows, but you can&rsquo;t get it to work with CMake.">
   <meta name="author" content="Badly Drawn Rod"/><script type="application/ld+json">
 {
     "@context": "http://schema.org",
@@ -44,8 +45,8 @@
         "@type": "ListItem",
         "position": 3,
         "item": {
-          "@id": "https:\/\/badlydrawnrod.github.io\/page\/about\/",
-          "name": "About me"
+          "@id": "https:\/\/badlydrawnrod.github.io\/posts\/2020\/05\/19\/emcmake-with-emscripten\/",
+          "name": "How to use emscripten with c make on windows"
         }
     }]
 }
@@ -56,15 +57,15 @@
   "author": {
     "name" : "Badly Drawn Rod"
   },
-  "headline": "About me",
-  "description" : "I work at Sophos as a Principal Software Engineer. All opinions here are mine, not those of my employer.",
+  "headline": "How to use Emscripten with CMake on Windows",
+  "description" : "Problem You\x26rsquo;ve installed Emscripten on Windows, but you can\x26rsquo;t get it to work with CMake.\n",
   "inLanguage" : "en",
-  "wordCount":  19 ,
-  "datePublished" : "0001-01-01T00:00:00",
-  "dateModified" : "0001-01-01T00:00:00",
+  "wordCount":  361 ,
+  "datePublished" : "2020-05-19T21:57:44",
+  "dateModified" : "2020-05-19T21:57:44",
   "image" : "https:\/\/badlydrawnrod.github.io\/img\/dadatar.png",
-  "keywords" : [ "" ],
-  "mainEntityOfPage" : "https:\/\/badlydrawnrod.github.io\/page\/about\/",
+  "keywords" : [ "howto, cmake, emscripten" ],
+  "mainEntityOfPage" : "https:\/\/badlydrawnrod.github.io\/posts\/2020\/05\/19\/emcmake-with-emscripten\/",
   "publisher" : {
     "@type": "Organization",
     "name" : "https:\/\/badlydrawnrod.github.io",
@@ -78,15 +79,17 @@
 }
 </script>
 
-<meta property="og:title" content="About me" />
-<meta property="og:description" content="Who is Badly Drawn Rod?">
+<meta property="og:title" content="How to use Emscripten with CMake on Windows" />
+<meta property="og:description" content="Problem
+You&rsquo;ve installed Emscripten on Windows, but you can&rsquo;t get it to work with CMake.">
 <meta property="og:image" content="https://badlydrawnrod.github.io/img/dadatar.png" />
-<meta property="og:url" content="https://badlydrawnrod.github.io/page/about/" />
+<meta property="og:url" content="https://badlydrawnrod.github.io/posts/2020/05/19/emcmake-with-emscripten/" />
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="Badly Drawn Rod" />
 
-  <meta name="twitter:title" content="About me" />
-  <meta name="twitter:description" content="Who is Badly Drawn Rod?">
+  <meta name="twitter:title" content="How to use Emscripten with CMake on Windows" />
+  <meta name="twitter:description" content="Problem
+You&rsquo;ve installed Emscripten on Windows, but you can&rsquo;t get it to work with CMake.">
   <meta name="twitter:image" content="https://badlydrawnrod.github.io/img/dadatar.png" />
   <meta name="twitter:card" content="summary" />
   <meta name="twitter:site" content="@badlydrawnrod" />
@@ -224,17 +227,13 @@
       <div class="container">
         <div class="row">
           <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
-            <div class="page-heading">
+            <div class="posts-heading">
               
-                <h1>About me</h1>
+                <h1>How to use Emscripten with CMake on Windows</h1>
               
               
                 <hr class="small">
               
-              
-                
-                  <span class="page-subheading">Who is Badly Drawn Rod?</span>
-                
               
               
             </div>
@@ -250,9 +249,78 @@
   <div class="row">
     <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
       <article role="main" class="blog-post">
-        <p>I work at <a href="https://sophos.com">Sophos</a> as a Principal Software Engineer. All opinions here are mine, not those of my employer.</p>
+        <h1 id="problem">Problem</h1>
+<p>You&rsquo;ve installed <strong>Emscripten</strong> on Windows, but you can&rsquo;t get it to work with <strong>CMake</strong>.</p>
+<h1 id="solution">Solution</h1>
+<h2 id="install-cmake">Install CMake</h2>
+<p>It may seem obvious, but first you should install <strong>CMake</strong> and make sure it&rsquo;s on your path.</p>
+<p>Here&rsquo;s how to do it with the <strong>chocolatey</strong> package manager.</p>
+<div class="highlight"><pre class="chroma"><code class="language-text" data-lang="text">C:&gt; choco install -y cmake --installargs &#39;ADD_CMAKE_TO_PATH=User&#39;
+</code></pre></div><p>The <code>--installargs 'ADD_CMAKE_TO_PATH=User</code> parameter tells <strong>chocolatey</strong> to add the <strong>CMake</strong> binaries such as <code>cmake</code> and <code>cmake-gui</code> to your path.</p>
+<p>If you don&rsquo;t have <strong>chocolatey</strong> or don&rsquo;t want to use it, then there are other options like downloading and installing <a href="https://cmake.org/install/">CMake binaries</a>.</p>
+<h2 id="set-your-emscripten-environment">Set your Emscripten environment</h2>
+<p>Run <code>emsdk_env.bat</code> from the <strong>Emscripten SDK</strong> to set the environment.</p>
+<div class="highlight"><pre class="chroma"><code class="language-text" data-lang="text">C:&gt; D:\Tools\emsdk\emsdk_env.bat
+Adding directories to PATH:
+PATH += D:\Tools\emsdk
+PATH += D:\Tools\emsdk\upstream\emscripten
+PATH += D:\Tools\emsdk\node\12.9.1_64bit\bin
+PATH += D:\Tools\emsdk\java\8.152_64bit\bin
 
+Setting environment variables:
+EMSDK = D:/Tools/emsdk
+EM_CONFIG = C:\Users\Rod\.emscripten
+EMSDK_NODE = D:\Tools\emsdk\node\12.9.1_64bit\bin\node.exe
+EMSDK_PYTHON = D:\Tools\emsdk\python\3.7.4-pywin32_64bit\python.exe
+JAVA_HOME = D:\Tools\emsdk\java\8.152_64bit
+</code></pre></div><h2 id="run-cmake-via-emcmake">Run CMake via <code>emcmake</code></h2>
+<p>Use <code>emcmake cmake</code> to run <strong>CMake</strong> with an environment suitable for <strong>Emscripten</strong>.</p>
+<p>Run the following from your source directory:</p>
+<div class="highlight"><pre class="chroma"><code class="language-text" data-lang="text">C:&gt; emcmake cmake . -B cmake-build-emscripten -G &#34;CodeBlocks - MinGW Makefiles&#34;
+</code></pre></div><p>This runs <code>cmake</code> via the <code>emcmake</code> tool which sets up the environment that <strong>CMake</strong> needs to use Emscripten.</p>
+<h2 id="install-mingw32-make-using-the-emscripten-sdk">Install <code>mingw32-make</code> using the Emscripten SDK</h2>
+<p>If you don&rsquo;t have a suitable <strong>make</strong> program installed, then one of the simplest ways to get one is to add <strong>MinGW</strong> to your Emscripten SDK.</p>
+<p>Run <code>emsdk list</code> to get a list of available packages, and find <code>mingw</code> in the output.</p>
+<div class="highlight"><pre class="chroma"><code class="language-text" data-lang="text">C:&gt; emsdk list
+...
+The following precompiled tool packages are available for download:
+     *     releases-upstream-048cf9424790cc525a7ea6da340820aae226f3b9-64bit     INSTALLED
+     *     releases-upstream-3b8cff670e9233a6623563add831647e8689a86b-64bit     INSTALLED
+           releases-fastcomp-048cf9424790cc525a7ea6da340820aae226f3b9-64bit
+           releases-fastcomp-3b8cff670e9233a6623563add831647e8689a86b-64bit
+           fastcomp-clang-e1.38.30-64bit
+           fastcomp-clang-e1.38.31-64bit
+           node-4.1.1-64bit
+           node-8.9.1-64bit
+     *     node-12.9.1-64bit            INSTALLED
+           python-2.7.13.1-64bit
+           python-3.7.4-64bit
+     *     python-3.7.4-pywin32-64bit   INSTALLED
+     *     java-8.152-64bit             INSTALLED
+           emscripten-1.38.30
+           emscripten-1.38.31
+           gnu-2.5.4
+           mingw-7.1.0-64bit
+</code></pre></div><p>Install and activate <code>mingw</code>.</p>
+<div class="highlight"><pre class="chroma"><code class="language-text" data-lang="text">C:&gt; emsdk install mingw-7.1.0-64bit
+C:&gt; emsdk activate mingw-7.1.0-64bit
+</code></pre></div><p>This gets you a <code>make</code> program. The MinGW version of this is called <code>mingw32-make</code>.</p>
+<h2 id="build-your-project">Build your project</h2>
+<p>Now you should be able to build your project by running <code>mingw32-make</code> from the directory that CMake created earlier.</p>
+<div class="highlight"><pre class="chroma"><code class="language-text" data-lang="text">C:&gt; cd cmake-build-emscripten
+C:&gt; ming32-make
+</code></pre></div><p>If you got an error saying that it can&rsquo;t find <code>mingw32-make</code>, then re-run <code>emsdk-env.bat</code> to add the <strong>MinGW</strong> binaries to the path and try again.</p>
 
+        
+          <div class="blog-tags">
+            
+              <a href="https://badlydrawnrod.github.io/tags/howto/">howto</a>&nbsp;
+            
+              <a href="https://badlydrawnrod.github.io/tags/cmake/">cmake</a>&nbsp;
+            
+              <a href="https://badlydrawnrod.github.io/tags/emscripten/">emscripten</a>&nbsp;
+            
+          </div>
         
 
         
@@ -265,42 +333,42 @@
     <ul class="share">
       
       <li>
-        <a href="//twitter.com/share?url=https%3a%2f%2fbadlydrawnrod.github.io%2fpage%2fabout%2f&amp;text=About%20me&amp;via=badlydrawnrod" target="_blank" title="Share on Twitter">
+        <a href="//twitter.com/share?url=https%3a%2f%2fbadlydrawnrod.github.io%2fposts%2f2020%2f05%2f19%2femcmake-with-emscripten%2f&amp;text=How%20to%20use%20Emscripten%20with%20CMake%20on%20Windows&amp;via=badlydrawnrod" target="_blank" title="Share on Twitter">
           <i class="fab fa-twitter"></i>
         </a>
       </li>
   
       
       <li>
-        <a href="//www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fbadlydrawnrod.github.io%2fpage%2fabout%2f" target="_blank" title="Share on Facebook">
+        <a href="//www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fbadlydrawnrod.github.io%2fposts%2f2020%2f05%2f19%2femcmake-with-emscripten%2f" target="_blank" title="Share on Facebook">
           <i class="fab fa-facebook"></i>
         </a>
       </li>
   
       
       <li>
-        <a href="//reddit.com/submit?url=https%3a%2f%2fbadlydrawnrod.github.io%2fpage%2fabout%2f&amp;title=About%20me" target="_blank" title="Share on Reddit">
+        <a href="//reddit.com/submit?url=https%3a%2f%2fbadlydrawnrod.github.io%2fposts%2f2020%2f05%2f19%2femcmake-with-emscripten%2f&amp;title=How%20to%20use%20Emscripten%20with%20CMake%20on%20Windows" target="_blank" title="Share on Reddit">
           <i class="fab fa-reddit"></i>
         </a>
       </li>
   
       
       <li>
-        <a href="//www.linkedin.com/shareArticle?url=https%3a%2f%2fbadlydrawnrod.github.io%2fpage%2fabout%2f&amp;title=About%20me" target="_blank" title="Share on LinkedIn">
+        <a href="//www.linkedin.com/shareArticle?url=https%3a%2f%2fbadlydrawnrod.github.io%2fposts%2f2020%2f05%2f19%2femcmake-with-emscripten%2f&amp;title=How%20to%20use%20Emscripten%20with%20CMake%20on%20Windows" target="_blank" title="Share on LinkedIn">
           <i class="fab fa-linkedin"></i>
         </a>
       </li>
   
       
       <li>
-        <a href="//www.stumbleupon.com/submit?url=https%3a%2f%2fbadlydrawnrod.github.io%2fpage%2fabout%2f&amp;title=About%20me" target="_blank" title="Share on StumbleUpon">
+        <a href="//www.stumbleupon.com/submit?url=https%3a%2f%2fbadlydrawnrod.github.io%2fposts%2f2020%2f05%2f19%2femcmake-with-emscripten%2f&amp;title=How%20to%20use%20Emscripten%20with%20CMake%20on%20Windows" target="_blank" title="Share on StumbleUpon">
           <i class="fab fa-stumbleupon"></i>
         </a>
       </li>
   
       
       <li>
-        <a href="//www.pinterest.com/pin/create/button/?url=https%3a%2f%2fbadlydrawnrod.github.io%2fpage%2fabout%2f&amp;description=About%20me" target="_blank" title="Share on Pinterest">
+        <a href="//www.pinterest.com/pin/create/button/?url=https%3a%2f%2fbadlydrawnrod.github.io%2fposts%2f2020%2f05%2f19%2femcmake-with-emscripten%2f&amp;description=How%20to%20use%20Emscripten%20with%20CMake%20on%20Windows" target="_blank" title="Share on Pinterest">
           <i class="fab fa-pinterest"></i>
         </a>
       </li>
@@ -314,14 +382,37 @@
 
         
           
+            
+          
+
+          
+                  <h4 class="see-also">See also</h4>
+                  <ul>
+                
+                
+                    <li><a href="/posts/2020/05/18/cmake-target-packages-from-vcpkg/">How to find the CMake targets for a vcpkg package</a></li>
+                
+              </ul>
 
           
         
       </article>
 
       
+        <ul class="pager blog-pager">
+          
+            <li class="previous">
+              <a href="https://badlydrawnrod.github.io/posts/2020/05/18/cmake-target-packages-from-vcpkg/" data-toggle="tooltip" data-placement="top" title="How to find the CMake targets for a vcpkg package">&larr; Previous Post</a>
+            </li>
+          
+          
+        </ul>
+      
 
 
+      
+        
+        
       
 
     </div>
@@ -329,14 +420,6 @@
 </div>
 
       
-    <div class="page-meta">
-  
-  
-  
-</div>
-
-
-  
 <footer>
   <div class="container">
     <div class="row">
