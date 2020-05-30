@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>emscripten on Badly Drawn Rod</title>
-    <link>https://badlydrawnrod.github.io/tags/emscripten/</link>
-    <description>Recent content in emscripten on Badly Drawn Rod</description>
+    <title>clion on Badly Drawn Rod</title>
+    <link>https://badlydrawnrod.github.io/tags/clion/</link>
+    <description>Recent content in clion on Badly Drawn Rod</description>
     <generator>Hugo -- gohugo.io</generator>
     <lastBuildDate>Sat, 30 May 2020 10:20:00 +0100</lastBuildDate>
     
-	<atom:link href="https://badlydrawnrod.github.io/tags/emscripten/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="https://badlydrawnrod.github.io/tags/clion/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
@@ -18,16 +18,6 @@
       <guid>https://badlydrawnrod.github.io/posts/2020/05/30/emscripten-project-in-clion/</guid>
       <description>&lt;h1 id=&#34;problem&#34;&gt;Problem&lt;/h1&gt;
 &lt;p&gt;You&amp;rsquo;re developing on Windows and have an existing &lt;strong&gt;Emscripten&lt;/strong&gt; project that builds and runs from the command line, but you&amp;rsquo;d like to do this from the &lt;strong&gt;CLion&lt;/strong&gt; IDE.&lt;/p&gt;</description>
-    </item>
-    
-    <item>
-      <title>How to use Emscripten with CMake on Windows</title>
-      <link>https://badlydrawnrod.github.io/posts/2020/05/19/emcmake-with-emscripten/</link>
-      <pubDate>Tue, 19 May 2020 21:57:44 +0100</pubDate>
-      
-      <guid>https://badlydrawnrod.github.io/posts/2020/05/19/emcmake-with-emscripten/</guid>
-      <description>&lt;h1 id=&#34;problem&#34;&gt;Problem&lt;/h1&gt;
-&lt;p&gt;You&amp;rsquo;ve installed &lt;strong&gt;Emscripten&lt;/strong&gt; on Windows, but you can&amp;rsquo;t get it to work with &lt;strong&gt;CMake&lt;/strong&gt;.&lt;/p&gt;</description>
     </item>
     
   </channel>
