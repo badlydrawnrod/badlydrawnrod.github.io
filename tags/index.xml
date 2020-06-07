@@ -5,10 +5,46 @@
     <link>https://badlydrawnrod.github.io/tags/</link>
     <description>Recent content in Tags on Badly Drawn Rod</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Sat, 30 May 2020 10:20:00 +0100</lastBuildDate>
+    <lastBuildDate>Sun, 07 Jun 2020 12:00:00 +0100</lastBuildDate>
     
 	<atom:link href="https://badlydrawnrod.github.io/tags/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>emscripten</title>
+      <link>https://badlydrawnrod.github.io/tags/emscripten/</link>
+      <pubDate>Sun, 07 Jun 2020 12:00:00 +0100</pubDate>
+      
+      <guid>https://badlydrawnrod.github.io/tags/emscripten/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>howto</title>
+      <link>https://badlydrawnrod.github.io/tags/howto/</link>
+      <pubDate>Sun, 07 Jun 2020 12:00:00 +0100</pubDate>
+      
+      <guid>https://badlydrawnrod.github.io/tags/howto/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>idbfs</title>
+      <link>https://badlydrawnrod.github.io/tags/idbfs/</link>
+      <pubDate>Sun, 07 Jun 2020 12:00:00 +0100</pubDate>
+      
+      <guid>https://badlydrawnrod.github.io/tags/idbfs/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>indexeddb</title>
+      <link>https://badlydrawnrod.github.io/tags/indexeddb/</link>
+      <pubDate>Sun, 07 Jun 2020 12:00:00 +0100</pubDate>
+      
+      <guid>https://badlydrawnrod.github.io/tags/indexeddb/</guid>
+      <description></description>
+    </item>
     
     <item>
       <title>clion</title>
@@ -25,24 +61,6 @@
       <pubDate>Sat, 30 May 2020 10:20:00 +0100</pubDate>
       
       <guid>https://badlydrawnrod.github.io/tags/cmake/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>emscripten</title>
-      <link>https://badlydrawnrod.github.io/tags/emscripten/</link>
-      <pubDate>Sat, 30 May 2020 10:20:00 +0100</pubDate>
-      
-      <guid>https://badlydrawnrod.github.io/tags/emscripten/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>howto</title>
-      <link>https://badlydrawnrod.github.io/tags/howto/</link>
-      <pubDate>Sat, 30 May 2020 10:20:00 +0100</pubDate>
-      
-      <guid>https://badlydrawnrod.github.io/tags/howto/</guid>
       <description></description>
     </item>
     
