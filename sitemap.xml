@@ -68,6 +68,16 @@
   </url>
   
   <url>
+    <loc>https://badlydrawnrod.github.io/tags/mingw/</loc>
+    <lastmod>2020-05-19T21:57:44+01:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://badlydrawnrod.github.io/tags/ninja/</loc>
+    <lastmod>2020-05-19T21:57:44+01:00</lastmod>
+  </url>
+  
+  <url>
     <loc>https://badlydrawnrod.github.io/posts/2020/05/18/cmake-target-packages-from-vcpkg/</loc>
     <lastmod>2020-05-18T21:27:46+01:00</lastmod>
   </url>

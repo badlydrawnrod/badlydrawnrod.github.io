@@ -60,11 +60,11 @@ You&rsquo;ve installed Emscripten on Windows, but you can&rsquo;t get it to work
   "headline": "How to use Emscripten with CMake on Windows",
   "description" : "Problem You\u0026rsquo;ve installed Emscripten on Windows, but you can\u0026rsquo;t get it to work with CMake.\n",
   "inLanguage" : "en",
-  "wordCount":  361 ,
+  "wordCount":  527 ,
   "datePublished" : "2020-05-19T21:57:44",
   "dateModified" : "2020-05-19T21:57:44",
   "image" : "https:\/\/badlydrawnrod.github.io\/img\/dadatar.png",
-  "keywords" : [ "howto, cmake, emscripten" ],
+  "keywords" : [ "howto, cmake, emscripten, mingw, ninja" ],
   "mainEntityOfPage" : "https:\/\/badlydrawnrod.github.io\/posts\/2020\/05\/19\/emcmake-with-emscripten\/",
   "publisher" : {
     "@type": "Organization",
@@ -254,10 +254,12 @@ You&rsquo;ve installed Emscripten on Windows, but you can&rsquo;t get it to work
 <h1 id="solution">Solution</h1>
 <h2 id="install-cmake">Install CMake</h2>
 <p>It may seem obvious, but first you should install <strong>CMake</strong> and make sure it&rsquo;s on your path.</p>
-<p>Here&rsquo;s how to do it with the <strong>chocolatey</strong> package manager.</p>
+<p>Here&rsquo;s how to install <strong>CMake</strong> with the <a href="https://scoop.sh"><strong>scoop</strong></a> package manager.</p>
+<div class="highlight"><pre class="chroma"><code class="language-text" data-lang="text">C:&gt; scoop install cmake
+</code></pre></div><p>Similarly, here&rsquo;s how to install <strong>CMake</strong> with the <a href="https://chocolatey.org"><strong>chocolatey</strong></a> package manager.</p>
 <div class="highlight"><pre class="chroma"><code class="language-text" data-lang="text">C:&gt; choco install -y cmake --installargs &#39;ADD_CMAKE_TO_PATH=User&#39;
 </code></pre></div><p>The <code>--installargs 'ADD_CMAKE_TO_PATH=User</code> parameter tells <strong>chocolatey</strong> to add the <strong>CMake</strong> binaries such as <code>cmake</code> and <code>cmake-gui</code> to your path.</p>
-<p>If you don&rsquo;t have <strong>chocolatey</strong> or don&rsquo;t want to use it, then there are other options like downloading and installing <a href="https://cmake.org/install/">CMake binaries</a>.</p>
+<p>If you don&rsquo;t have <strong>chocolatey</strong> or <strong>scoop</strong>, or don&rsquo;t want to use them, then there are other options such as downloading and installing <a href="https://cmake.org/install/">CMake binaries</a>.</p>
 <h2 id="set-your-emscripten-environment">Set your Emscripten environment</h2>
 <p>Run <code>emsdk_env.bat</code> from the <strong>Emscripten SDK</strong> to set the environment.</p>
 <div class="highlight"><pre class="chroma"><code class="language-text" data-lang="text">C:&gt; D:\Tools\emsdk\emsdk_env.bat
@@ -275,11 +277,20 @@ EMSDK_PYTHON = D:\Tools\emsdk\python\3.7.4-pywin32_64bit\python.exe
 JAVA_HOME = D:\Tools\emsdk\java\8.152_64bit
 </code></pre></div><h2 id="run-cmake-via-emcmake">Run CMake via <code>emcmake</code></h2>
 <p>Use <code>emcmake cmake</code> to run <strong>CMake</strong> with an environment suitable for <strong>Emscripten</strong>.</p>
-<p>Run the following from your source directory:</p>
+<h3 id="using-ninja">Using Ninja</h3>
+<p>If you want to use <a href="https://ninja-build.org"><strong>Ninja</strong></a> to build your projects, then run the following from your source directory:</p>
+<div class="highlight"><pre class="chroma"><code class="language-text" data-lang="text">C:&gt; emcmake cmake . -B cmake-build-emscripten -G Ninja
+</code></pre></div><p>This runs <code>cmake</code> via the <code>emcmake</code> tool which sets up the environment that <strong>CMake</strong> needs to use <strong>Emscripten</strong>. It uses <code>-G Ninja</code> to tell <strong>CMake</strong> to generate a build pipeline that uses <strong>Ninja</strong>.</p>
+<p>If you don&rsquo;t have <strong>Ninja</strong> installed, then the easiest way of getting it is to use a package manager such as <strong>chocolatey</strong> or <strong>scoop</strong>.</p>
+<p>Here&rsquo;s how to install <strong>Ninja</strong> with <a href="https://scoop.sh"><strong>scoop</strong></a>.</p>
+<div class="highlight"><pre class="chroma"><code class="language-text" data-lang="text">C:&gt; scoop install ninja
+</code></pre></div><p>And here&rsquo;s how to install <strong>Ninja</strong> with <a href="https://chocolatey.org"><strong>chocolatey</strong></a>.</p>
+<div class="highlight"><pre class="chroma"><code class="language-text" data-lang="text">C:&gt; choco install ninja
+</code></pre></div><h3 id="using-makefiles">Using Makefiles</h3>
+<p>If you would like to use traditional makefiles to build your projects, then run the following from your source directory:</p>
 <div class="highlight"><pre class="chroma"><code class="language-text" data-lang="text">C:&gt; emcmake cmake . -B cmake-build-emscripten -G &#34;CodeBlocks - MinGW Makefiles&#34;
-</code></pre></div><p>This runs <code>cmake</code> via the <code>emcmake</code> tool which sets up the environment that <strong>CMake</strong> needs to use Emscripten.</p>
-<h2 id="install-mingw32-make-using-the-emscripten-sdk">Install <code>mingw32-make</code> using the Emscripten SDK</h2>
-<p>If you don&rsquo;t have a suitable <strong>make</strong> program installed, then one of the simplest ways to get one is to add <strong>MinGW</strong> to your Emscripten SDK.</p>
+</code></pre></div><p>This runs <code>cmake</code> via the <code>emcmake</code> tool which sets up the environment that <strong>CMake</strong> needs to use <strong>Emscripten</strong>. It uses <code>-G &quot;CodeBlocks - MinGW Makefiles&quot;</code> to tell <strong>CMake</strong> to generate a build pipeline that uses makefiles.</p>
+<p>If you don&rsquo;t have a suitable <strong>make</strong> program installed (<strong>nmake</strong> is <em>not</em> suitable), then one of the simplest ways to get one is to add <strong>MinGW</strong> to your Emscripten SDK.</p>
 <p>Run <code>emsdk list</code> to get a list of available packages, and find <code>mingw</code> in the output.</p>
 <div class="highlight"><pre class="chroma"><code class="language-text" data-lang="text">C:&gt; emsdk list
 ...
@@ -304,12 +315,11 @@ The following precompiled tool packages are available for download:
 </code></pre></div><p>Install and activate <code>mingw</code>.</p>
 <div class="highlight"><pre class="chroma"><code class="language-text" data-lang="text">C:&gt; emsdk install mingw-7.1.0-64bit
 C:&gt; emsdk activate mingw-7.1.0-64bit
-</code></pre></div><p>This gets you a <code>make</code> program. The MinGW version of this is called <code>mingw32-make</code>.</p>
+</code></pre></div><p>This gets you a <code>make</code> program. The <strong>MinGW</strong> version of this is called <code>mingw32-make</code>.</p>
 <h2 id="build-your-project">Build your project</h2>
-<p>Now you should be able to build your project by running <code>mingw32-make</code> from the directory that CMake created earlier.</p>
-<div class="highlight"><pre class="chroma"><code class="language-text" data-lang="text">C:&gt; cd cmake-build-emscripten
-C:&gt; ming32-make
-</code></pre></div><p>If you got an error saying that it can&rsquo;t find <code>mingw32-make</code>, then re-run <code>emsdk-env.bat</code> to add the <strong>MinGW</strong> binaries to the path and try again.</p>
+<p>Now you should be able to build your project by running <code>cmake --build</code> followed by the name of the directory that <strong>CMake</strong> created earlier.</p>
+<div class="highlight"><pre class="chroma"><code class="language-text" data-lang="text">C:&gt; cmake --build cmake-build-emscripten
+</code></pre></div><p>If you opted to use makefiles and got an error saying that it can&rsquo;t find <code>mingw32-make</code>, then re-run <code>emsdk-env.bat</code> to add the <strong>MinGW</strong> binaries to the path and try again.</p>
 
         
           <div class="blog-tags">
@@ -319,6 +329,10 @@ C:&gt; ming32-make
               <a href="https://badlydrawnrod.github.io/tags/cmake/">cmake</a>&nbsp;
             
               <a href="https://badlydrawnrod.github.io/tags/emscripten/">emscripten</a>&nbsp;
+            
+              <a href="https://badlydrawnrod.github.io/tags/mingw/">mingw</a>&nbsp;
+            
+              <a href="https://badlydrawnrod.github.io/tags/ninja/">ninja</a>&nbsp;
             
           </div>
         
