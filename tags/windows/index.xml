@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>windows on Badly Drawn Rod</title>
+    <link>https://badlydrawnrod.github.io/tags/windows/</link>
+    <description>Recent content in windows on Badly Drawn Rod</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <lastBuildDate>Sat, 15 Aug 2020 15:30:00 +0100</lastBuildDate>
+    
+	<atom:link href="https://badlydrawnrod.github.io/tags/windows/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>How to save and restore Windows console modes</title>
+      <link>https://badlydrawnrod.github.io/posts/2020/08/15/</link>
+      <pubDate>Sat, 15 Aug 2020 15:30:00 +0100</pubDate>
+      
+      <guid>https://badlydrawnrod.github.io/posts/2020/08/15/</guid>
+      <description>&lt;h1 id=&#34;problem&#34;&gt;Problem&lt;/h1&gt;
+&lt;p&gt;You&amp;rsquo;re writing a console application in &lt;strong&gt;Windows&lt;/strong&gt; and would like to change the console behaviour and restore it later.&lt;/p&gt;</description>
+    </item>
+    
+  </channel>
+</rss>
