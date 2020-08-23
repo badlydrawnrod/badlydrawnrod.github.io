@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>c&#43;&#43; on Badly Drawn Rod</title>
-    <link>https://badlydrawnrod.github.io/tags/c&#43;&#43;/</link>
-    <description>Recent content in c&#43;&#43; on Badly Drawn Rod</description>
+    <title>typesafe on Badly Drawn Rod</title>
+    <link>https://badlydrawnrod.github.io/tags/typesafe/</link>
+    <description>Recent content in typesafe on Badly Drawn Rod</description>
     <generator>Hugo -- gohugo.io</generator>
     <lastBuildDate>Sun, 23 Aug 2020 20:00:00 +0100</lastBuildDate>
     
-	<atom:link href="https://badlydrawnrod.github.io/tags/c++/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="https://badlydrawnrod.github.io/tags/typesafe/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
@@ -22,16 +22,6 @@
 of the implementation from the caller. This makes a lot of sense, because you want to provide the caller with functionality,
 but you don&amp;rsquo;t want them to make arbitrary changes to objects that you own.&lt;/p&gt;
 &lt;p&gt;But how do you make your handles typesafe?&lt;/p&gt;</description>
-    </item>
-    
-    <item>
-      <title>How to save and restore Windows console modes</title>
-      <link>https://badlydrawnrod.github.io/posts/2020/08/15/</link>
-      <pubDate>Sat, 15 Aug 2020 15:30:00 +0100</pubDate>
-      
-      <guid>https://badlydrawnrod.github.io/posts/2020/08/15/</guid>
-      <description>&lt;h1 id=&#34;problem&#34;&gt;Problem&lt;/h1&gt;
-&lt;p&gt;You&amp;rsquo;re writing a console application in &lt;strong&gt;Windows&lt;/strong&gt; and would like to change the console behaviour and restore it later.&lt;/p&gt;</description>
     </item>
     
   </channel>
