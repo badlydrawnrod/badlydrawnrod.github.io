@@ -1,255 +1,40 @@
 <!DOCTYPE html>
-<html lang="en" itemscope itemtype="http://schema.org/WebPage">
-  <head>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>How to build and run an Emscripten project from CLion on Windows</title>
+	
+	
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu|Lora">
+	<link rel="stylesheet" href="/css/style.css">
+	
+</head>
+<body>
+	<header class="wrapper">
+    <nav>
+        <a href="https://badlydrawnrod.github.io">Home</a>
+        <ul>
+			
+            
+            <li><a href="/page/about/">About</a></li>
+            
+            <li><a href="/posts/">All posts</a></li>
+            
+        </ul>
+    </nav>
     
-
-  <meta charset="utf-8" />
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-
-  <title>How to build and run an Emscripten project from CLion on Windows - Badly Drawn Rod</title>
-  <meta name="description" content="Problem
-You&rsquo;re developing on Windows and have an existing Emscripten project that builds and runs from the command line, but you&rsquo;d like to do this from the CLion IDE.">
-  <meta name="author" content="Badly Drawn Rod"/><script type="application/ld+json">
-{
-    "@context": "http://schema.org",
-    "@type": "WebSite",
-    "name": "Badly Drawn Rod",
-    
-    "url": "https:\/\/badlydrawnrod.github.io"
-}
-</script><script type="application/ld+json">
-{
-  "@context": "http://schema.org",
-  "@type": "Organization",
-  "name": "",
-  "url": "https:\/\/badlydrawnrod.github.io"
-  
-  
-  
-  
-}
-</script>
-<script type="application/ld+json">
-{
-  "@context": "http://schema.org",
-  "@type": "BreadcrumbList",
-  "itemListElement": [{
-        "@type": "ListItem",
-        "position": 1,
-        "item": {
-          "@id": "https:\/\/badlydrawnrod.github.io",
-          "name": "home"
-        }
-    },{
-        "@type": "ListItem",
-        "position": 3,
-        "item": {
-          "@id": "https:\/\/badlydrawnrod.github.io\/posts\/2020\/05\/30\/emscripten-project-in-clion\/",
-          "name": "How to build and run an emscripten project from c lion on windows"
-        }
-    }]
-}
-</script><script type="application/ld+json">
-{
-  "@context": "http://schema.org",
-  "@type": "Article",
-  "author": {
-    "name" : "Badly Drawn Rod"
-  },
-  "headline": "How to build and run an Emscripten project from CLion on Windows",
-  "description" : "Problem You\u0026rsquo;re developing on Windows and have an existing Emscripten project that builds and runs from the command line, but you\u0026rsquo;d like to do this from the CLion IDE.\n",
-  "inLanguage" : "en",
-  "wordCount":  862 ,
-  "datePublished" : "2020-05-30T10:20:00",
-  "dateModified" : "2020-05-30T10:20:00",
-  "image" : "https:\/\/badlydrawnrod.github.io\/img\/dadatar.png",
-  "keywords" : [ "howto, emscripten, cmake, clion" ],
-  "mainEntityOfPage" : "https:\/\/badlydrawnrod.github.io\/posts\/2020\/05\/30\/emscripten-project-in-clion\/",
-  "publisher" : {
-    "@type": "Organization",
-    "name" : "https:\/\/badlydrawnrod.github.io",
-    "logo" : {
-        "@type" : "ImageObject",
-        "url" : "https:\/\/badlydrawnrod.github.io\/img\/dadatar.png",
-        "height" :  60 ,
-        "width" :  60
-    }
-  }
-}
-</script>
-
-<meta property="og:title" content="How to build and run an Emscripten project from CLion on Windows" />
-<meta property="og:description" content="Problem
-You&rsquo;re developing on Windows and have an existing Emscripten project that builds and runs from the command line, but you&rsquo;d like to do this from the CLion IDE.">
-<meta property="og:image" content="https://badlydrawnrod.github.io/img/dadatar.png" />
-<meta property="og:url" content="https://badlydrawnrod.github.io/posts/2020/05/30/emscripten-project-in-clion/" />
-<meta property="og:type" content="website" />
-<meta property="og:site_name" content="Badly Drawn Rod" />
-
-  <meta name="twitter:title" content="How to build and run an Emscripten project from CLion on Windows" />
-  <meta name="twitter:description" content="Problem
-You&rsquo;re developing on Windows and have an existing Emscripten project that builds and runs from the command line, but you&rsquo;d like to do this from the CLion IDE.">
-  <meta name="twitter:image" content="https://badlydrawnrod.github.io/img/dadatar.png" />
-  <meta name="twitter:card" content="summary" />
-  <meta name="twitter:site" content="@badlydrawnrod" />
-  <meta name="twitter:creator" content="@badlydrawnrod" />
-  <link href='https://badlydrawnrod.github.io/img/favicon.ico' rel='icon' type='image/x-icon'/>
-  <meta name="generator" content="Hugo 0.72.0" />
-  <link rel="alternate" href="https://badlydrawnrod.github.io/index.xml" type="application/rss+xml" title="Badly Drawn Rod"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css" integrity="sha384-9eLZqc9ds8eNjO3TmqPeYcDj8n+Qfa4nuSiGYa6DjLNcv9BtN69ZIulL9+8CqC9Y" crossorigin="anonymous">
-  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous"><link rel="stylesheet" href="https://badlydrawnrod.github.io/css/main.css" /><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" /><link rel="stylesheet" href="https://badlydrawnrod.github.io/css/syntax.css" /><link rel="stylesheet" href="https://badlydrawnrod.github.io/css/codeblock.css" /><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/4.1.2/photoswipe.min.css" integrity="sha384-h/L2W9KefUClHWaty3SLE5F/qvc4djlyR4qY3NUV5HGQBBW7stbcfff1+I/vmsHh" crossorigin="anonymous">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/4.1.2/default-skin/default-skin.min.css" integrity="sha384-iD0dNku6PYSIQLyfTOpB06F2KCZJAKLOThS5HRe8b3ibhdEQ6eKsFf/EeFxdOt5R" crossorigin="anonymous">
-
-
-
-  </head>
-  <body>
-    <nav class="navbar navbar-default navbar-fixed-top navbar-custom">
-  <div class="container-fluid">
-    <div class="navbar-header">
-      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#main-navbar">
-        <span class="sr-only">Toggle navigation</span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-      </button>
-      <a class="navbar-brand" href="https://badlydrawnrod.github.io">Badly Drawn Rod</a>
-    </div>
-
-    <div class="collapse navbar-collapse" id="main-navbar">
-      <ul class="nav navbar-nav navbar-right">
+</header>
+	
+<main class="wrapper">
+    <article>
+        <p></p>
         
-          
-            <li>
-              <a title="Blog" href="/">Blog</a>
-            </li>
-          
+        <div class="date">30 May, 2020</div>
         
-          
-            <li>
-              <a title="About" href="/page/about">About</a>
-            </li>
-          
-        
-          
-            <li>
-              <a title="Tags" href="/tags">Tags</a>
-            </li>
-          
-        
-
-        
-
-        
-      </ul>
-    </div>
-
-    
-      <div class="avatar-container">
-        <div class="avatar-img-border">
-          <a title="Badly Drawn Rod" href="https://badlydrawnrod.github.io">
-            <img class="avatar-img" src="https://badlydrawnrod.github.io/img/dadatar.png" alt="Badly Drawn Rod" />
-          </a>
-        </div>
-      </div>
-    
-
-  </div>
-</nav>
-
-
-
-
-    
-
-
-<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
-
-<div class="pswp__bg"></div>
-
-<div class="pswp__scroll-wrap">
-    
-    <div class="pswp__container">
-      <div class="pswp__item"></div>
-      <div class="pswp__item"></div>
-      <div class="pswp__item"></div>
-    </div>
-    
-    <div class="pswp__ui pswp__ui--hidden">
-    <div class="pswp__top-bar">
-      
-      <div class="pswp__counter"></div>
-      <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
-      <button class="pswp__button pswp__button--share" title="Share"></button>
-      <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
-      <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
-      
-      
-      <div class="pswp__preloader">
-        <div class="pswp__preloader__icn">
-          <div class="pswp__preloader__cut">
-            <div class="pswp__preloader__donut"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
-      <div class="pswp__share-tooltip"></div>
-    </div>
-    <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
-    </button>
-    <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
-    </button>
-    <div class="pswp__caption">
-      <div class="pswp__caption__center"></div>
-    </div>
-    </div>
-    </div>
-</div>
-
-
-  
-  
-  
-
-
-
-
-
-
-  
-
-  <header class="header-section ">
-    
-    <div class="intro-header no-img">
-      <div class="container">
-        <div class="row">
-          <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
-            <div class="posts-heading">
-              
-                <h1>How to build and run an Emscripten project from CLion on Windows</h1>
-              
-              
-                <hr class="small">
-              
-              
-              
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </header>
-
-
-    
-<div class="container" role="main">
-  <div class="row">
-    <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
-      <article role="main" class="blog-post">
-        <h1 id="problem">Problem</h1>
+        <div>
+            <h1 id="problem">Problem</h1>
 <p>You&rsquo;re developing on Windows and have an existing <strong>Emscripten</strong> project that builds and runs from the command line, but you&rsquo;d like to do this from the <strong>CLion</strong> IDE.</p>
 <h1 id="solution">Solution</h1>
 <h3 id="pre-requisites">Pre-requisites</h3>
@@ -262,7 +47,7 @@ You&rsquo;re developing on Windows and have an existing Emscripten project that 
 <p>In <strong>CLion</strong>, go to <em>File -&gt; Open&hellip;</em> and open your project by selecting the directory containing <code>CMakeLists.txt</code>.</p>
 <p><strong>CLion</strong> will detect <code>CMakeLists.txt</code> and attempt to load it with <strong>CMake</strong>, using its default toolchain. On my Windows dev box, this is <strong>MinGW</strong>, so that&rsquo;s what I&rsquo;m showing here.</p>
 <p>If <strong>CLion</strong> already has a <strong>MinGW</strong> toolchain configured, then you will see output similar to the following in its <strong>CMake</strong> tool window.</p>
-<div class="highlight"><pre class="chroma"><code class="language-fallback" data-lang="fallback">C:\Users\Rod\AppData\Local\JetBrains\Toolbox\apps\CLion\ch-0\201.6668.126\bin\cmake\win\bin\cmake.exe -DCMAKE_BUILD_TYPE=Debug -G &#34;CodeBlocks - MinGW Makefiles&#34; D:\Users\Rod\Projects\c++\demo
+<pre tabindex="0"><code>C:\Users\Rod\AppData\Local\JetBrains\Toolbox\apps\CLion\ch-0\201.6668.126\bin\cmake\win\bin\cmake.exe -DCMAKE_BUILD_TYPE=Debug -G &quot;CodeBlocks - MinGW Makefiles&quot; D:\Users\Rod\Projects\c++\demo
 -- The C compiler identification is GNU 7.1.0
 -- The CXX compiler identification is GNU 7.1.0
 -- Check for working C compiler: D:/Tools/emsdk/mingw/7.1.0_64bit/bin/gcc.exe
@@ -291,7 +76,7 @@ You&rsquo;re developing on Windows and have an existing Emscripten project that 
 -- Build files have been written to: D:/Users/Rod/Projects/c++/demo/cmake-build-debug
 
 [Finished]
-</code></pre></div><p>If this is the case, then you probably don&rsquo;t need to configure the <strong>MinGW</strong> toolchain. Skip ahead to <a href="#configure-the-build">Configure the build</a>.</p>
+</code></pre><p>If this is the case, then you probably don&rsquo;t need to configure the <strong>MinGW</strong> toolchain. Skip ahead to <a href="#configure-the-build">Configure the build</a>.</p>
 <p>Otherwise, you do need to configure the <strong>MinGW</strong> toolchain in <strong>CLion</strong>, so continue reading.</p>
 <h2 id="configure-the-mingw-toolchain">Configure the MinGW toolchain</h2>
 <p>Open the <strong>CLion</strong> settings window by pressing <code>Ctrl+Alt+S</code>, then navigate to <em>Build, Execution, Deployment &ndash;&gt; Toolchains</em>.</p>
@@ -306,18 +91,10 @@ You&rsquo;re developing on Windows and have an existing Emscripten project that 
 </ul>
 <p>Once you have entered a valid path in the <em>Environment:</em> field, then <strong>CLion</strong> will try to populate the <em>Make:</em>, <em>C Compiler:</em>, <em>C++ Compiler:</em>, and <em>Debugger</em> fields.</p>
 <p>You should end up with something like this:</p>
-
-<link rel="stylesheet" href="https://badlydrawnrod.github.io/css/hugo-easy-gallery.css" />
-<div class="box" >
-  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
-    <div class="img">
-      <img itemprop="thumbnail" src="toolchain.png" alt="toolchain.png"/>
-    </div>
-    <a href="toolchain.png" itemprop="contentUrl"></a>
-      <figcaption><h4>Figure: the CLion Toolchains window</h4>
-      </figcaption>
-  </figure>
-</div>
+<figure><img src="toolchain.png"/><figcaption>
+            <h4>Figure: the CLion Toolchains window</h4>
+        </figcaption>
+</figure>
 
 <p>Click <em>OK</em> to dismiss the window.</p>
 <p>Now <strong>CMake</strong> will run again. It will probably fail with an error, because you still need to tell <strong>CLion</strong> to use your build directory.</p>
@@ -332,22 +109,14 @@ You&rsquo;re developing on Windows and have an existing Emscripten project that 
 </li>
 </ul>
 <p>The window will look something like this.</p>
-
-
-<div class="box" >
-  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
-    <div class="img">
-      <img itemprop="thumbnail" src="cmake.png" alt="cmake.png"/>
-    </div>
-    <a href="cmake.png" itemprop="contentUrl"></a>
-      <figcaption><h4>Figure: the CLion CMake window</h4>
-      </figcaption>
-  </figure>
-</div>
+<figure><img src="cmake.png"/><figcaption>
+            <h4>Figure: the CLion CMake window</h4>
+        </figcaption>
+</figure>
 
 <p>Click <em>OK</em> to dismiss the window.</p>
 <p><strong>CMake</strong> will run yet again. This time it should show the same output that you would see if you had you run <code>emcmake</code> from the command line.</p>
-<div class="highlight"><pre class="chroma"><code class="language-fallback" data-lang="fallback">C:\Users\Rod\AppData\Local\JetBrains\Toolbox\apps\CLion\ch-0\201.6668.126\bin\cmake\win\bin\cmake.exe -DCMAKE_BUILD_TYPE=Debug -G &#34;CodeBlocks - MinGW Makefiles&#34; D:\Users\Rod\Projects\c++\demo
+<pre tabindex="0"><code>C:\Users\Rod\AppData\Local\JetBrains\Toolbox\apps\CLion\ch-0\201.6668.126\bin\cmake\win\bin\cmake.exe -DCMAKE_BUILD_TYPE=Debug -G &quot;CodeBlocks - MinGW Makefiles&quot; D:\Users\Rod\Projects\c++\demo
 -- Emscripten detected
 -- Build type: CMAKE_BUILD_TYPE=Debug
 -- Compiler: CMAKE_CXX_COMPILER=D:/Tools/emsdk/upstream/emscripten/em++.bat
@@ -363,31 +132,31 @@ You&rsquo;re developing on Windows and have an existing Emscripten project that 
 -- Build files have been written to: D:/Users/Rod/Projects/c++/demo/cmake-build-emscripten
 
 [Finished]
-</code></pre></div><h2 id="build-your-project-in-clion">Build your project in CLion</h2>
+</code></pre><h2 id="build-your-project-in-clion">Build your project in CLion</h2>
 <p>You can now build your <strong>Emscripten</strong> project in <strong>CLion</strong> by pressing <code>Ctrl+F9</code>.</p>
 <h2 id="run-your-emscripten-project">Run your Emscripten project</h2>
 <p>To run your <strong>Emscripten</strong> project, you will need a web server that knows how to serve <code>.wasm</code> files as <code>application/wasm</code>.</p>
 <p>Here&rsquo;s a short <strong>Python</strong> script that will do the job.</p>
-<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="ch">#!/usr/bin/env python3</span>
-<span class="c1"># Serve &#34;.wasm&#34; files as &#34;application/wasm&#34;.</span>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#008000">#!/usr/bin/env python3</span>
+<span style="color:#008000"># Serve &#34;.wasm&#34; files as &#34;application/wasm&#34;.</span>
 
-<span class="kn">from</span> <span class="nn">http.server</span> <span class="kn">import</span> <span class="n">SimpleHTTPRequestHandler</span><span class="p">,</span> <span class="n">test</span>
+<span style="color:#00f">from</span> http.server <span style="color:#00f">import</span> SimpleHTTPRequestHandler, test
 
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
-    <span class="kn">import</span> <span class="nn">argparse</span>
+<span style="color:#00f">if</span> __name__ == <span style="color:#a31515">&#39;__main__&#39;</span>:
+    <span style="color:#00f">import</span> argparse
 
-    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--bind&#39;</span><span class="p">,</span> <span class="s1">&#39;-b&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;ADDRESS&#39;</span><span class="p">,</span>
-                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Specify alternate bind address &#39;</span>
-                             <span class="s1">&#39;[default: all interfaces]&#39;</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;port&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">,</span>
-                        <span class="n">default</span><span class="o">=</span><span class="mi">8000</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
-                        <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;?&#39;</span><span class="p">,</span>
-                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Specify alternate port [default: 8000]&#39;</span><span class="p">)</span>
-    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
-    <span class="n">handler_class</span> <span class="o">=</span> <span class="n">SimpleHTTPRequestHandler</span>
-    <span class="n">handler_class</span><span class="o">.</span><span class="n">extensions_map</span><span class="p">[</span><span class="s2">&#34;.wasm&#34;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&#34;application/wasm&#34;</span>
-    <span class="n">test</span><span class="p">(</span><span class="n">HandlerClass</span><span class="o">=</span><span class="n">handler_class</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">port</span><span class="p">,</span> <span class="n">bind</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">bind</span><span class="p">)</span>
+    parser = argparse.ArgumentParser()
+    parser.add_argument(<span style="color:#a31515">&#39;--bind&#39;</span>, <span style="color:#a31515">&#39;-b&#39;</span>, default=<span style="color:#a31515">&#39;&#39;</span>, metavar=<span style="color:#a31515">&#39;ADDRESS&#39;</span>,
+                        help=<span style="color:#a31515">&#39;Specify alternate bind address &#39;</span>
+                             <span style="color:#a31515">&#39;[default: all interfaces]&#39;</span>)
+    parser.add_argument(<span style="color:#a31515">&#39;port&#39;</span>, action=<span style="color:#a31515">&#39;store&#39;</span>,
+                        default=8000, type=int,
+                        nargs=<span style="color:#a31515">&#39;?&#39;</span>,
+                        help=<span style="color:#a31515">&#39;Specify alternate port [default: 8000]&#39;</span>)
+    args = parser.parse_args()
+    handler_class = SimpleHTTPRequestHandler
+    handler_class.extensions_map[<span style="color:#a31515">&#34;.wasm&#34;</span>] = <span style="color:#a31515">&#34;application/wasm&#34;</span>
+    test(HandlerClass=handler_class, port=args.port, bind=args.bind)
 </code></pre></div><p>If you want to run it from within <strong>CLion</strong> then&hellip;</p>
 <ul>
 <li>Add it to your <strong>CLion</strong> project.</li>
@@ -398,213 +167,49 @@ You&rsquo;re developing on Windows and have an existing Emscripten project that 
 <li>Click <em>OK</em> to close the window.</li>
 </ul>
 <p>You should now be able to start the web server from within <strong>CLion</strong> by selecting the <em>run_server</em> configuration and pressing <code>Shift+F10</code>.</p>
-
+        </div>
         
-          <div class="blog-tags">
-            
-              <a href="https://badlydrawnrod.github.io/tags/howto/">howto</a>&nbsp;
-            
-              <a href="https://badlydrawnrod.github.io/tags/emscripten/">emscripten</a>&nbsp;
-            
-              <a href="https://badlydrawnrod.github.io/tags/cmake/">cmake</a>&nbsp;
-            
-              <a href="https://badlydrawnrod.github.io/tags/clion/">clion</a>&nbsp;
-            
-          </div>
+        <div>
+            <ul id="tags">
+                
+                <li><a href="/tags/howto">howto</a></li>
+                
+                <li><a href="/tags/emscripten">emscripten</a></li>
+                
+                <li><a href="/tags/cmake">cmake</a></li>
+                
+                <li><a href="/tags/clion">clion</a></li>
+                
+            </ul>
+        </div>
         
-
-        
-            <hr/>
-            <section id="social-share">
-              <div class="list-inline footer-links">
+    </article>
+</main>
+<aside class="wrapper">
+    <div>
+        <div>
+            <h3>Latest Posts</h3>
+        </div>
+        <div>
+            <ul>
                 
-
-<div class="share-box" aria-hidden="true">
-    <ul class="share">
-      
-      <li>
-        <a href="//twitter.com/share?url=https%3a%2f%2fbadlydrawnrod.github.io%2fposts%2f2020%2f05%2f30%2femscripten-project-in-clion%2f&amp;text=How%20to%20build%20and%20run%20an%20Emscripten%20project%20from%20CLion%20on%20Windows&amp;via=badlydrawnrod" target="_blank" title="Share on Twitter">
-          <i class="fab fa-twitter"></i>
-        </a>
-      </li>
-  
-      
-      <li>
-        <a href="//www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fbadlydrawnrod.github.io%2fposts%2f2020%2f05%2f30%2femscripten-project-in-clion%2f" target="_blank" title="Share on Facebook">
-          <i class="fab fa-facebook"></i>
-        </a>
-      </li>
-  
-      
-      <li>
-        <a href="//reddit.com/submit?url=https%3a%2f%2fbadlydrawnrod.github.io%2fposts%2f2020%2f05%2f30%2femscripten-project-in-clion%2f&amp;title=How%20to%20build%20and%20run%20an%20Emscripten%20project%20from%20CLion%20on%20Windows" target="_blank" title="Share on Reddit">
-          <i class="fab fa-reddit"></i>
-        </a>
-      </li>
-  
-      
-      <li>
-        <a href="//www.linkedin.com/shareArticle?url=https%3a%2f%2fbadlydrawnrod.github.io%2fposts%2f2020%2f05%2f30%2femscripten-project-in-clion%2f&amp;title=How%20to%20build%20and%20run%20an%20Emscripten%20project%20from%20CLion%20on%20Windows" target="_blank" title="Share on LinkedIn">
-          <i class="fab fa-linkedin"></i>
-        </a>
-      </li>
-  
-      
-      <li>
-        <a href="//www.stumbleupon.com/submit?url=https%3a%2f%2fbadlydrawnrod.github.io%2fposts%2f2020%2f05%2f30%2femscripten-project-in-clion%2f&amp;title=How%20to%20build%20and%20run%20an%20Emscripten%20project%20from%20CLion%20on%20Windows" target="_blank" title="Share on StumbleUpon">
-          <i class="fab fa-stumbleupon"></i>
-        </a>
-      </li>
-  
-      
-      <li>
-        <a href="//www.pinterest.com/pin/create/button/?url=https%3a%2f%2fbadlydrawnrod.github.io%2fposts%2f2020%2f05%2f30%2femscripten-project-in-clion%2f&amp;description=How%20to%20build%20and%20run%20an%20Emscripten%20project%20from%20CLion%20on%20Windows" target="_blank" title="Share on Pinterest">
-          <i class="fab fa-pinterest"></i>
-        </a>
-      </li>
-    </ul>
-  </div>
-  
-
-              </div>
-            </section>
-        
-
-        
-          
-            
-          
-
-          
-                  <h4 class="see-also">See also</h4>
-                  <ul>
+                <li><a href="/posts/2021/11/15/how-i-went-to-c/">How I went to C</a></li>
                 
+                <li><a href="/posts/2021/11/12/in-the-beginning/">In the beginning</a></li>
                 
-                    <li><a href="/posts/2020/08/15/">How to save and restore Windows console modes</a></li>
+                <li><a href="/posts/2020/08/23/handles/">How to expose typesafe handles in a C API</a></li>
                 
-                    <li><a href="/posts/2020/07/05/cmake-detect-emscripten/">How to detect Emscripten in CMake</a></li>
+                <li><a href="/posts/2020/08/15/">How to save and restore Windows console modes</a></li>
                 
-                    <li><a href="/posts/2020/06/07/emscripten-indexeddb/">How to save downloaded files to IndexedDB with Emscripten</a></li>
+                <li><a href="/posts/2020/07/05/cmake-detect-emscripten/">How to detect Emscripten in CMake</a></li>
                 
-                    <li><a href="/posts/2020/05/19/emcmake-with-emscripten/">How to use Emscripten with CMake on Windows</a></li>
-                
-                    <li><a href="/posts/2020/05/18/cmake-target-packages-from-vcpkg/">How to find the CMake targets for a vcpkg package</a></li>
-                
-              </ul>
-
-          
-        
-      </article>
-
-      
-        <ul class="pager blog-pager">
-          
-            <li class="previous">
-              <a href="https://badlydrawnrod.github.io/posts/2020/05/19/emcmake-with-emscripten/" data-toggle="tooltip" data-placement="top" title="How to use Emscripten with CMake on Windows">&larr; Previous Post</a>
-            </li>
-          
-          
-            <li class="next">
-              <a href="https://badlydrawnrod.github.io/posts/2020/06/07/emscripten-indexeddb/" data-toggle="tooltip" data-placement="top" title="How to save downloaded files to IndexedDB with Emscripten">Next Post &rarr;</a>
-            </li>
-          
-        </ul>
-      
-
-
-      
-        
-        
-      
-
+            </ul>
+        </div>
     </div>
-  </div>
-</div>
+</aside> 
+	<footer class="wrapper">
+	<p>&copy; 2021 <a href="https://badlydrawnrod.github.io">Badly Drawn Rod</a></p>
+</footer>
 
-      
-<footer>
-  <div class="container">
-    <div class="row">
-      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
-        <ul class="list-inline text-center footer-links">
-          
-              <li>
-                <a href="https://github.com/badlydrawnrod" title="GitHub">
-                  <span class="fa-stack fa-lg">
-                    <i class="fas fa-circle fa-stack-2x"></i>
-                    <i class="fab fa-github fa-stack-1x fa-inverse"></i>
-                  </span>
-                </a>
-              </li>
-              <li>
-                <a href="https://twitter.com/badlydrawnrod" title="Twitter">
-                  <span class="fa-stack fa-lg">
-                    <i class="fas fa-circle fa-stack-2x"></i>
-                    <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
-                  </span>
-                </a>
-              </li>
-              <li>
-                <a href="https://itch.io/profile/badlydrawnrod" title="Itch.io">
-                  <span class="fa-stack fa-lg">
-                    <i class="fas fa-circle fa-stack-2x"></i>
-                    <i class="fas fa-gamepad fa-stack-1x fa-inverse"></i>
-                  </span>
-                </a>
-              </li>
-          
-          <li>
-            <a href="" title="RSS">
-              <span class="fa-stack fa-lg">
-                <i class="fas fa-circle fa-stack-2x"></i>
-                <i class="fas fa-rss fa-stack-1x fa-inverse"></i>
-              </span>
-            </a>
-          </li>
-          
-        </ul>
-        <p class="credits copyright text-muted">
-          
-            
-              <a href="https://badlydrawnrod.github.io">Badly Drawn Rod</a>
-            
-          
-
-          &nbsp;&bull;&nbsp;&copy;
-          
-            2020
-          
-
-          
-            &nbsp;&bull;&nbsp;
-            <a href="https://badlydrawnrod.github.io">Badly Drawn Rod</a>
-          
-        </p>
-        
-        <p class="credits theme-by text-muted">
-          <a href="https://gohugo.io">Hugo v0.72.0</a> powered &nbsp;&bull;&nbsp; Theme <a href="https://github.com/halogenica/beautifulhugo">Beautiful Hugo</a> adapted from <a href="https://deanattali.com/beautiful-jekyll/">Beautiful Jekyll</a>
-          
-        </p>
-      </div>
-    </div>
-  </div>
-</footer><script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.js" integrity="sha384-K3vbOmF2BtaVai+Qk37uypf7VrgBubhQreNQe9aGsz9lB63dIFiQVlJbr92dw2Lx" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/contrib/auto-render.min.js" integrity="sha384-kmZOZB5ObwgQnS/DuDg6TScgOiWWBiVt0plIRkZCmE6rDZGrEOQeHM5PcHi+nyqe" crossorigin="anonymous"></script>
-<script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ=" crossorigin="anonymous"></script>
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
-
-<script src="https://badlydrawnrod.github.io/js/main.js"></script><script> renderMathInElement(document.body); </script><script src="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/4.1.2/photoswipe.min.js" integrity="sha384-QELNnmcmU8IR9ZAykt67vGr9/rZJdHbiWi64V88fCPaOohUlHCqUD/unNN0BXSqy" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/4.1.2/photoswipe-ui-default.min.js" integrity="sha384-m67o7SkQ1ALzKZIFh4CiTA8tmadaujiTa9Vu+nqPSwDOqHrDmxLezTdFln8077+q" crossorigin="anonymous"></script><script src="https://badlydrawnrod.github.io/js/load-photoswipe.js"></script>
-
-
-
-
-
-
-
-
-
-    
-  </body>
+</body>
 </html>
-

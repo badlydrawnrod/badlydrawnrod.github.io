@@ -5,19 +5,15 @@
     <link>https://badlydrawnrod.github.io/tags/console/</link>
     <description>Recent content in console on Badly Drawn Rod</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Sat, 15 Aug 2020 15:30:00 +0100</lastBuildDate>
-    
-	<atom:link href="https://badlydrawnrod.github.io/tags/console/index.xml" rel="self" type="application/rss+xml" />
-    
-    
+    <language>en</language>
+    <lastBuildDate>Wed, 12 Aug 2020 12:30:00 +0100</lastBuildDate><atom:link href="https://badlydrawnrod.github.io/tags/console/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>How to save and restore Windows console modes</title>
       <link>https://badlydrawnrod.github.io/posts/2020/08/15/</link>
-      <pubDate>Sat, 15 Aug 2020 15:30:00 +0100</pubDate>
+      <pubDate>Wed, 12 Aug 2020 12:30:00 +0100</pubDate>
       
       <guid>https://badlydrawnrod.github.io/posts/2020/08/15/</guid>
-      <description>&lt;h1 id=&#34;problem&#34;&gt;Problem&lt;/h1&gt;
-&lt;p&gt;You&amp;rsquo;re writing a console application in &lt;strong&gt;Windows&lt;/strong&gt; and would like to change the console behaviour and restore it later.&lt;/p&gt;</description>
+      <description>&lt;p&gt;How do you save and restore console modes in Windows?&lt;/p&gt;</description>
     </item>
     
   </channel>

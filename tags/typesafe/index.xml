@@ -5,23 +5,15 @@
     <link>https://badlydrawnrod.github.io/tags/typesafe/</link>
     <description>Recent content in typesafe on Badly Drawn Rod</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Sun, 23 Aug 2020 20:00:00 +0100</lastBuildDate>
-    
-	<atom:link href="https://badlydrawnrod.github.io/tags/typesafe/index.xml" rel="self" type="application/rss+xml" />
-    
-    
+    <language>en</language>
+    <lastBuildDate>Sun, 23 Aug 2020 20:00:00 +0100</lastBuildDate><atom:link href="https://badlydrawnrod.github.io/tags/typesafe/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>How to expose typesafe handles in a C API</title>
       <link>https://badlydrawnrod.github.io/posts/2020/08/23/handles/</link>
       <pubDate>Sun, 23 Aug 2020 20:00:00 +0100</pubDate>
       
       <guid>https://badlydrawnrod.github.io/posts/2020/08/23/handles/</guid>
-      <description>&lt;h1 id=&#34;problem&#34;&gt;Problem&lt;/h1&gt;
-&lt;p&gt;If you have a C API, how do you pass handles to it in a typesafe manner?&lt;/p&gt;
-&lt;p&gt;It is fairly common to see C APIs that use an opaque handle to an underlying resource. The idea is to hide the details
-of the implementation from the caller. This makes a lot of sense, because you want to provide the caller with functionality,
-but you don&amp;rsquo;t want them to make arbitrary changes to objects that you own.&lt;/p&gt;
-&lt;p&gt;But how do you make your handles typesafe?&lt;/p&gt;</description>
+      <description>&lt;p&gt;If you have a C API, how do you pass handles to it in a typesafe manner?&lt;/p&gt;</description>
     </item>
     
   </channel>

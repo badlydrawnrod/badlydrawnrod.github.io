@@ -1,0 +1,141 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Lora, Georgia, 'Times New Roman', Times, serif;
+    font-size: medium;
+    font-style: normal;
+    font-weight: 400;
+    text-rendering: optimizeLegibility;
+    background-color: white;
+    margin-bottom: 75px;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: Ubuntu, Arial, Helvetica, sans-serif;
+}
+
+h1 {
+    font-size: xx-large;
+}
+
+body>header {
+    position: -webkit-sticky;
+    position: sticky;
+    top: 0px;
+    padding-bottom: 16px;
+    background-color: white;
+}
+
+header nav ul li {
+    display: inline;
+}
+
+header nav ul {
+    display: inline;
+    padding: 0px;
+}
+
+header nav {
+    display: inline;
+}
+
+.date {
+    font-style: italic;
+}
+
+#tags {
+    padding-inline: 0px;
+}
+
+#tags::before {
+    font-family: Ubuntu, Arial, Helvetica, sans-serif;
+    font-weight: bold;
+    font-size: normal;
+    content: "Tags: ";
+    margin-right: 1em;
+}
+
+#tags>li {
+    display: inline;
+}
+
+div.highlight {
+    border-style: solid;
+    border-color: indianred;
+    border-width: thin;
+    padding: 4px;
+    overflow-x: auto;
+}
+
+pre,
+code {
+    overflow-x: auto;
+    font-size: medium;
+    font-family: Consolas, 'Courier New', Courier, monospace;
+    text-rendering: optimizeLegibility;
+}
+
+[class*="span"] {
+    float: left;
+    min-height: 1px;
+}
+
+.span9 {
+    width: 75%;
+    padding: 8px;
+    background-color: navajowhite;
+}
+
+.span3 {
+    width: 25%;
+    padding: 8px;
+    background-color: moccasin;
+}
+
+
+/* Default to columns on top of each other, i.e., rows! */
+
+[class*="col-"] {
+    width: 100%;
+    /* border: 1px solid blue; */
+}
+
+.wrapper {
+    max-width: 900px;
+    margin-right: auto;
+    margin-left: auto;
+}
+
+
+/* Add a breakpoint at 768px. */
+
+@media only screen and (min-width: 768px) {
+    [class*="col-"] {
+        float: left;
+        padding: 15px;
+        /* border: 1px solid red; */
+    }
+    .col-3 {
+        width: 25%;
+    }
+    .col-9 {
+        width: 75%;
+    }
+}
+
+.row::after {
+    content: "";
+    clear: both;
+    display: table;
+}
+
+footer {
+    display: block;
+}

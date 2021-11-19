@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>How I went to C</title>
+	
+	
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu|Lora">
+	<link rel="stylesheet" href="/css/style.css">
+	
+</head>
+<body>
+	<header class="wrapper">
+    <nav>
+        <a href="https://badlydrawnrod.github.io">Home</a>
+        <ul>
+			
+            
+            <li><a href="/page/about/">About</a></li>
+            
+            <li><a href="/posts/">All posts</a></li>
+            
+        </ul>
+    </nav>
+    
+</header>
+	
+<main class="wrapper">
+    <article>
+        <p></p>
+        
+        <div class="date">15 November, 2021</div>
+        
+        <div>
+            <p>My Twitter name says that I&rsquo;m the old C dog, so you may be surprised to hear that it took me quite a while to warm to C.</p>
+<h1 id="how-i-went-to-c">How I went to C</h1>
+<p>I&rsquo;ve used a few programming languages over the years. There are some that I like, some that I dislike, and some that I&rsquo;d like to like but don&rsquo;t. But of all of them, I would say that C hits a sweet spot that most other languages don&rsquo;t.</p>
+<p>I first heard of C when I read about it in <a href="https://archive.org/details/byte-magazine-1983-08">Byte magazine</a> in 1983. At the time I didn&rsquo;t really see the point of it as I was too busy trying to make video games in Z80 and 6502 assembly language. The 8-bit machines that I had access to at the time were already slow, so anything slower than hand-optimised machine code made no sense to me. It didn&rsquo;t help that on page 324 of the same issue of <em>Byte</em>, Jerry Pournelle complained that C &ldquo;generates <em>very</em> large programs&rdquo;, so of course I&rsquo;d have been put off.</p>
+<p>Fast forward a couple of years, and I&rsquo;d started to hear good things about C, and how it had been used to write this much revered operating system called UNIX. Around the same time, my sixth form college bought an <a href="https://en.wikipedia.org/wiki/Atari_ST">Atari 520ST</a> with a monochrome monitor, about 32 times the amount of RAM that I was used to, a single floppy drive, and a C compiler. I begged my way into borrowing it for the holidays (thanks Ray!) and got absolutely nowhere with it as the manual assumed C knowlege, and I didn&rsquo;t have access to any resources that would allow me to learn it. Remember, this was the mid 80s, so there was no internet.</p>
+<p>Fast forward another year to 1986, and I went to the <a href="https://www.essex.ac.uk/">University of Essex</a> where I learned <a href="https://en.wikipedia.org/wiki/Modula-2">Modula-2</a>. This was Niklaus Wirth&rsquo;s attempt at a systems programming language. I liked it very much, despite its arthritis-causing propensity for CAPITALISING ABSOLUTELY EVERY KEYWORD. I also remember learning 68000 assembly language, which was a dream to program, and LISP which was not, and getting up at the crack of dawn to play <a href="https://en.wikipedia.org/wiki/MUD">MUD</a>. But I don&rsquo;t think I learned C until my second year.</p>
+<p>When I did finally learn C (ironically, to write a LISP interpreter), I had mixed feelings about it. I liked the sparse syntax. It was refreshingly brief, and used braces rather than cumbersome keywords, so it made Modula-2 look astonishingly verbose. My fingers certainly enjoyed the break - there are only so many times that you can type <code>IMPLEMENTATION MODULE</code> before you get RSI.</p>
+<p>This wasn&rsquo;t the ANSI C / C90 that many people seem to associate with C. No, this was old school <a href="https://archive.org/details/TheCProgrammingLanguageFirstEdition">K&amp;R C</a>, and it had some quirky syntax around function definitions in which argument names were separated from their types.</p>
+<p>Here&rsquo;s a simple example - a function that adds two integers. Note that the default return type is <code>int</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C">add(x, y)               <span style="color:#008000">/* name ( argument list, if any ) */</span>
+<span style="color:#2b91af">int</span> x;                  <span style="color:#008000">/* argument declaration */</span>
+<span style="color:#2b91af">int</span> y;                  <span style="color:#008000">/* argument declaration */</span>
+{
+    <span style="color:#008000">/* Local variables, if any, had to go here, before the code. This is also
+</span><span style="color:#008000">     * true of ANSI-C / C90.
+</span><span style="color:#008000">     */</span>
+    <span style="color:#00f">return</span> x + y;
+}
+</code></pre></div><p>Here&rsquo;s its modern-day equivalent.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C"><span style="color:#2b91af">int</span> add(<span style="color:#2b91af">int</span> x, <span style="color:#2b91af">int</span> y)
+{
+    <span style="color:#00f">return</span> x + y;
+}
+</code></pre></div><p>There were no function prototypes. If you had a function that returned a non-<code>int</code> value then you&rsquo;d have to declare it, but you didn&rsquo;t declare the arguments. To illustrate, here&rsquo;s a declaration for <code>atof()</code> in K&amp;R C.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C"><span style="color:#2b91af">double</span> atof();  <span style="color:#008000">/* Convert a string to a double. */</span>
+</code></pre></div><p>And here&rsquo;s the modern day equivalent.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C"><span style="color:#2b91af">double</span> atof(<span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* str);   <span style="color:#008000">// Convert a string to a double.
+</span></code></pre></div><p>So, C was brief, and easy on the fingers, but it was primitive, even compared to its current incarnation. By comparison, Modula-2 was verbose, and stricter about types, but it had two features that C didn&rsquo;t, namely modules and co-routines.</p>
+<p>Modula-2 let you define a public interface to your code in a <code>DEFINITION MODULE</code> (it was a truly shouty language) and implement it in a private <code>IMPLEMENTATION MODULE</code>. Many modern programming languages have modules, but this was the first time that I&rsquo;d seen them, and had naively expected that they would become a feature of most modern programming languages.</p>
+<p>C, by comparison, had (and has) the very primitive notion of using a preprocessor to include header files. This preprocessor isn&rsquo;t part of the C language. It is just a way of including more text into the thing that you&rsquo;re compiling, partly so that you don&rsquo;t have to keep typing common declarations over and over.</p>
+<p>Co-routines are less easy to describe succinctly, but if you&rsquo;ve used a language with <code>async</code>/<code>await</code>, or used <code>yield</code> in Python then you&rsquo;ve probably got the idea.</p>
+<p>I was able to forgive C its lack of modules. It was an older language than Modula-2, and I was convinced that it would eventually get them. However, all it did was evolve slightly, giving us ANSI-C in 1989 which didn&rsquo;t add much, but made the language a little less quirky and a lot more standardised. But even today, C doesn&rsquo;t have modules.</p>
+<p>I was less surprised that C didn&rsquo;t have co-routines. From what I&rsquo;d understood at the time, one of the inspirations for C was <a href="https://en.wikipedia.org/wiki/BCPL">BCPL</a>, which had them, but they weren&rsquo;t added to BCPL until around 1977, which is <em>after</em> C was invented.</p>
+<p>By having both modules and co-routines, Modula-2 was probably ahead of its time. Even today, there are languages that have neither. For example, they only made it into C++ in C++20.</p>
+<p>So, despite its apparent shortcomings, why did I like C so much?</p>
+<p>Unlike assembly language, <strong>it was portable</strong>, and the code that it generated was usually small enough and fast enough to write games. At the same time, computers themselves started to become far more powerful, so writing C instead of assembly language was a good trade-off. And if you really needed speed, then many C compilers supported inline assembly language anyway.</p>
+<p>Unlike Modula-2, <strong>it was used on UNIX</strong>. My first job out of university was as a Fortran programmer for a <a href="http://www.oldcomputers.it/parts/hp/hp1000/docs/hp1000rte/index.html">little-known real-time system</a>, but within about 6 months I was primarily programming in C on <a href="https://www.youtube.com/watch?v=SpLRTAGa6bU">UNIX</a>. And I <em>loved</em> UNIX.</p>
+<blockquote>
+<p>Some background. In the late 80s and early 90s, there was a big move away from the mainframes and minicomputers that had dominated the landscape. At this time, PCs ran MS-DOS and were generally limited to 640KB of RAM, Windows was a party trick that ran on top of MS-DOS, and Macs were expensive and confined largely to publishing. By contrast, UNIX boxes had lots of RAM (ok, 16MB) and let several people use the computer at the same time. The language that you needed to do anything serious in UNIX was C.</p>
+</blockquote>
+<p>C programs compiled quickly and ran quickly, so <strong>it was fast</strong>. Admittedly, Fortran programs were often faster, but Fortran at the time lacked things like recursive functions (I&rsquo;m not joking) and user defined data types. My first introduction to socket programming was in Fortran, and that wasn&rsquo;t pretty. Take a look <a href="http://www.oldcomputers.it/parts/hp/hp1000/docs/hp1000rte/91790-90020.pdf">on page 5-113 of this manual</a> to see what a simple socket server looked like. The same program in C is much more succinct, and far easier to understand, even if the principles are the same.</p>
+<p><strong>It was low level</strong>. A language that lets you get down to bits and bytes is very useful for certain types of programming.</p>
+<p><strong>It was small</strong>. This is more of a retrospective opinion, but C is a tiny language. If you look at a C program written by someone else, you can usually figure out what&rsquo;s going on without having to consult a language reference. This isn&rsquo;t the case for all languages. For example, I can read C++ written by people at my job, because we have some coding conventions that we stick to, but it will take me much longer to read some arbitrary C++ from GitHub, because there are so many ways of doing the same thing. C++ is a complicated language. And Rust, despite its charms, isn&rsquo;t much better in that respect, so don&rsquo;t start!</p>
+<p>And that&rsquo;s the story of how I went to C.</p>
+        </div>
+        
+    </article>
+</main>
+<aside class="wrapper">
+    <div>
+        <div>
+            <h3>Latest Posts</h3>
+        </div>
+        <div>
+            <ul>
+                
+                <li><a href="/posts/2021/11/15/how-i-went-to-c/">How I went to C</a></li>
+                
+                <li><a href="/posts/2021/11/12/in-the-beginning/">In the beginning</a></li>
+                
+                <li><a href="/posts/2020/08/23/handles/">How to expose typesafe handles in a C API</a></li>
+                
+                <li><a href="/posts/2020/08/15/">How to save and restore Windows console modes</a></li>
+                
+                <li><a href="/posts/2020/07/05/cmake-detect-emscripten/">How to detect Emscripten in CMake</a></li>
+                
+            </ul>
+        </div>
+    </div>
+</aside> 
+	<footer class="wrapper">
+	<p>&copy; 2021 <a href="https://badlydrawnrod.github.io">Badly Drawn Rod</a></p>
+</footer>
+
+</body>
+</html>

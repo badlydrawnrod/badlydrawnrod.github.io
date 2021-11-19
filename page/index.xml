@@ -5,10 +5,7 @@
     <link>https://badlydrawnrod.github.io/page/</link>
     <description>Recent content in Pages on Badly Drawn Rod</description>
     <generator>Hugo -- gohugo.io</generator>
-    
-	<atom:link href="https://badlydrawnrod.github.io/page/index.xml" rel="self" type="application/rss+xml" />
-    
-    
+    <language>en</language><atom:link href="https://badlydrawnrod.github.io/page/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>About me</title>
       <link>https://badlydrawnrod.github.io/page/about/</link>

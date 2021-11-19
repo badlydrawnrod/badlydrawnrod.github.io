@@ -1,39 +1,12 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Badly Drawn Rod</title>
-    <link>https://badlydrawnrod.github.io/</link>
-    <description>Recent content on Badly Drawn Rod</description>
+    <title>howto on Badly Drawn Rod</title>
+    <link>https://badlydrawnrod.github.io/categories/howto/</link>
+    <description>Recent content in howto on Badly Drawn Rod</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Mon, 15 Nov 2021 23:01:38 +0000</lastBuildDate><atom:link href="https://badlydrawnrod.github.io/index.xml" rel="self" type="application/rss+xml" />
-    <item>
-      <title>How I went to C</title>
-      <link>https://badlydrawnrod.github.io/posts/2021/11/15/how-i-went-to-c/</link>
-      <pubDate>Mon, 15 Nov 2021 23:01:38 +0000</pubDate>
-      
-      <guid>https://badlydrawnrod.github.io/posts/2021/11/15/how-i-went-to-c/</guid>
-      <description>&lt;p&gt;My Twitter name says that I&amp;rsquo;m the old C dog, so you may be surprised to hear that it took me quite a while to warm to C.&lt;/p&gt;</description>
-    </item>
-    
-    <item>
-      <title>In the beginning</title>
-      <link>https://badlydrawnrod.github.io/posts/2021/11/12/in-the-beginning/</link>
-      <pubDate>Fri, 12 Nov 2021 22:45:31 +0000</pubDate>
-      
-      <guid>https://badlydrawnrod.github.io/posts/2021/11/12/in-the-beginning/</guid>
-      <description>&lt;p&gt;When my parents moved house they found an old story that I wrote for my sixth form college&amp;rsquo;s student magazine.&lt;/p&gt;</description>
-    </item>
-    
-    <item>
-      <title>How to expose typesafe handles in a C API</title>
-      <link>https://badlydrawnrod.github.io/posts/2020/08/23/handles/</link>
-      <pubDate>Sun, 23 Aug 2020 20:00:00 +0100</pubDate>
-      
-      <guid>https://badlydrawnrod.github.io/posts/2020/08/23/handles/</guid>
-      <description>&lt;p&gt;If you have a C API, how do you pass handles to it in a typesafe manner?&lt;/p&gt;</description>
-    </item>
-    
+    <lastBuildDate>Wed, 12 Aug 2020 12:30:00 +0100</lastBuildDate><atom:link href="https://badlydrawnrod.github.io/categories/howto/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>How to save and restore Windows console modes</title>
       <link>https://badlydrawnrod.github.io/posts/2020/08/15/</link>
@@ -92,15 +65,6 @@
       <description>&lt;h1 id=&#34;problem&#34;&gt;Problem&lt;/h1&gt;
 &lt;p&gt;When you install a package with &lt;code&gt;vcpkg&lt;/code&gt; it tells you the &lt;strong&gt;CMake&lt;/strong&gt; targets. But if you didn&amp;rsquo;t make a note of them at the time, how do you find out what they are?&lt;/p&gt;
 &lt;p&gt;And what if you want the &lt;strong&gt;CMake&lt;/strong&gt; targets for a package&amp;rsquo;s dependencies?&lt;/p&gt;</description>
-    </item>
-    
-    <item>
-      <title>About me</title>
-      <link>https://badlydrawnrod.github.io/page/about/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>https://badlydrawnrod.github.io/page/about/</guid>
-      <description>I work at Sophos as a Principal Software Engineer. All opinions here are mine, not those of my employer.</description>
     </item>
     
   </channel>
