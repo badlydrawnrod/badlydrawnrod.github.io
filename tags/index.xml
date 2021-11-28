@@ -6,22 +6,49 @@
     <description>Recent content in Tags on Badly Drawn Rod</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Fri, 12 Nov 2021 22:45:31 +0000</lastBuildDate><atom:link href="https://badlydrawnrod.github.io/tags/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 28 Nov 2021 16:02:20 +0000</lastBuildDate><atom:link href="https://badlydrawnrod.github.io/tags/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>humour</title>
-      <link>https://badlydrawnrod.github.io/tags/humour/</link>
-      <pubDate>Fri, 12 Nov 2021 22:45:31 +0000</pubDate>
+      <title>arviss</title>
+      <link>https://badlydrawnrod.github.io/tags/arviss/</link>
+      <pubDate>Sun, 28 Nov 2021 16:02:20 +0000</pubDate>
       
-      <guid>https://badlydrawnrod.github.io/tags/humour/</guid>
+      <guid>https://badlydrawnrod.github.io/tags/arviss/</guid>
       <description></description>
     </item>
     
     <item>
       <title>c</title>
       <link>https://badlydrawnrod.github.io/tags/c/</link>
-      <pubDate>Sun, 23 Aug 2020 20:00:00 +0100</pubDate>
+      <pubDate>Sun, 28 Nov 2021 16:02:20 +0000</pubDate>
       
       <guid>https://badlydrawnrod.github.io/tags/c/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>emulators</title>
+      <link>https://badlydrawnrod.github.io/tags/emulators/</link>
+      <pubDate>Sun, 28 Nov 2021 16:02:20 +0000</pubDate>
+      
+      <guid>https://badlydrawnrod.github.io/tags/emulators/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>risc-v</title>
+      <link>https://badlydrawnrod.github.io/tags/risc-v/</link>
+      <pubDate>Sun, 28 Nov 2021 16:02:20 +0000</pubDate>
+      
+      <guid>https://badlydrawnrod.github.io/tags/risc-v/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>humour</title>
+      <link>https://badlydrawnrod.github.io/tags/humour/</link>
+      <pubDate>Fri, 12 Nov 2021 22:45:31 +0000</pubDate>
+      
+      <guid>https://badlydrawnrod.github.io/tags/humour/</guid>
       <description></description>
     </item>
     

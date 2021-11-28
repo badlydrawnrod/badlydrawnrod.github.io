@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Why I wrote Arviss</title>
+	
+	
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu|Lora">
+	<link rel="stylesheet" href="/css/style.css">
+	
+</head>
+<body>
+	<header class="wrapper">
+    <nav>
+        <a href="https://badlydrawnrod.github.io">Home</a>
+        <ul>
+			
+            
+            <li><a href="/page/about/">About</a></li>
+            
+            <li><a href="/posts/">All posts</a></li>
+            
+        </ul>
+    </nav>
+    
+</header>
+	
+<main class="wrapper">
+    <article>
+        <p></p>
+        
+        <div class="date">28 November, 2021</div>
+        
+        <div>
+            <p>Why did I write <a href="https://github.com/badlydrawnrod/arviss">Arviss</a>, a RISC-V instruction set simulator?</p>
+<h1 id="why-i-wrote-arviss">Why I wrote Arviss</h1>
+<p>A formative moment in my career as a programmer came when <em>Byte</em> magazine devoted their <a href="https://archive.org/details/byte-magazine-1981-12/mode/1up?view=theater">December 1981 issue</a> to &ldquo;Computer Games&rdquo;. The game that most caught my attention was <a href="https://en.wikipedia.org/wiki/RobotWar">RobotWar</a> written by <a href="https://www.polygon.com/features/2019/12/24/21029936/castle-wolfenstein-silas-warner">Silas Warner</a>.</p>
+<p>RobotWar was based around programming robots to fight it out in an arena. The robots were programmed in Battle Language, a custom assembly language that was invented for the game, much in the same way that <a href="https://www.zachtronics.com">Zachtronics</a> games such as <a href="https://www.zachtronics.com/shenzhen-io">Shenzhen I/O</a> and <a href="https://www.zachtronics.com/tis-100">TIS 100</a> use their own custom assembly languages to solve puzzles. I suspect that if anyone were to make a spiritual successor to RobotWar then it would probably be Zachtronics, as their games have a knack for making assembly language programming fun.</p>
+<p>At the time, what fascinated me about the game was how it could run multiple programs simultaneously, as that just wasn’t something that home computers did back then. Robot battles were also a fun idea, and twenty years later I spent quite a bit of my spare time playing <a href="https://robocode.sourceforge.io">Robocode</a>, a similar game in which the robots were programmed in Java.</p>
+<p>But sometimes I would find myself returning to the question of how to write such a game myself, largely as a thought exercise. I concluded that each robot would need its own emulated CPU, but it would need to meet the following requirements.</p>
+<ol>
+<li><strong>It would have to be fair</strong>. To ensure that no robot could gain more than its fair share of time, each robot’s CPU would have to be capable of being run for exactly n instructions or clock cycles at a time.</li>
+<li><strong>It would need a C compiler</strong>. It’s very useful to be able to read assembly language and occasionally write it, but it’s very time consuming to write.</li>
+<li><strong>It would have to be small and fast</strong>, as I had a grand vision of a game with potentially hundreds of robots.</li>
+</ol>
+<p>Designing my own <a href="https://en.wikipedia.org/wiki/Instruction_set_architecture">ISA</a> was initially attractive, but I dismissed it as being impractical as not only would I have to write the emulator, but I’d also have to write the tools to support it, including the C compiler.</p>
+<p>Using an existing CPU emulator also seemed like a good option. I’d grown up programming <a href="https://en.wikipedia.org/wiki/Zilog_Z80">Z80</a>, <a href="https://en.wikipedia.org/wiki/MOS_Technology_6502">6502</a>, and <a href="https://en.wikipedia.org/wiki/Motorola_68000">68000</a>, and there are plenty of battle-hardened emulators for all of them. But picking such old CPUs ruled out good C compiler support. As for modern CPUs, they may have good C compiler support, but many of them are hugely complicated with thousands of instructions, so they didn’t seem like they’d be a good target for emulation.</p>
+<p>At this point I turned to <a href="https://en.wikipedia.org/wiki/RISC-V">RISC-V</a>. I didn’t know much about it, but it was a modern ISA with a much reduced instruction set (hint - it’s in the name), and it had good C compiler support. There were also several interesting looking RISC-V emulators, which was encouraging.</p>
+<p>However, many of the RISC-V emulators seemed to be designed for running in the large, such as running Linux on <a href="https://en.wikipedia.org/wiki/QEMU">QEMU</a>. This is in itself is an interesting thing to do, but ultimately I couldn&rsquo;t find a RISC-V emulator written in a language callable from C that met both the the fairness requirement and the size requirement.</p>
+<p>At this point I realised that it would be a good learning exercise to write my own RISC-V emulator that met my requirements.</p>
+        </div>
+        
+        <div>
+            <ul id="tags">
+                
+                <li><a href="/tags/arviss">arviss</a></li>
+                
+                <li><a href="/tags/c">c</a></li>
+                
+                <li><a href="/tags/emulators">emulators</a></li>
+                
+                <li><a href="/tags/risc-v">risc-v</a></li>
+                
+            </ul>
+        </div>
+        
+    </article>
+</main>
+<aside class="wrapper">
+    <div>
+        <div>
+            <h3>Latest Posts</h3>
+        </div>
+        <div>
+            <ul>
+                
+                <li><a href="/posts/2021/11/28/why_arviss/">Why I wrote Arviss</a></li>
+                
+                <li><a href="/posts/2021/11/15/how-i-went-to-c/">How I went to C</a></li>
+                
+                <li><a href="/posts/2021/11/12/in-the-beginning/">In the beginning</a></li>
+                
+                <li><a href="/posts/2020/08/23/handles/">How to expose typesafe handles in a C API</a></li>
+                
+                <li><a href="/posts/2020/08/15/">How to save and restore Windows console modes</a></li>
+                
+            </ul>
+        </div>
+    </div>
+</aside> 
+	<footer class="wrapper">
+	<p>&copy; 2021 <a href="https://badlydrawnrod.github.io">Badly Drawn Rod</a></p>
+</footer>
+
+</body>
+</html>
