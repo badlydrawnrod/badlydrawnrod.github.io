@@ -49,7 +49,7 @@
 <p>Using an existing CPU emulator also seemed like a good option. I’d grown up programming <a href="https://en.wikipedia.org/wiki/Zilog_Z80">Z80</a>, <a href="https://en.wikipedia.org/wiki/MOS_Technology_6502">6502</a>, and <a href="https://en.wikipedia.org/wiki/Motorola_68000">68000</a>, and there are plenty of battle-hardened emulators for all of them. But picking such old CPUs ruled out good C compiler support. As for modern CPUs, they may have good C compiler support, but many of them are hugely complicated with thousands of instructions, so they didn’t seem like they’d be a good target for emulation.</p>
 <p>At this point I turned to <a href="https://en.wikipedia.org/wiki/RISC-V">RISC-V</a>. I didn’t know much about it, but it was a modern ISA with a much reduced instruction set (hint - it’s in the name), and it had good C compiler support. There were also several interesting looking RISC-V emulators, which was encouraging.</p>
 <p>However, many of the RISC-V emulators seemed to be designed for running in the large, such as running Linux on <a href="https://en.wikipedia.org/wiki/QEMU">QEMU</a>. This is in itself is an interesting thing to do, but ultimately I couldn&rsquo;t find a RISC-V emulator written in a language callable from C that met both the the fairness requirement and the size requirement.</p>
-<p>At this point I realised that it would be a good learning exercise to write my own RISC-V emulator that met my requirements.</p>
+<p>At this point I realised that it would be a good learning exercise to write my own RISC-V emulator that met my requirements, and so <a href="https://github.com/badlydrawnrod/arviss">Arviss</a> was born.</p>
         </div>
         
         <div>
