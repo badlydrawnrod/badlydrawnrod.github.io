@@ -2,31 +2,46 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
+    <loc>https://badlydrawnrod.github.io/</loc>
+    <lastmod>2021-12-12T11:47:42+00:00</lastmod>
+  </url><url>
+    <loc>https://badlydrawnrod.github.io/tags/c&#43;&#43;/</loc>
+    <lastmod>2021-12-12T11:47:42+00:00</lastmod>
+  </url><url>
+    <loc>https://badlydrawnrod.github.io/tags/c&#43;&#43;20/</loc>
+    <lastmod>2021-12-12T11:47:42+00:00</lastmod>
+  </url><url>
+    <loc>https://badlydrawnrod.github.io/posts/2021/12/12/cpp-modules/</loc>
+    <lastmod>2021-12-12T11:47:42+00:00</lastmod>
+  </url><url>
+    <loc>https://badlydrawnrod.github.io/categories/</loc>
+    <lastmod>2021-12-12T11:47:42+00:00</lastmod>
+  </url><url>
+    <loc>https://badlydrawnrod.github.io/tags/modules/</loc>
+    <lastmod>2021-12-12T11:47:42+00:00</lastmod>
+  </url><url>
+    <loc>https://badlydrawnrod.github.io/categories/notes/</loc>
+    <lastmod>2021-12-12T11:47:42+00:00</lastmod>
+  </url><url>
+    <loc>https://badlydrawnrod.github.io/posts/</loc>
+    <lastmod>2021-12-12T11:47:42+00:00</lastmod>
+  </url><url>
+    <loc>https://badlydrawnrod.github.io/tags/</loc>
+    <lastmod>2021-12-12T11:47:42+00:00</lastmod>
+  </url><url>
     <loc>https://badlydrawnrod.github.io/categories/articles/</loc>
     <lastmod>2021-11-28T16:02:20+00:00</lastmod>
   </url><url>
     <loc>https://badlydrawnrod.github.io/tags/arviss/</loc>
     <lastmod>2021-11-28T16:02:20+00:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/</loc>
-    <lastmod>2021-11-28T16:02:20+00:00</lastmod>
-  </url><url>
     <loc>https://badlydrawnrod.github.io/tags/c/</loc>
-    <lastmod>2021-11-28T16:02:20+00:00</lastmod>
-  </url><url>
-    <loc>https://badlydrawnrod.github.io/categories/</loc>
     <lastmod>2021-11-28T16:02:20+00:00</lastmod>
   </url><url>
     <loc>https://badlydrawnrod.github.io/tags/emulators/</loc>
     <lastmod>2021-11-28T16:02:20+00:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/posts/</loc>
-    <lastmod>2021-11-28T16:02:20+00:00</lastmod>
-  </url><url>
     <loc>https://badlydrawnrod.github.io/tags/risc-v/</loc>
-    <lastmod>2021-11-28T16:02:20+00:00</lastmod>
-  </url><url>
-    <loc>https://badlydrawnrod.github.io/tags/</loc>
     <lastmod>2021-11-28T16:02:20+00:00</lastmod>
   </url><url>
     <loc>https://badlydrawnrod.github.io/posts/2021/11/28/why_arviss/</loc>
@@ -40,9 +55,6 @@
   </url><url>
     <loc>https://badlydrawnrod.github.io/posts/2021/11/12/in-the-beginning/</loc>
     <lastmod>2021-11-12T22:45:31+00:00</lastmod>
-  </url><url>
-    <loc>https://badlydrawnrod.github.io/tags/c&#43;&#43;/</loc>
-    <lastmod>2020-08-23T20:00:00+01:00</lastmod>
   </url><url>
     <loc>https://badlydrawnrod.github.io/tags/handles/</loc>
     <lastmod>2020-08-23T20:00:00+01:00</lastmod>

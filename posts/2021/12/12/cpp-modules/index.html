@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>C&#43;&#43;20 Modules with clang</title>
+	
+	
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu|Lora">
+	<link rel="stylesheet" href="/css/style.css">
+	
+</head>
+<body>
+	<header class="wrapper">
+    <nav>
+        <a href="https://badlydrawnrod.github.io">Home</a>
+        <ul>
+			
+            
+            <li><a href="/page/about/">About</a></li>
+            
+            <li><a href="/posts/">All posts</a></li>
+            
+        </ul>
+    </nav>
+    
+</header>
+	
+<main class="wrapper">
+    <article>
+        <p></p>
+        
+        <div class="date">12 December, 2021</div>
+        
+        <div>
+            <p>Notes on compiling C++20 modules with clang and MSVC.</p>
+<h1 id="compiling-c20-modules-with-clang">Compiling C++20 Modules with clang</h1>
+<h2 id="compiling-a-module">Compiling a module</h2>
+<p>This compiles a module and generates a <code>.pcm</code> file which is a binary representation of the module.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ clang rod.cpp --std=c++20 -o rod.pcm -c -Xclang -emit-module-interface
+</code></pre></div><h2 id="using-a-pre-compiled-module">Using a pre-compiled module</h2>
+<p>When importing a module, the compiler needs to know how to find module binaries. Use <code>-fprebuilt-module-path</code> to provide a search path. This works when the imported module name is the same as the <code>.pcm</code> file.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ clang main.cpp --std=c++20 -fprebuilt-module-path=. rod.pcm -o main
+</code></pre></div><p>If the imported module name differs from the <code>.pcm</code> then use <code>-fmodule-file</code> to specify the mapping.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ mv rod.pcm test.pcm
+$ clang main.cpp --std=c++20 -fmodule-file=rod=test.pcm test.pcm -o main
+</code></pre></div><h1 id="compiling-c20-modules-with-msvc">Compiling C++20 Modules with MSVC</h1>
+<h2 id="compiling-a-module-1">Compiling a module</h2>
+<p>By default, the module interface has a <code>.ixx</code> extension. If you want to use a <code>.cpp</code> file then supply the <code>/interface</code> and <code>/TP</code> options. Compiling a module generates a <code>.obj</code> file and a <code>.ifc</code> file. The <code>.ifc</code> file is a binary representation of the module.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">C:&gt; cl /c /std:c++20 /interface /TP rod.cpp
+</code></pre></div><h2 id="using-a-pre-compiled-module-1">Using a pre-compiled module</h2>
+<p>When importing a module, the compiler needs to know how to find module binaries. It implicitly searches in the current directory. Use <code>/ifcSearchDir</code> to add to the search path.</p>
+<p>If the module&rsquo;s <code>.ifc</code> isn&rsquo;t in the current directory then use <code>/ifcSearchDir</code> to tell it where to look.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">C:&gt; cl /std:c++20 main.cpp rod.obj /ifcSearchDir C:<span style="color:#a31515">\m</span>odules
+</code></pre></div><p>If the module&rsquo;s <code>.ifc</code> is in the current directory then there is no need to specific <code>/ifcSearchDir</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">C:&gt; cl /std:c++20 main.cpp rod.obj
+</code></pre></div><p>If the imported module name differs from the <code>.ifc</code> name then use <code>/reference</code> to specify the mapping.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">C:&gt; move rod.ifc test.ifc
+C:&gt; cl /std:c++20 main.cpp /reference rod=test.ifc rod.obj
+</code></pre></div><h1 id="further-reading">Further reading</h1>
+<p>For more information, follow these links.</p>
+<h3 id="clang">Clang</h3>
+<ul>
+<li><a href="https://clang.llvm.org/docs/Modules.html">clang documentation - Modules</a></li>
+<li><a href="https://blog.ecosta.dev/en/tech/cpp-modules-with-clang">C++ modules with clang</a></li>
+</ul>
+<h3 id="msvc">MSVC</h3>
+<ul>
+<li><a href="https://devblogs.microsoft.com/cppblog/using-cpp-modules-in-msvc-from-the-command-line-part-1/">Using C++ Modules in MSVC from the Command Line</a></li>
+</ul>
+        </div>
+        
+        <div>
+            <ul id="tags">
+                
+                <li><a href="/tags/c&#43;&#43;">c&#43;&#43;</a></li>
+                
+                <li><a href="/tags/c&#43;&#43;20">c&#43;&#43;20</a></li>
+                
+                <li><a href="/tags/modules">modules</a></li>
+                
+            </ul>
+        </div>
+        
+    </article>
+</main>
+<aside class="wrapper">
+    <div>
+        <div>
+            <h3>Latest Posts</h3>
+        </div>
+        <div>
+            <ul>
+                
+                <li><a href="/posts/2021/12/12/cpp-modules/">C&#43;&#43;20 Modules with clang</a></li>
+                
+                <li><a href="/posts/2021/11/28/why_arviss/">Why I wrote Arviss</a></li>
+                
+                <li><a href="/posts/2021/11/15/how-i-went-to-c/">How I went to C</a></li>
+                
+                <li><a href="/posts/2021/11/12/in-the-beginning/">In the beginning</a></li>
+                
+                <li><a href="/posts/2020/08/23/handles/">How to expose typesafe handles in a C API</a></li>
+                
+            </ul>
+        </div>
+    </div>
+</aside> 
+	<footer class="wrapper">
+	<p>&copy; 2021 <a href="https://badlydrawnrod.github.io">Badly Drawn Rod</a></p>
+</footer>
+
+</body>
+</html>
