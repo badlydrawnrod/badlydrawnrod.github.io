@@ -35,21 +35,21 @@
         
         <div>
             <p>Notes on compiling C++20 modules with clang and MSVC.</p>
-<h1 id="compiling-c20-modules-with-clang">Compiling C++20 Modules with clang</h1>
-<h2 id="compiling-a-mo">Compiling a mo</h2>
+<h1 id="clang">clang</h1>
+<h2 id="compiling-a-c-module-with-clang">Compiling a C++ module with clang</h2>
 <p>This compiles a module and generates a <code>.pcm</code> file which is a binary representation of the module.</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ clang rod.cpp --std=c++20 -o rod.pcm -c -Xclang -emit-module-interface
-</code></pre></div><h2 id="using-a-pre-compiled-module">Using a pre-compiled module</h2>
+</code></pre></div><h2 id="using-a-pre-compiled-module-with-clang">Using a pre-compiled module with clang</h2>
 <p>When importing a module, the compiler needs to know how to find module binaries. Use <code>-fprebuilt-module-path</code> to provide a search path. This works when the imported module name is the same as the <code>.pcm</code> file.</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ clang main.cpp --std=c++20 -fprebuilt-module-path=. rod.pcm -o main
 </code></pre></div><p>If the imported module name differs from the <code>.pcm</code> then use <code>-fmodule-file</code> to specify the mapping.</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ mv rod.pcm test.pcm
 $ clang main.cpp --std=c++20 -fmodule-file=rod=test.pcm test.pcm -o main
-</code></pre></div><h1 id="compiling-c20-modules-with-msvc">Compiling C++20 Modules with MSVC</h1>
-<h2 id="compiling-a-module">Compiling a module</h2>
-<p>By default, the module interface has a <code>.ixx</code> extension. If you want to use a <code>.cpp</code> file then supply the <code>/interface</code> and <code>/TP</code> options. Compiling a module generates a <code>.obj</code> file and a <code>.ifc</code> file. The <code>.ifc</code> file is a binary representation of the module.</p>
+</code></pre></div><h1 id="msvc">MSVC</h1>
+<h2 id="compiling-a-c-module-with-msvc">Compiling a C++ module with MSVC</h2>
+<p>By default, the module interface has a <code>.ixx</code> extension. To use a <code>.cpp</code> file, supply the <code>/interface</code> and <code>/TP</code> options. Compiling a module generates a <code>.obj</code> file and a <code>.ifc</code> file. The <code>.ifc</code> file is a binary representation of the module.</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">C:&gt; cl /c /std:c++20 /interface /TP rod.cpp
-</code></pre></div><h2 id="using-a-pre-compiled-module-1">Using a pre-compiled module</h2>
+</code></pre></div><h2 id="using-a-pre-compiled-module-with-msvc">Using a pre-compiled module with MSVC</h2>
 <p>When importing a module, the compiler needs to know how to find module binaries. It implicitly searches in the current directory. Use <code>/ifcSearchDir</code> to add to the search path.</p>
 <p>If the module&rsquo;s <code>.ifc</code> isn&rsquo;t in the current directory then use <code>/ifcSearchDir</code> to tell it where to look.</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">C:&gt; cl /std:c++20 main.cpp rod.obj /ifcSearchDir C:<span style="color:#a31515">\m</span>odules
@@ -60,12 +60,12 @@ $ clang main.cpp --std=c++20 -fmodule-file=rod=test.pcm test.pcm -o main
 C:&gt; cl /std:c++20 main.cpp /reference rod=test.ifc rod.obj
 </code></pre></div><h1 id="further-reading">Further reading</h1>
 <p>For more information, follow these links.</p>
-<h3 id="clang">Clang</h3>
+<h3 id="clang-1">Clang</h3>
 <ul>
 <li><a href="https://clang.llvm.org/docs/Modules.html">clang documentation - Modules</a></li>
 <li><a href="https://blog.ecosta.dev/en/tech/cpp-modules-with-clang">C++ modules with clang</a></li>
 </ul>
-<h3 id="msvc">MSVC</h3>
+<h3 id="msvc-1">MSVC</h3>
 <ul>
 <li><a href="https://devblogs.microsoft.com/cppblog/using-cpp-modules-in-msvc-from-the-command-line-part-1/">Using C++ Modules in MSVC from the Command Line</a></li>
 </ul>
