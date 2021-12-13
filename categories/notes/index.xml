@@ -8,7 +8,7 @@
     <language>en</language>
     <lastBuildDate>Sun, 12 Dec 2021 11:47:42 +0000</lastBuildDate><atom:link href="https://badlydrawnrod.github.io/categories/notes/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>C&#43;&#43;20 Modules with clang</title>
+      <title>Compiling C&#43;&#43;20 Modules with clang and MSVC</title>
       <link>https://badlydrawnrod.github.io/posts/2021/12/12/cpp-modules/</link>
       <pubDate>Sun, 12 Dec 2021 11:47:42 +0000</pubDate>
       
