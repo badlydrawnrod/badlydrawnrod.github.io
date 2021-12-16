@@ -13,7 +13,7 @@
       <pubDate>Sun, 12 Dec 2021 11:47:42 +0000</pubDate>
       
       <guid>https://badlydrawnrod.github.io/posts/2021/12/12/cpp-modules/</guid>
-      <description>&lt;p&gt;Notes on compiling C++20 modules with clang and MSVC.&lt;/p&gt;</description>
+      <description>&lt;p&gt;Command lines for compiling and using C++20 modules from both clang and MSVC.&lt;/p&gt;</description>
     </item>
     
   </channel>

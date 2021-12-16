@@ -34,38 +34,99 @@
         <div class="date">12 December, 2021</div>
         
         <div>
-            <p>Notes on compiling C++20 modules with clang and MSVC.</p>
-<h1 id="clang">clang</h1>
-<h2 id="compiling-a-c-module-with-clang">Compiling a C++ module with clang</h2>
-<p>This compiles a module and generates a <code>.pcm</code> file which is a binary representation of the module.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ clang rod.cpp --std=c++20 -o rod.pcm -c -Xclang -emit-module-interface
+            <p>Command lines for compiling and using C++20 modules from both clang and MSVC.</p>
+<h1 id="example-files">Example files</h1>
+<p>Here are some example files that are used in the command lines below.</p>
+<h2 id="a-c-module-interface-unit-with-both-interface-and-implementation">A C++ module interface unit with both interface and implementation</h2>
+<p>Here is a C++ module interface unit, <code>greetings.cpp</code>. Despite the name, a module interface unit can contain both interface <em>and</em> implementation.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#00f">export</span> module greetings;
+
+<span style="color:#00f">export</span>
+{
+    <span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* greet();
+}
+
+<span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* greet()
+{
+    <span style="color:#00f">return</span> <span style="color:#a31515">&#34;Hello.&#34;</span>;
+}
+</code></pre></div><h2 id="a-c-module-interface-unit-with-an-interface-only">A C++ module interface unit with an interface only</h2>
+<p>Here is a C++ module interface unit, <code>hello.cpp</code>. This example contains an interface, but it does not contain an implementation.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#00f">export</span> module hello;
+
+<span style="color:#00f">export</span> <span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* hello_world();
+</code></pre></div><h2 id="a-c-module-implementation-unit">A C++ module implementation unit</h2>
+<p>Here is a C++ module implementation unit, <code>hello_impl.cpp</code>. It contains the implementation for the interface defined in <code>hello.cpp</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">module hello;
+
+<span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* hello_world()
+{
+	<span style="color:#00f">return</span> <span style="color:#a31515">&#34;Hello, world!&#34;</span>;
+}
+</code></pre></div><h2 id="programs-that-import-modules">Programs that import modules</h2>
+<p>Here is <code>greet.cpp</code>. This imports the <code>greetings</code> module.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">import greetings;
+
+<span style="color:#00f">#include</span> <span style="color:#00f">&lt;iostream&gt;</span><span style="color:#00f">
+</span><span style="color:#00f"></span>
+<span style="color:#2b91af">int</span> main()
+{
+	std::cout &lt;&lt; greet() &lt;&lt; <span style="color:#a31515">&#39;\n&#39;</span>;
+}
+</code></pre></div><p>And here&rsquo;s <code>say_hello.cpp</code>. This imports the <code>hello</code> module.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">import hello;
+
+<span style="color:#00f">#include</span> <span style="color:#00f">&lt;iostream&gt;</span><span style="color:#00f">
+</span><span style="color:#00f"></span>
+<span style="color:#2b91af">int</span> main()
+{
+    std::cout &lt;&lt; hello_world() &lt;&lt; <span style="color:#a31515">&#39;\n&#39;</span>;
+}
+</code></pre></div><h1 id="command-lines-for-compiling-modules-with-clang">Command lines for compiling modules with clang</h1>
+<h2 id="compiling-a-module-interface-unit-with-clang">Compiling a module interface unit with clang</h2>
+<p>This compiles <code>greetings.cpp</code> and generates a <code>.pcm</code> file which is a binary representation of the module.  It does not generate a <code>.o</code> file.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ clang -c --std=c++20 greetings.cpp -Xclang -emit-module-interface -o greetings.pcm
+</code></pre></div><h2 id="compiling-a-module-implementation-unit-with-clang">Compiling a module implementation unit with clang</h2>
+<p>First, compile the module interface unit. This compiles <code>hello.cpp</code> and generates a <code>.pcm</code> file.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ clang -c --std=c++20 hello.cpp -Xclang -emit-module-interface -o hello.pcm
+</code></pre></div><p>Then compile the module implementation unit. This compiles <code>hello_impl.cpp</code>. It needs to be told about the <code>.pcm</code> file with <code>-fmodule-file</code>.
+It generates a <code>.o</code> file.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ clang -c --std=c++20 hello_impl.cpp -fmodule-file=hello.pcm
 </code></pre></div><h2 id="using-a-pre-compiled-module-with-clang">Using a pre-compiled module with clang</h2>
-<p>When importing a module, the compiler needs to know how to find module binaries. Use <code>-fprebuilt-module-path</code> to provide a search path. This works when the imported module name is the same as the <code>.pcm</code> file.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ clang main.cpp --std=c++20 -fprebuilt-module-path=. rod.pcm -o main
+<p>When importing a module, the compiler needs to know how to find module binaries. Use <code>-fprebuilt-module-path</code> to provide a search path.</p>
+<p>This example uses the <code>greetings</code> module which combined both interface and implementation.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ clang --std=c++20 -fprebuilt-module-path=. greet.cpp greetings.pcm -o greet
 </code></pre></div><p>If the imported module name differs from the <code>.pcm</code> then use <code>-fmodule-file</code> to specify the mapping.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ mv rod.pcm test.pcm
-$ clang main.cpp --std=c++20 -fmodule-file=rod=test.pcm test.pcm -o main
-</code></pre></div><h1 id="msvc">MSVC</h1>
-<h2 id="compiling-a-c-module-with-msvc">Compiling a C++ module with MSVC</h2>
-<p>By default, the module interface has a <code>.ixx</code> extension. To use a <code>.cpp</code> file, supply the <code>/interface</code> and <code>/TP</code> options. Compiling a module generates a <code>.obj</code> file and a <code>.ifc</code> file. The <code>.ifc</code> file is a binary representation of the module.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">C:&gt; cl /c /std:c++20 /interface /TP rod.cpp
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ mv greetings.pcm test.pcm
+$ clang --std=c++20 -fmodule-file=greetings=test.pcm greet.cpp test.pcm -o greet
+</code></pre></div><p>This example uses the <code>hello</code> module, which was split into interface and implementation.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">clang --std=c++20 -fprebuilt-module-path=. say_hello.cpp hello.pcm hello_impl.o -o say_hello
+</code></pre></div><h1 id="command-lines-for-compiling-modules-with-msvc">Command lines for compiling modules with MSVC</h1>
+<h2 id="compiling-a-module-interface-unit-with-msvc">Compiling a module interface unit with MSVC</h2>
+<p>This compiles <code>greetings.cpp</code> and generates an <code>.ifc</code> file and an <code>.obj</code> file. The <code>.ifc</code> file is a binary representation of the module&rsquo;s interface.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">C:&gt; cl /c /std:c++20 /interface /TP greetings.cpp
+</code></pre></div><p>By default, MSVC expects module interfaces to have an <code>.ixx</code> extension. The <code>/interface</code> and <code>/TP</code> options allow us to use a <code>.cpp</code> file.</p>
+<h2 id="compiling-a-module-implementation-unit-with-msvc">Compiling a module implementation unit with MSVC</h2>
+<p>First, compile the module interface unit. This compiles <code>hello.cpp</code> and generates an <code>.ifc</code> file.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">C:&gt; cl /c /std:c++20 /interface /TP hello.cpp
+</code></pre></div><p>Then compile the module implementation unit. This compiles <code>hello_impl.cpp</code>. The <code>.ifc</code> file for the module must exist. It generates a <code>.obj</code> file.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">C:&gt; cl /c /std:c++20 hello_impl.cpp
 </code></pre></div><h2 id="using-a-pre-compiled-module-with-msvc">Using a pre-compiled module with MSVC</h2>
-<p>When importing a module, the compiler needs to know how to find module binaries. It implicitly searches in the current directory. Use <code>/ifcSearchDir</code> to add to the search path.</p>
-<p>If the module&rsquo;s <code>.ifc</code> isn&rsquo;t in the current directory then use <code>/ifcSearchDir</code> to tell it where to look.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">C:&gt; cl /std:c++20 main.cpp rod.obj /ifcSearchDir C:<span style="color:#a31515">\m</span>odules
-</code></pre></div><p>If the module&rsquo;s <code>.ifc</code> is in the current directory then there is no need to specific <code>/ifcSearchDir</code>.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">C:&gt; cl /std:c++20 main.cpp rod.obj
-</code></pre></div><p>If the imported module name differs from the <code>.ifc</code> name then use <code>/reference</code> to specify the mapping.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">C:&gt; move rod.ifc test.ifc
-C:&gt; cl /std:c++20 main.cpp /reference rod=test.ifc rod.obj
+<p>When importing a module, the compiler needs to know how to find module binaries. It implicitly searches in the current directory.</p>
+<p>This example uses the <code>greetings</code> module which combined both interface and implementation.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">C:&gt; cl /std:c++20 greet.cpp greetings.obj
+</code></pre></div><p>If the module&rsquo;s <code>.ifc</code> file isn&rsquo;t in the current directory then use <code>/ifcSearchDir</code> to add to the search path.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">C:&gt; cl /std:c++20 greet.cpp greetings.obj /ifcSearchDir C:/modules
+</code></pre></div><p>This example uses the <code>hello</code> module, which was split into interface and implementation.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">C:&gt; cl /std:c++20 say_hello.cpp hello.obj hello_impl.obj
 </code></pre></div><h1 id="further-reading">Further reading</h1>
 <p>For more information, follow these links.</p>
-<h3 id="clang-1">Clang</h3>
+<h3 id="clang">Clang</h3>
 <ul>
 <li><a href="https://clang.llvm.org/docs/Modules.html">clang documentation - Modules</a></li>
 <li><a href="https://blog.ecosta.dev/en/tech/cpp-modules-with-clang">C++ modules with clang</a></li>
 </ul>
-<h3 id="msvc-1">MSVC</h3>
+<h3 id="msvc">MSVC</h3>
 <ul>
 <li><a href="https://devblogs.microsoft.com/cppblog/using-cpp-modules-in-msvc-from-the-command-line-part-1/">Using C++ Modules in MSVC from the Command Line</a></li>
 </ul>
