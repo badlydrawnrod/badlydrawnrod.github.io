@@ -6,7 +6,16 @@
     <description>Recent content in Posts on Badly Drawn Rod</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Sun, 12 Dec 2021 11:47:42 +0000</lastBuildDate><atom:link href="https://badlydrawnrod.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 18 Dec 2021 16:00:00 +0000</lastBuildDate><atom:link href="https://badlydrawnrod.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Exploring Module Linkage in C&#43;&#43;20</title>
+      <link>https://badlydrawnrod.github.io/posts/2021/12/19/cpp-modules-2/</link>
+      <pubDate>Sat, 18 Dec 2021 16:00:00 +0000</pubDate>
+      
+      <guid>https://badlydrawnrod.github.io/posts/2021/12/19/cpp-modules-2/</guid>
+      <description>&lt;p&gt;C++20 introduced the idea of module linkage, but it seems to be somewhat inconsistently implemented.&lt;/p&gt;</description>
+    </item>
+    
     <item>
       <title>Compiling C&#43;&#43;20 Modules with clang and MSVC</title>
       <link>https://badlydrawnrod.github.io/posts/2021/12/12/cpp-modules/</link>

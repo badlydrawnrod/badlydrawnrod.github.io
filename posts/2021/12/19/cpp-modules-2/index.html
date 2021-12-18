@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Exploring Module Linkage in C&#43;&#43;20</title>
+	
+	
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu|Lora">
+	<link rel="stylesheet" href="/css/style.css">
+	
+</head>
+<body>
+	<header class="wrapper">
+    <nav>
+        <a href="https://badlydrawnrod.github.io">Home</a>
+        <ul>
+			
+            
+            <li><a href="/page/about/">About</a></li>
+            
+            <li><a href="/posts/">All posts</a></li>
+            
+        </ul>
+    </nav>
+    
+</header>
+	
+<main class="wrapper">
+    <article>
+        <p></p>
+        
+        <div class="date">18 December, 2021</div>
+        
+        <div>
+            <p>C++20 introduced the idea of module linkage, but it seems to be somewhat inconsistently implemented.</p>
+<h1 id="exploring-module-linkage-in-c20">Exploring module linkage in C++20</h1>
+<p>As far as I can tell, symbols in a module unit should not be visible outside of their module unless
+they have been exported with the <code>export</code> keyword. Other symbols which would otherwise have had
+external linkage (such as functions) should instead have a new kind of linkage,  <strong>module
+linkage</strong>, which basically means that they&rsquo;re visible within their module but not outside of it.</p>
+<p>So far, so good. My understanding of this is that I can use the same symbol in a different module
+and not get a name clash.</p>
+<p>Does this work in practice?</p>
+<h2 id="single-file-modules">Single-file modules</h2>
+<p><em>tl;dr - it works with MSVC and gcc, but fails with clang.</em></p>
+<p>Here&rsquo;s a module interface unit, <code>Module1.cpp</code>. It exports a function <code>Module1Greeter()</code> which calls
+an unexported function <code>SayHello()</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#008000">// Module1.cpp
+</span><span style="color:#008000"></span><span style="color:#00f">export</span> module Module1;
+
+<span style="color:#00f">export</span> <span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* Module1Greeter();
+
+<span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* SayHello()
+{
+    <span style="color:#00f">return</span> <span style="color:#a31515">&#34;Hello from Module1&#34;</span>;
+}
+
+<span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* Module1Greeter()
+{
+    <span style="color:#00f">return</span> SayHello();
+}
+</code></pre></div><p>Here&rsquo;s another module interface unit, <code>Module2.cpp</code>. It exports a function <code>Module2Greeter()</code> which
+calls an unexported function <code>SayHello()</code>. This is clearly not the same <code>SayHello()</code> as the one in
+<code>Module1.cpp</code>. They&rsquo;re both in separate modules and aren&rsquo;t exported, so should therefore have module
+linkage.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#008000">// Module2.cpp
+</span><span style="color:#008000"></span><span style="color:#00f">export</span> module Module2;
+
+<span style="color:#00f">export</span> <span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* Module2Greeter();
+
+<span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* SayHello()
+{
+    <span style="color:#00f">return</span> <span style="color:#a31515">&#34;Hello from Module2&#34;</span>;
+}
+
+<span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* Module2Greeter()
+{
+    <span style="color:#00f">return</span> SayHello();
+}
+</code></pre></div><p>Here&rsquo;s a short program that uses both of these modules.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#008000">// main.cpp
+</span><span style="color:#008000"></span>import Module1;
+import Module2;
+
+<span style="color:#00f">#include</span> <span style="color:#00f">&lt;iostream&gt;</span><span style="color:#00f">
+</span><span style="color:#00f"></span>
+<span style="color:#2b91af">int</span> main()
+{
+	std::cout &lt;&lt; Module1Greeter() &lt;&lt; <span style="color:#a31515">&#39;\n&#39;</span>;
+	std::cout &lt;&lt; Module2Greeter() &lt;&lt; <span style="color:#a31515">&#39;\n&#39;</span>;
+}
+</code></pre></div><p>But there&rsquo;s a discrepancy here between compilers.</p>
+<h3 id="heres-msvc-cl-193030706">Here&rsquo;s MSVC (cl 19.30.30706)</h3>
+<p>It compiles and runs.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">C:&gt; cl /EHsc /c /std:c++20 /interface /TP Module1.cpp
+C:&gt; cl /EHsc /c /std:c++20 /interface /TP Module2.cpp
+C:&gt; cl /EHsc /std:c++20 main.cpp Module1.obj Module2.obj
+C:&gt; main.exe
+Hello from Module1
+Hello from Module2
+</code></pre></div><h3 id="heres-gcc-gcc-1120---mingw">Here&rsquo;s gcc (gcc 11.2.0 - mingw)</h3>
+<p>It compiles and runs.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">C:&gt; g++ -c --std=c++20 -fmodules-ts Module1.cpp
+C:&gt; g++ -c --std=c++20 -fmodules-ts Module2.cpp
+C:&gt; g++ --std=c++20 -fmodules-ts main.cpp Module1.o Module2.o -o main.exe
+C:&gt; main
+Hello from Module1
+Hello from Module2
+</code></pre></div><h3 id="heres-clang-clang-1300">Here&rsquo;s clang (clang 13.0.0)</h3>
+<p>It fails to compile, stating that <code>SayHello()</code> has different definitions in different modules.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:&gt; clang -c -std=c++20 -Xclang -emit-module-interface Module1.cpp -o Module1.pcm
+C:&gt; clang -c -std=c++20 -Xclang -emit-module-interface Module2.cpp -o Module2.pcm
+C:&gt; clang -std=c++20 -fprebuilt-module-path=. main.cpp Module1.pcm Module2.pcm -o main.exe
+In file included from main.cpp:2:
+Module2.cpp:5:13: error: &#39;SayHello&#39; has different definitions in different modules; definition in
+module &#39;Module2&#39; first difference is function body
+const char* SayHello()
+~~~~~~~~~~~~^~~~~~~~~~
+Module1.cpp:5:13: note: but in &#39;Module1&#39; found a different body
+const char* SayHello()
+~~~~~~~~~~~~^~~~~~~~~~
+1 error generated.#
+</code></pre></div><h2 id="modules-with-a-separate-implementation-unit">Modules with a separate implementation unit</h2>
+<p><em>tl;dr - it works with g++ and clang (Linux) but fails with MSVC and clang (Windows).</em></p>
+<p>Let&rsquo;s take the module interface units from the previous example and split them into interface and
+implementation.</p>
+<p>Here&rsquo;s module interface unit, <code>Module1.cpp</code>. It exports a function <code>Module1Greeter()</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#008000">// Module1.cpp
+</span><span style="color:#008000"></span><span style="color:#00f">export</span> module Module1;
+
+<span style="color:#00f">export</span> <span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* Module1Greeter();
+</code></pre></div><p>Here&rsquo;s its implementation unit, <code>Module1_impl.cpp</code>. It contains a definition for the exported
+function <code>Module1Greeter()</code>, and an unexported function <code>SayHello()</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#008000">// Module1_impl.cpp
+</span><span style="color:#008000"></span>module Module1;
+
+<span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* SayHello()
+{
+    <span style="color:#00f">return</span> <span style="color:#a31515">&#34;Hello from Module1&#34;</span>;
+}
+
+<span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* Module1Greeter()
+{
+    <span style="color:#00f">return</span> SayHello();
+}
+</code></pre></div><p>Similarly, here&rsquo;s module interface unit, <code>Module2.cpp</code>. It exports a function <code>Module2Greeter()</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#008000">// Module2.cpp
+</span><span style="color:#008000"></span><span style="color:#00f">export</span> module Module2;
+
+<span style="color:#00f">export</span> <span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* Module2Greeter();
+</code></pre></div><p>Here&rsquo;s its implementation unit, <code>Module2_impl.cpp</code>. It contains a definition for the exported
+function <code>Module2Greeter()</code>, and an unexported function <code>SayHello()</code>. As before, <code>SayHello()</code> is
+in a module unit and therefore should have module linkage.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#008000">// Module2_impl.cpp
+</span><span style="color:#008000"></span>module Module2;
+
+<span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* SayHello()
+{
+    <span style="color:#00f">return</span> <span style="color:#a31515">&#34;Hello from Module2&#34;</span>;
+}
+
+<span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* Module2Greeter()
+{
+    <span style="color:#00f">return</span> SayHello();
+}
+</code></pre></div><p>I won&rsquo;t show <code>main.cpp</code> as it&rsquo;s the same as the previous example.</p>
+<h3 id="heres-msvc-cl-193030706-1">Here&rsquo;s MSVC (cl 19.30.30706)</h3>
+<p>It fails to link due to multiply defined symbols.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:&gt; cl /EHsc /c /std:c++20 /interface /TP Module1.cpp
+C:&gt; cl /EHsc /c /std:c++20 /interface /TP Module2.cpp
+C:&gt; cl /EHsc /c /std:c++20 Module1_impl.cpp
+C:&gt; cl /EHsc /c /std:c++20 Module2_impl.cpp
+C:&gt; cl /EHsc /std:c++20 main.cpp Module1.obj Module1_impl.obj Module2.obj Module2_impl.obj
+...
+Module2_impl.obj : error LNK2005: &#34;char const * __cdecl SayHello(void)&#34; (?SayHello@@YAPBDXZ)
+already defined in Module1_impl.obj
+main.exe : fatal error LNK1169: one or more multiply defined symbols found
+</code></pre></div><h3 id="heres-gcc-gcc-1120---mingw-1">Here&rsquo;s gcc (gcc 11.2.0 - mingw)</h3>
+<p>It compiles and runs.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">C:&gt; g++ -c --std=c++20 -fmodules-ts Module1.cpp
+C:&gt; g++ -c --std=c++20 -fmodules-ts Module2.cpp
+C:&gt; g++ -c --std=c++20 -fmodules-ts Module1_impl.cpp
+C:&gt; g++ -c --std=c++20 -fmodules-ts Module2_impl.cpp
+C:&gt; g++ --std=c++20 -fmodules-ts main.cpp Module1.o Module1_impl.o Module2.o Module2_impl.o -o main.exe
+C:&gt; main
+Hello from Module1
+Hello from Module2
+</code></pre></div><h3 id="heres-clang-clang-1300-on-windows">Here&rsquo;s clang (clang 13.0.0) on Windows</h3>
+<p>It fails to link due to multiply defined symbols.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:&gt; clang -c -std=c++20 -Xclang -emit-module-interface Module1.cpp -o Module1.pcm
+C:&gt; clang -c -std=c++20 -Xclang -emit-module-interface Module2.cpp -o Module2.pcm
+C:&gt; clang -c -std=c++20 -fmodule-file=Module1.pcm Module1_impl.cpp
+C:&gt; clang -c -std=c++20 -fmodule-file=Module2.pcm Module2_impl.cpp
+C:&gt; clang++ -std=c++20 -fprebuilt-module-path=. main.cpp Module1.pcm Module2.pcm Module1_impl.o \
+    Module2_impl.o -o main.exe
+Module2_impl.o : error LNK2005: &#34;char const * __cdecl SayHello(void)&#34; (?SayHello@@YAPEBDXZ) already
+defined in Module1_impl.o
+main.exe : fatal error LNK1169: one or more multiply defined symbols found
+clang: error: linker command failed with exit code 1169 (use -v to see invocation)
+</code></pre></div><p>I also tried this with <code>-fuse-ld=lld</code> to use a different linker and got a similar error.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">lld-link: error: duplicate symbol: char const * __cdecl SayHello(void)
+&gt;&gt;&gt; defined at Module1_impl.o
+&gt;&gt;&gt; defined at Module2_impl.o
+clang: error: linker command failed with exit code 1 (use -v to see invocation)
+</code></pre></div><h3 id="heres-clang-clang-1302-on-linux">Here&rsquo;s clang (clang 13.0.2) on Linux</h3>
+<p>It compiles and runs.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">$ clang -c -std=c++20 -Xclang -emit-module-interface Module1.cpp -o Module1.pcm
+$ clang -c -std=c++20 -Xclang -emit-module-interface Module2.cpp -o Module2.pcm
+$ clang -c -std=c++20 -fmodule-file=Module1.pcm Module1_impl.cpp
+$ clang -c -std=c++20 -fmodule-file=Module2.pcm Module2_impl.cpp
+$ clang++ -std=c++20 -fprebuilt-module-path=. main.cpp Module1.pcm Module2.pcm Module1_impl.o \
+  Module2_impl.o -o main.exe
+$ ./main
+Hello from Module1
+Hello from Module2
+</code></pre></div><h2 id="whats-happening-here">What&rsquo;s happening here?</h2>
+<p>I&rsquo;m new to C++ modules, so it&rsquo;s entirely possible that I&rsquo;ve misunderstood something about module
+linkage or even that I&rsquo;m simply using the wrong flags to compile. If this is the case, then please
+let me know.</p>
+<p>However, nearly every article that I&rsquo;ve read about C++20 modules contains a section that talks
+about module linkage in the way that I described above, so they can&rsquo;t all be wrong. Also, I&rsquo;ve yet
+to find any sample code (other than slideware) that doesn&rsquo;t also use a namespace.</p>
+<p>My conclusion is that C++20 module support is still new, and that compiler vendors have been
+concentrating on big wins such as making <code>std</code> importable as a module, and that they may simply
+not have got around to implementing this particular aspect of module linkage.</p>
+        </div>
+        
+        <div>
+            <ul id="tags">
+                
+                <li><a href="/tags/c&#43;&#43;">c&#43;&#43;</a></li>
+                
+                <li><a href="/tags/c&#43;&#43;20">c&#43;&#43;20</a></li>
+                
+                <li><a href="/tags/modules">modules</a></li>
+                
+            </ul>
+        </div>
+        
+    </article>
+</main>
+<aside class="wrapper">
+    <div>
+        <div>
+            <h3>Latest Posts</h3>
+        </div>
+        <div>
+            <ul>
+                
+                <li><a href="/posts/2021/12/19/cpp-modules-2/">Exploring Module Linkage in C&#43;&#43;20</a></li>
+                
+                <li><a href="/posts/2021/12/12/cpp-modules/">Compiling C&#43;&#43;20 Modules with clang and MSVC</a></li>
+                
+                <li><a href="/posts/2021/11/28/why_arviss/">Why I wrote Arviss</a></li>
+                
+                <li><a href="/posts/2021/11/15/how-i-went-to-c/">How I went to C</a></li>
+                
+                <li><a href="/posts/2021/11/12/in-the-beginning/">In the beginning</a></li>
+                
+            </ul>
+        </div>
+    </div>
+</aside> 
+	<footer class="wrapper">
+	<p>&copy; 2021 <a href="https://badlydrawnrod.github.io">Badly Drawn Rod</a></p>
+</footer>
+
+</body>
+</html>
