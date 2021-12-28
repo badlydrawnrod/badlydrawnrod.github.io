@@ -6,7 +6,16 @@
     <description>Recent content in Posts on Badly Drawn Rod</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Sat, 18 Dec 2021 16:00:00 +0000</lastBuildDate><atom:link href="https://badlydrawnrod.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Tue, 28 Dec 2021 14:15:00 +0000</lastBuildDate><atom:link href="https://badlydrawnrod.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Polymorphic Allocators in C&#43;&#43;</title>
+      <link>https://badlydrawnrod.github.io/posts/2021/12/28/allocators/</link>
+      <pubDate>Tue, 28 Dec 2021 14:15:00 +0000</pubDate>
+      
+      <guid>https://badlydrawnrod.github.io/posts/2021/12/28/allocators/</guid>
+      <description>&lt;p&gt;C++17 introduced polymorphic allocators, but what problem do they solve?&lt;/p&gt;</description>
+    </item>
+    
     <item>
       <title>Exploring Module Linkage in C&#43;&#43;20</title>
       <link>https://badlydrawnrod.github.io/posts/2021/12/19/cpp-modules-2/</link>

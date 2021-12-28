@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Polymorphic Allocators in C&#43;&#43;</title>
+	
+	
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu|Lora">
+	<link rel="stylesheet" href="/css/style.css">
+	
+</head>
+<body>
+	<header class="wrapper">
+    <nav>
+        <a href="https://badlydrawnrod.github.io">Home</a>
+        <ul>
+			
+            
+            <li><a href="/page/about/">About</a></li>
+            
+            <li><a href="/posts/">All posts</a></li>
+            
+        </ul>
+    </nav>
+    
+</header>
+	
+<main class="wrapper">
+    <article>
+        <p></p>
+        
+        <div class="date">28 December, 2021</div>
+        
+        <div>
+            <p>C++17 introduced polymorphic allocators, but what problem do they solve?</p>
+<h1 id="polymorphic-allocators-in-c">Polymorphic Allocators in C++</h1>
+<h2 id="standard-library-containers-use-allocators">Standard Library Containers use Allocators</h2>
+<p>Containers in C++ are typically defined in terms of their type, supplied as a template parameter. For
+example, here&rsquo;s a vector of <code>int</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">std::vector&lt;<span style="color:#2b91af">int</span>&gt; vectorOfInt = {1, 2, 3, 5, 7, 11, 13, 17, 19, 23};
+</code></pre></div><p>However, if you look at <a href="https://en.cppreference.com/w/cpp/container/vector">the definition for <code>std::vector</code></a>
+then you&rsquo;ll see that there are actually <em>two</em> template parameters. The first template parameter is the
+type of the object stored in the container, and the second is an <strong>Allocator</strong> for it. This second
+template parameter defaults to <a href="https://en.cppreference.com/w/cpp/memory/allocator"><code>std::allocator&lt;T&gt;</code></a>.</p>
+<p>Standard library containers use allocators to allocate and deallocate memory. In fact, nearly all
+standard library components that need to allocate or deallocate memory use an allocator to do so.</p>
+<p>Here&rsquo;s a vector of <code>int</code> that uses <code>std::allocator&lt;int&gt;</code> explicitly.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">std::vector&lt;<span style="color:#2b91af">int</span>, std::allocator&lt;<span style="color:#2b91af">int</span>&gt;&gt; vectorOfIntStdAllocator;
+</code></pre></div><p>You can assign between these vectors because they&rsquo;re the same type. In other words,
+<code>std::vector&lt;int&gt;</code> is the same type as <code>std::vector&lt;int, std::allocator&lt;int&gt;&gt;</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#008000">// Same type, so assignment is possible.
+</span><span style="color:#008000"></span>vectorOfIntStdAllocator = vectorOfInt;
+vectorOfInt = vectorOfIntStdAllocator;
+</code></pre></div><h2 id="implementing-an-allocator">Implementing an Allocator</h2>
+<p>By its nature, <code>std::allocator</code> is general purpose and therefore has to cater for many scenarios. It
+has no idea if your application needs a large number of similarly sized objects, or objects of a
+wide variety of sizes. It has no idea if they&rsquo;ll be short-lived or long-lived, or if they&rsquo;ll be
+large or small.</p>
+<p>It won&rsquo;t be as efficient as a custom allocator because it has no way of knowing about
+the memory usage of your application.</p>
+<p>Fortunately, the containers in the C++ standard library allow you to provide your own
+<strong>custom allocators</strong> that are more suited to your needs. For example, if you&rsquo;re handling something
+short-lived, such as a web request in which none of the objects will be needed once the response has been sent, then you
+could use a <a href="https://os.phil-opp.com/allocator-designs/#bump-allocator">bump allocator</a> that never
+deallocates, then frees memory in one operation at the end, once the request has been handled.</p>
+<p>To be an allocator, a class has to meet certain <a href="https://en.cppreference.com/w/cpp/named_req">named requirements</a>.
+The named requirements for <code>Allocator</code> are defined on <a href="https://en.cppreference.com/w/cpp/named_req/Allocator">this page in cppreference.com</a>.</p>
+<h3 id="a-minimal-c11-allocator">A minimal C++11 allocator</h3>
+<p>Here&rsquo;s a minimal C++11 allocator, based on the example from that page. It is written in terms of
+<code>malloc()</code> and <code>free()</code>, and logs allocations and deallocations to stdout.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#00f">template</span>&lt;<span style="color:#00f">class</span> <span style="color:#2b91af">T</span>&gt;
+<span style="color:#00f">struct</span> <span style="color:#2b91af">ChattyAllocator</span>
+{
+    <span style="color:#00f">using</span> value_type = T;
+
+    ChattyAllocator() = <span style="color:#00f">default</span>;
+
+    <span style="color:#00f">template</span>&lt;<span style="color:#00f">class</span> <span style="color:#2b91af">U</span>&gt;
+    <span style="color:#00f">constexpr</span> ChattyAllocator(<span style="color:#00f">const</span> ChattyAllocator&lt;U&gt;&amp;) <span style="color:#00f">noexcept</span>
+    {
+    }
+
+    [[nodiscard]] T* allocate(std::size_t n)
+    {
+        <span style="color:#00f">if</span> (n &gt; std::numeric_limits&lt;std::size_t&gt;::max() / <span style="color:#00f">sizeof</span>(T))
+        {
+            <span style="color:#00f">throw</span> std::bad_array_new_length();
+        }
+
+        <span style="color:#00f">if</span> (<span style="color:#00f">auto</span> p = <span style="color:#00f">static_cast</span>&lt;T*&gt;(std::malloc(n * <span style="color:#00f">sizeof</span>(T))))
+        {
+            std::cout &lt;&lt; <span style="color:#a31515">&#34;Allocated &#34;</span> &lt;&lt; n * <span style="color:#00f">sizeof</span>(T) &lt;&lt; <span style="color:#a31515">&#34; bytes at 0x&#34;</span> &lt;&lt; std::hex
+                      &lt;&lt; <span style="color:#00f">reinterpret_cast</span>&lt;<span style="color:#2b91af">void</span>*&gt;(p) &lt;&lt; std::dec &lt;&lt; <span style="color:#a31515">&#39;\n&#39;</span>;
+            <span style="color:#00f">return</span> p;
+        }
+
+        <span style="color:#00f">throw</span> std::bad_alloc();
+    }
+
+    <span style="color:#2b91af">void</span> deallocate(T* p, std::size_t n) <span style="color:#00f">noexcept</span>
+    {
+        std::cout &lt;&lt; <span style="color:#a31515">&#34;Deallocated &#34;</span> &lt;&lt; n * <span style="color:#00f">sizeof</span>(T) &lt;&lt; <span style="color:#a31515">&#34; bytes at 0x&#34;</span> &lt;&lt; std::hex
+                  &lt;&lt; <span style="color:#00f">reinterpret_cast</span>&lt;<span style="color:#2b91af">void</span>*&gt;(p) &lt;&lt; std::dec &lt;&lt; <span style="color:#a31515">&#39;\n&#39;</span>;
+        std::free(p);
+    }
+};
+
+<span style="color:#00f">template</span>&lt;<span style="color:#00f">class</span> <span style="color:#2b91af">T</span>, <span style="color:#00f">class</span> <span style="color:#2b91af">U</span>&gt;
+<span style="color:#2b91af">bool</span> <span style="color:#00f">operator</span>==(<span style="color:#00f">const</span> ChattyAllocator&lt;T&gt;&amp;, <span style="color:#00f">const</span> ChattyAllocator&lt;U&gt;&amp;)
+{
+    <span style="color:#00f">return</span> true;
+}
+
+<span style="color:#00f">template</span>&lt;<span style="color:#00f">class</span> <span style="color:#2b91af">T</span>, <span style="color:#00f">class</span> <span style="color:#2b91af">U</span>&gt;
+<span style="color:#2b91af">bool</span> <span style="color:#00f">operator</span>!=(<span style="color:#00f">const</span> ChattyAllocator&lt;T&gt;&amp;, <span style="color:#00f">const</span> ChattyAllocator&lt;U&gt;&amp;)
+{
+    <span style="color:#00f">return</span> false;
+}
+</code></pre></div><p>Here&rsquo;s a vector of <code>int</code> that uses the <code>ChattyAllocator</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">std::vector&lt;<span style="color:#2b91af">int</span>, ChattyAllocator&lt;<span style="color:#2b91af">int</span>&gt;&gt; vectorWithCustomAllocator;
+</code></pre></div><p>Unfortunately, using a different allocator changes the type of the vector. The vectors up
+to this point have been <code>std::vector&lt;int, std::allocator&lt;int&gt;&gt;</code>, but the new one is
+<code>std::vector&lt;int, ChattyAllocator&lt;int&gt;&gt;</code>.</p>
+<p>Assignment between these vectors is not allowed, because they&rsquo;re different types.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#008000">// Assigning from std::vector&lt;int, ChattyAllocator&lt;int&gt;&gt; to std::vector&lt;int&gt; is not allowed.
+</span><span style="color:#008000"></span>vectorOfInt = vectorWithCustomAllocator;
+
+<span style="color:#008000">// Assigning from std::vector&lt;int&gt; to std::vector&lt;int, ChattyAllocator&lt;int&gt;&gt; is not allowed.
+</span><span style="color:#008000"></span>vectorWithCustomAllocator = vectorOfInt;
+</code></pre></div><h2 id="polymorphic-allocators-and-memory-resources">Polymorphic Allocators and Memory Resources</h2>
+<p>To solve this problem, C++17 introduced <a href="https://en.cppreference.com/w/cpp/memory/polymorphic_allocator">polymorphic allocators</a>,
+in which allocators use <a href="https://en.cppreference.com/w/cpp/memory/memory_resource">memory resources</a>
+to perform allocation and deallocations on their behalf. Polymorphic allocators and memory
+resources come from the <code>&lt;memory_resource&gt;</code> header.</p>
+<p>Here&rsquo;s a vector of <code>int</code> that uses a polymorphic allocator.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">std::pmr::vector&lt;<span style="color:#2b91af">int</span>&gt; vectorOfIntPmr = {29, 31, 37, 41, 43, 47, 53, 59, 61, 67}; 
+</code></pre></div><p>Note that  <code>std::pmr::vector&lt;int&gt;</code> is an alias for <code>std::vector&lt;int, std::pmr::polymorphic_allocator&lt;int&gt;&gt;</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">std::vector&lt;<span style="color:#2b91af">int</span>, std::pmr::polymorphic_allocator&lt;<span style="color:#2b91af">int</span>&gt;&gt; vectorOfIntPmrAllocator;
+</code></pre></div><p>You can assign between these vectors because they&rsquo;re the same type. In other words,
+<code>std::pmr::vector&lt;int&gt;</code> is the same type as <code>std::vector&lt;int, std::pmr::polymorphic_allocator&lt;int&gt;&gt;</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">vectorOfIntPmrAllocator = vectorOfIntPmr;
+vectorOfIntPmr = vectorOfIntPmrAllocator;
+</code></pre></div><p>You might think that there&rsquo;s nothing new here as this was also possible with <code>std::vector&lt;int&gt;</code> and
+<code>std::vector&lt;int, std::allocator&lt;int&gt;&gt;</code>. However, polymorphic allocators, in combination with memory
+resources, allow for assignment between allocators that use different allocation strategies.</p>
+<p>Memory resources derive from <code>std::pmr::memory_resource</code>, and look very much like allocators, in
+that they have <code>allocate()</code> and <code>deallocate()</code> methods. They are implemented by overriding the pure
+virtual methods <code>do_allocate()</code>, <code>do_deallocate()</code>, and <code>do_is_equal()</code>.</p>
+<h3 id="a-minimal-memory-resource">A minimal memory resource</h3>
+<p>Here&rsquo;s a minimal example of a memory resource. It uses
+<a href="https://en.cppreference.com/w/cpp/memory/new_delete_resource"><code>std::pmr::new_delete_resource()</code></a> to
+allocate and deallocate memory. As with <code>ChattyAllocator</code>, it also logs allocations and
+deallocations to stdout.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#00f">class</span> <span style="color:#2b91af">ChattyMemoryResource</span> : <span style="color:#00f">public</span> std::pmr::memory_resource
+{
+    <span style="color:#2b91af">void</span>* do_allocate(std::size_t n, std::size_t alignment) <span style="color:#00f">override</span>
+    {
+        <span style="color:#2b91af">void</span>* p = std::pmr::new_delete_resource()-&gt;allocate(n, alignment);
+        std::cout &lt;&lt; <span style="color:#a31515">&#34;Allocated &#34;</span> &lt;&lt; n &lt;&lt; <span style="color:#a31515">&#34; bytes at 0x&#34;</span> &lt;&lt; std::hex &lt;&lt; <span style="color:#00f">reinterpret_cast</span>&lt;<span style="color:#2b91af">void</span>*&gt;(p)
+                  &lt;&lt; std::dec &lt;&lt; <span style="color:#a31515">&#39;\n&#39;</span>;
+        <span style="color:#00f">return</span> p;
+    }
+
+    <span style="color:#2b91af">void</span> do_deallocate(<span style="color:#2b91af">void</span>* p, std::size_t n, std::size_t alignment) <span style="color:#00f">override</span>
+    {
+        std::cout &lt;&lt; <span style="color:#a31515">&#34;Deallocated &#34;</span> &lt;&lt; n &lt;&lt; <span style="color:#a31515">&#34; bytes at 0x&#34;</span> &lt;&lt; std::hex &lt;&lt; <span style="color:#00f">reinterpret_cast</span>&lt;<span style="color:#2b91af">void</span>*&gt;(p)
+                  &lt;&lt; std::dec &lt;&lt; <span style="color:#a31515">&#39;\n&#39;</span>;
+        <span style="color:#00f">return</span> std::pmr::new_delete_resource()-&gt;deallocate(p, n, alignment);
+    }
+
+    <span style="color:#2b91af">bool</span> do_is_equal(<span style="color:#00f">const</span> std::pmr::memory_resource&amp; other) <span style="color:#00f">const</span> <span style="color:#00f">noexcept</span> <span style="color:#00f">override</span>
+    {
+        <span style="color:#00f">return</span> std::pmr::new_delete_resource()-&gt;is_equal(other);
+    }
+};
+</code></pre></div><p>Here&rsquo;s a polymorphic allocator that uses it.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">ChattyMemoryResource chattyMemoryResource;
+std::pmr::polymorphic_allocator&lt;<span style="color:#2b91af">int</span>&gt; chattyPolymorphicAllocator(&amp;chattyMemoryResource);
+</code></pre></div><p>Here&rsquo;s a vector of <code>int</code> that uses the new polymorphic allocator.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">std::pmr::vector&lt;<span style="color:#2b91af">int</span>&gt; vectorOfIntChattyPolymorphicAllocator{chattyPolymorphicAllocator};
+</code></pre></div><p>You can assign between vectors that use polymorphic allocators, even when those allocators use
+different memory resources.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">vectorOfIntChattyPolymorphicAllocator = vectorOfIntPmr;
+vectorOfIntPmr = vectorOfIntChattyPolymorphicAllocator;
+</code></pre></div><p>And that&rsquo;s the problem solved by polymorphic allocators.</p>
+<h2 id="gotchas">Gotchas</h2>
+<p>There are, of course, caveats. The <a href="https://en.cppreference.com/w/cpp/memory/polymorphic_allocator">notes section for polymorphic allocators on cppreference.com</a>
+gives a warning that  polymorphic allocator does not propagate on container copy assignment, move assignment
+or swap, and goes on to explain the implications.</p>
+<h1 id="further-reading">Further Reading</h1>
+<p>For more information, follow these links.</p>
+<ul>
+<li><a href="https://vector-of-bool.github.io/2018/11/06/dumbest-allocator.html">The Dumbest Allocator of All Time</a> in which vector-of-bool implements a bump allocator.</li>
+<li><a href="https://blog.feabhas.com/2019/03/thanks-for-the-memory-allocator/">Thanks for the memory (allocator)</a> in which Glennan Carnie of Feabhas Ltd gives a great breakdown of polymorphic allocators and memory resources.</li>
+<li><a href="https://en.cppreference.com/w/cpp/memory">Dynamic Memory Management</a> on cppreference.com</li>
+<li><a href="https://en.cppreference.com/w/cpp/memory/memory_resource">Memory Resource</a> on cppreference.com</li>
+<li><a href="https://en.cppreference.com/w/cpp/memory/polymorphic_allocator">Polymorphic Allocator</a> on cppreference.com.</li>
+</ul>
+        </div>
+        
+        <div>
+            <ul id="tags">
+                
+                <li><a href="/tags/c&#43;&#43;">c&#43;&#43;</a></li>
+                
+                <li><a href="/tags/allocators">allocators</a></li>
+                
+            </ul>
+        </div>
+        
+    </article>
+</main>
+<aside class="wrapper">
+    <div>
+        <div>
+            <h3>Latest Posts</h3>
+        </div>
+        <div>
+            <ul>
+                
+                <li><a href="/posts/2021/12/28/allocators/">Polymorphic Allocators in C&#43;&#43;</a></li>
+                
+                <li><a href="/posts/2021/12/19/cpp-modules-2/">Exploring Module Linkage in C&#43;&#43;20</a></li>
+                
+                <li><a href="/posts/2021/12/12/cpp-modules/">Compiling C&#43;&#43;20 Modules with clang and MSVC</a></li>
+                
+                <li><a href="/posts/2021/11/28/why_arviss/">Why I wrote Arviss</a></li>
+                
+                <li><a href="/posts/2021/11/15/how-i-went-to-c/">How I went to C</a></li>
+                
+            </ul>
+        </div>
+    </div>
+</aside> 
+	<footer class="wrapper">
+	<p>&copy; 2021 <a href="https://badlydrawnrod.github.io">Badly Drawn Rod</a></p>
+</footer>
+
+</body>
+</html>
