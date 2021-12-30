@@ -6,7 +6,16 @@
     <description>Recent content on Badly Drawn Rod</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Tue, 28 Dec 2021 14:15:00 +0000</lastBuildDate><atom:link href="https://badlydrawnrod.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 30 Dec 2021 16:30:00 +0000</lastBuildDate><atom:link href="https://badlydrawnrod.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Bump Allocators in C&#43;&#43;</title>
+      <link>https://badlydrawnrod.github.io/posts/2021/12/30/monotonic_buffer_resource/</link>
+      <pubDate>Thu, 30 Dec 2021 16:30:00 +0000</pubDate>
+      
+      <guid>https://badlydrawnrod.github.io/posts/2021/12/30/monotonic_buffer_resource/</guid>
+      <description>&lt;p&gt;How do I implement a C++ bump allocator that works with standard library containers?&lt;/p&gt;</description>
+    </item>
+    
     <item>
       <title>Polymorphic Allocators in C&#43;&#43;</title>
       <link>https://badlydrawnrod.github.io/posts/2021/12/28/allocators/</link>
