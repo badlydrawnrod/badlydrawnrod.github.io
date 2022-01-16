@@ -6,7 +6,16 @@
     <description>Recent content in Posts on Badly Drawn Rod</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Thu, 30 Dec 2021 16:30:00 +0000</lastBuildDate><atom:link href="https://badlydrawnrod.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 16 Jan 2022 16:07:39 +0000</lastBuildDate><atom:link href="https://badlydrawnrod.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Forgettable Git</title>
+      <link>https://badlydrawnrod.github.io/posts/2022/01/16/git/</link>
+      <pubDate>Sun, 16 Jan 2022 16:07:39 +0000</pubDate>
+      
+      <guid>https://badlydrawnrod.github.io/posts/2022/01/16/git/</guid>
+      <description>&lt;p&gt;Git commands that I usually forget.&lt;/p&gt;</description>
+    </item>
+    
     <item>
       <title>Bump Allocators in C&#43;&#43;</title>
       <link>https://badlydrawnrod.github.io/posts/2021/12/30/monotonic_buffer_resource/</link>
