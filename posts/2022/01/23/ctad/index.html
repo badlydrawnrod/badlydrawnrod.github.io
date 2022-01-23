@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>CTAD and Deduction Guides in C&#43;&#43;</title>
+	
+	
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu|Lora">
+	<link rel="stylesheet" href="/css/style.css">
+	
+</head>
+<body>
+	<header class="wrapper">
+    <nav>
+        <a href="https://badlydrawnrod.github.io">Home</a>
+        <ul>
+			
+            
+            <li><a href="/page/about/">About</a></li>
+            
+            <li><a href="/posts/">All posts</a></li>
+            
+        </ul>
+    </nav>
+    
+</header>
+	
+<main class="wrapper">
+    <article>
+        <p></p>
+        
+        <div class="date">23 January, 2022</div>
+        
+        <div>
+            <p>A brief look at CTAD and deduction guides.</p>
+<h1 id="ctad-and-deduction-guides-in-c">CTAD and Deduction Guides in C++</h1>
+<h2 id="what-problem-does-ctad-solve">What problem does CTAD solve?</h2>
+<p>What problem does CTAD solve? The clue is in the longer version of the name, <strong>Class Template Argument
+Deduction</strong>.</p>
+<p>Let&rsquo;s look at an example. Take the following class template&hellip;</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#00f">template</span>&lt;<span style="color:#00f">typename</span> T&gt;
+<span style="color:#00f">class</span> <span style="color:#2b91af">Greeter</span>
+{
+<span style="color:#00f">public</span>:
+    <span style="color:#00f">explicit</span> Greeter(T greeting) : greeting_{greeting}
+    {
+    }
+
+    <span style="color:#2b91af">void</span> Greet()
+    {
+        std::cout &lt;&lt; greeting_ &lt;&lt; <span style="color:#a31515">&#39;\n&#39;</span>;
+    }
+
+<span style="color:#00f">private</span>:
+    T greeting_;
+};
+</code></pre></div><p>In C++14, to create an instance of this class you would have to spell out the template arguments, as shown below.
+This is verbose and annoying.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">    Greeter&lt;<span style="color:#00f">const</span> <span style="color:#2b91af">char</span>*&gt; greeter1{<span style="color:#a31515">&#34;Hello, world!&#34;</span>};
+    Greeter&lt;std::string&gt; greeter2{std::string{<span style="color:#a31515">&#34;Hello, world!&#34;</span>}};
+</code></pre></div><p><strong>In C++17, you can omit the template arguments</strong> as the compiler is able to deduce them. The feature that
+makes this possible is known as CTAD or <a href="https://en.cppreference.com/w/cpp/language/class_template_argument_deduction">Class Template Argument Deduction</a>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">    Greeter greeter1{<span style="color:#a31515">&#34;Hello, world!&#34;</span>};
+    Greeter greeter2{std::string{<span style="color:#a31515">&#34;Hello, world!&#34;</span>}};
+</code></pre></div><h2 id="deduction-guides">Deduction Guides</h2>
+<p>What if the class&rsquo;s constructor took its arguments by reference rather than by value? It certainly
+isn&rsquo;t unusual to take arguments by const reference.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#00f">template</span>&lt;<span style="color:#00f">typename</span> T&gt;
+<span style="color:#00f">class</span> <span style="color:#2b91af">Greeter</span>
+{
+<span style="color:#00f">public</span>:
+    <span style="color:#00f">explicit</span> Greeter(<span style="color:#00f">const</span> T&amp; greeting) : greeting_{greeting}
+    {
+    }
+    <span style="color:#008000">// Omitted for brevity.
+</span><span style="color:#008000"></span>};
+</code></pre></div><p>Passing a <code>std::string</code> by reference works just fine.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">    Greeter greeter{std::string{greeting}};
+</code></pre></div><p>But passing a string literal won&rsquo;t compile. You&rsquo;ll get an error such as: <code>Cannot initialize an array element of type 'char' with an lvalue of type 'const char [14]'</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">    Greeter greeter{<span style="color:#a31515">&#34;Hello, world!&#34;</span>};
+</code></pre></div><p>The issue here is that <strong>arguments passed by reference do not decay</strong>. In the earlier examples,
+the arguments were passed by <em>value</em> and so they decayed. But in this example, the arguments are
+passed by reference and so don&rsquo;t decay.</p>
+<p>In concrete terms, with the example that passes by value we called the constructor with the
+string literal <code>&quot;Hello, world!&quot;</code>. Its type is <code>const char [14]</code>, so it decays to <code>const char*</code> when
+passed by value to <code>Greeter</code>&rsquo;s constructor.</p>
+<p>However, in the version that passes by reference, the type is <code>const char(&amp;) [14]</code>. References don&rsquo;t decay, so
+the compiler deduces that the template argument is <code>const char [14]</code>. This is almost certainly <em>not</em>
+what we wanted.</p>
+<p>The problem can be fixed by introducing a <strong>deduction guide</strong>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#00f">template</span>&lt;<span style="color:#00f">typename</span> T&gt;
+Greeter(T) -&gt; Greeter&lt;T&gt;;
+</code></pre></div><p>It looks like a function declaration with a trailing return type. But what this says to the
+compiler is that type deduction should work as if the type had been passed by value. And because
+it is now deduced as having been passed by value, it decays to <code>const char*</code>.</p>
+<p>Now this will compile.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">    Greeter greeter{<span style="color:#a31515">&#34;Hello, world!&#34;</span>};
+</code></pre></div><p>As this is C++, there are subtleties and nuances at every corner, but that&rsquo;s the basic idea. For a
+more thorough treatment of these topics, take a look at some of the links below.</p>
+<h1 id="further-reading">Further reading</h1>
+<p>For more information, follow these links.</p>
+<h3 id="ctad">CTAD</h3>
+<ul>
+<li><a href="https://en.cppreference.com/w/cpp/language/class_template_argument_deduction">Class template argument deduction</a> on cppreference.com.</li>
+<li><a href="https://youtu.be/-H-ut6j1BYU">Class Template Argument Deduction for Everyone</a> - a CppCon 2018 talk from Stephen T. Lavavej.</li>
+<li><a href="https://isocpp.org/blog/2017/09/quick-q-what-are-template-deduction-guides-in-cpp17">What are template deduction guides in C++17?</a> on isocpp.org.</li>
+<li><a href="https://stackoverflow.com/questions/40951697/what-are-template-deduction-guides-and-when-should-we-use-them">What are template deduction guides and when should we use them?</a> on Stack Overflow.</li>
+</ul>
+<h3 id="decay">Decay</h3>
+<ul>
+<li><a href="https://en.cppreference.com/w/cpp/language/array#Array-to-pointer_decay">Array to pointer decay</a> on cppreference.com.</li>
+</ul>
+<h3 id="books">Books</h3>
+<ul>
+<li><a href="https://leanpub.com/cpp17">C++17 - The Complete Guide</a> by Nicolai M. Josuttis covers these topics (and others) very well.</li>
+</ul>
+        </div>
+        
+        <div>
+            <ul id="tags">
+                
+                <li><a href="/tags/c&#43;&#43;">c&#43;&#43;</a></li>
+                
+                <li><a href="/tags/ctad">ctad</a></li>
+                
+            </ul>
+        </div>
+        
+    </article>
+</main>
+<aside class="wrapper">
+    <div>
+        <div>
+            <h3>Latest Posts</h3>
+        </div>
+        <div>
+            <ul>
+                
+                <li><a href="/posts/2022/01/23/ctad/">CTAD and Deduction Guides in C&#43;&#43;</a></li>
+                
+                <li><a href="/posts/2022/01/16/git/">Forgettable Git</a></li>
+                
+                <li><a href="/posts/2021/12/30/monotonic_buffer_resource/">Bump Allocators in C&#43;&#43;</a></li>
+                
+                <li><a href="/posts/2021/12/28/allocators/">Polymorphic Allocators in C&#43;&#43;</a></li>
+                
+                <li><a href="/posts/2021/12/19/cpp-modules-2/">Exploring Module Linkage in C&#43;&#43;20</a></li>
+                
+            </ul>
+        </div>
+    </div>
+</aside> 
+	<footer class="wrapper">
+	<p>&copy; 2022 <a href="https://badlydrawnrod.github.io">Badly Drawn Rod</a></p>
+</footer>
+
+</body>
+</html>

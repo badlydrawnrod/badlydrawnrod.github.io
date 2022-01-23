@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>ctad on Badly Drawn Rod</title>
+    <link>https://badlydrawnrod.github.io/tags/ctad/</link>
+    <description>Recent content in ctad on Badly Drawn Rod</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en</language>
+    <lastBuildDate>Sun, 23 Jan 2022 14:25:00 +0000</lastBuildDate><atom:link href="https://badlydrawnrod.github.io/tags/ctad/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>CTAD and Deduction Guides in C&#43;&#43;</title>
+      <link>https://badlydrawnrod.github.io/posts/2022/01/23/ctad/</link>
+      <pubDate>Sun, 23 Jan 2022 14:25:00 +0000</pubDate>
+      
+      <guid>https://badlydrawnrod.github.io/posts/2022/01/23/ctad/</guid>
+      <description>&lt;p&gt;A brief look at CTAD and deduction guides.&lt;/p&gt;</description>
+    </item>
+    
+  </channel>
+</rss>
