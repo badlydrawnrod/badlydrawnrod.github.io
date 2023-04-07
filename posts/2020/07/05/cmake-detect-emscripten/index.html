@@ -39,22 +39,22 @@
 <h1 id="solution">Solution</h1>
 <h2 id="detect-emscripten-with-the-emscripten-variable">Detect Emscripten with the <code>EMSCRIPTEN</code> variable</h2>
 <p>Use the <code>EMSCRIPTEN</code> global variable in <code>CMakeLists.txt</code> to detect <strong>Emscripten</strong> builds.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cmake" data-lang="cmake">if (<span style="color:#a31515">EMSCRIPTEN</span>)<span style="">
-</span><span style=""></span>    <span style="color:#008000"># Do something Emscripten specific here...
-</span><span style="color:#008000"></span>    message(<span style="color:#a31515">STATUS</span> <span style="color:#a31515">&#34;This is an Emscripten build.&#34;</span>)<span style="">
-</span><span style="">
-</span><span style=""></span>    <span style="color:#008000"># Set some flags to tell Emscripten that we&#39;re using GLFW3, WebGL2, and SDL2_Image.
-</span><span style="color:#008000"></span>    set(<span style="color:#a31515">CMAKE_CXX_FLAGS</span> <span style="color:#a31515">&#34;${CMAKE_CXX_FLAGS} -s USE_GLFW=3 -s USE_WEBGL2=1&#34;</span>)<span style="">
-</span><span style=""></span>    set(<span style="color:#a31515">CMAKE_CXX_FLAGS</span> <span style="color:#a31515">&#34;${CMAKE_CXX_FLAGS} -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS=[\&#34;</span><span style="color:#a31515">png\</span><span style="color:#a31515">&#34;]&#34;</span>)<span style="">
-</span><span style=""></span>else ()<span style="">
-</span><span style=""></span>    <span style="color:#008000"># Do something else here...
-</span><span style="color:#008000"></span>    message(<span style="color:#a31515">STATUS</span> <span style="color:#a31515">&#34;This is NOT an Emscripten build.&#34;</span>)<span style="">
-</span><span style=""></span>endif ()<span style="">
-</span></code></pre></div><p>This works because the <a href="https://cmake.org/cmake/help/v3.18/manual/cmake-toolchains.7.html">CMake toolchain</a> file, <code>Emscripten.cmake</code>, sets the <code>EMSCRIPTEN</code> global variable as follows:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cmake" data-lang="cmake"><span style="color:#008000"># Set a global EMSCRIPTEN variable that can be used in client CMakeLists.txt to
-</span><span style="color:#008000"># detect when building using Emscripten.
-</span><span style="color:#008000"></span>set(<span style="color:#a31515">EMSCRIPTEN</span> <span style="color:#a31515">1</span> <span style="color:#a31515">CACHE</span> <span style="color:#a31515">BOOL</span> <span style="color:#a31515">&#34;If true, we are targeting Emscripten output.&#34;</span>)<span style="">
-</span></code></pre></div>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cmake" data-lang="cmake"><span style="display:flex;"><span>if (<span style="color:#a31515">EMSCRIPTEN</span>)<span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>    <span style="color:#008000"># Do something Emscripten specific here...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    message(<span style="color:#a31515">STATUS</span> <span style="color:#a31515">&#34;This is an Emscripten build.&#34;</span>)<span style="">
+</span></span></span><span style="display:flex;"><span><span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>    <span style="color:#008000"># Set some flags to tell Emscripten that we&#39;re using GLFW3, WebGL2, and SDL2_Image.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    set(<span style="color:#a31515">CMAKE_CXX_FLAGS</span> <span style="color:#a31515">&#34;${CMAKE_CXX_FLAGS} -s USE_GLFW=3 -s USE_WEBGL2=1&#34;</span>)<span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>    set(<span style="color:#a31515">CMAKE_CXX_FLAGS</span> <span style="color:#a31515">&#34;${CMAKE_CXX_FLAGS} -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS=[\&#34;</span><span style="color:#a31515">png\</span><span style="color:#a31515">&#34;]&#34;</span>)<span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>else ()<span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>    <span style="color:#008000"># Do something else here...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    message(<span style="color:#a31515">STATUS</span> <span style="color:#a31515">&#34;This is NOT an Emscripten build.&#34;</span>)<span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>endif ()<span style="">
+</span></span></span></code></pre></div><p>This works because the <a href="https://cmake.org/cmake/help/v3.18/manual/cmake-toolchains.7.html">CMake toolchain</a> file, <code>Emscripten.cmake</code>, sets the <code>EMSCRIPTEN</code> global variable as follows:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cmake" data-lang="cmake"><span style="display:flex;"><span><span style="color:#008000"># Set a global EMSCRIPTEN variable that can be used in client CMakeLists.txt to
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"># detect when building using Emscripten.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>set(<span style="color:#a31515">EMSCRIPTEN</span> <span style="color:#a31515">1</span> <span style="color:#a31515">CACHE</span> <span style="color:#a31515">BOOL</span> <span style="color:#a31515">&#34;If true, we are targeting Emscripten output.&#34;</span>)<span style="">
+</span></span></span></code></pre></div>
         </div>
         
         <div>
@@ -79,6 +79,8 @@
         <div>
             <ul>
                 
+                <li><a href="/posts/2023/04/07/time-to-learn-rust/">It&#39;s time to learn Rust</a></li>
+                
                 <li><a href="/posts/2022/02/27/mandatory-copy-elision/">Mandatory Copy Elision in C&#43;&#43;</a></li>
                 
                 <li><a href="/posts/2022/01/23/ctad/">CTAD and Deduction Guides in C&#43;&#43;</a></li>
@@ -87,14 +89,12 @@
                 
                 <li><a href="/posts/2021/12/30/monotonic_buffer_resource/">Bump Allocators in C&#43;&#43;</a></li>
                 
-                <li><a href="/posts/2021/12/28/allocators/">Polymorphic Allocators in C&#43;&#43;</a></li>
-                
             </ul>
         </div>
     </div>
 </aside> 
 	<footer class="wrapper">
-	<p>&copy; 2022 <a href="https://badlydrawnrod.github.io">Badly Drawn Rod</a></p>
+	<p>&copy; 2023 <a href="https://badlydrawnrod.github.io">Badly Drawn Rod</a></p>
 </footer>
 
 </body>

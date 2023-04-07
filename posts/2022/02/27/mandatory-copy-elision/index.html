@@ -42,156 +42,156 @@ not elided.</p>
 <p>This is highly desirable, so under some circumstances copy elision is mandatory.</p>
 <p>According to <a href="https://en.cppreference.com/w/cpp/language/copy_elision">cppreference.com</a>, copy elision is mandatory&hellip;</p>
 <ul>
-<li><em>&ldquo;In a return statement, when the operand is a prvalue of the same class type (ignoring cv-qualification) as the function return type.&quot;</em></li>
-<li><em>&ldquo;In the initialization of an object, when the initializer expression is a prvalue of the same class type (ignoring cv-qualification) as the variable type.&quot;</em></li>
+<li><em>&ldquo;In a return statement, when the operand is a prvalue of the same class type (ignoring cv-qualification) as the function return type.&rdquo;</em></li>
+<li><em>&ldquo;In the initialization of an object, when the initializer expression is a prvalue of the same class type (ignoring cv-qualification) as the variable type.&rdquo;</em></li>
 </ul>
 <p>When copy elision occurs, copy constructors, move constructors, and destructors are omitted, <strong>even if they have
 demonstrable side-effects</strong>.</p>
 <p>What does this mean in practice, and how does it work?</p>
 <h2 id="demonstrating-copy-elision">Demonstrating Copy Elision</h2>
 <p>Here is a class, <code>Elide</code>. It has a constructor, a copy constructor, and a destructor.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#00f">class</span> <span style="color:#2b91af">Elide</span>
-{
-<span style="color:#00f">public</span>:
-    Elide();                <span style="color:#008000">// Constructor.
-</span><span style="color:#008000"></span>    Elide(<span style="color:#00f">const</span> Elide&amp; e);  <span style="color:#008000">// Copy constructor.
-</span><span style="color:#008000"></span>    ~Elide();               <span style="color:#008000">// Destructor.
-</span><span style="color:#008000"></span>
-<span style="color:#00f">private</span>:
-    <span style="color:#2b91af">int</span> x_;
-    <span style="color:#2b91af">int</span> y_;
-    <span style="color:#2b91af">int</span> z_;
-};
-</code></pre></div><p>As a side effect, each function writes a message to <code>stdout</code> when called.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Elide::Elide() : x_{1}, y_{2}, z_{3}
-{
-    std::cout &lt;&lt; <span style="color:#a31515">&#34;</span><span style="color:#a31515">\t</span><span style="color:#a31515">Elide::Elide();</span><span style="color:#a31515">\n</span><span style="color:#a31515">&#34;</span>; <span style="color:#008000">// Side effect.
-</span><span style="color:#008000"></span>}
-
-Elide::Elide(<span style="color:#00f">const</span> Elide&amp; e)
-{
-    std::cout &lt;&lt; <span style="color:#a31515">&#34;</span><span style="color:#a31515">\t</span><span style="color:#a31515">Elide::Elide(const Elide&amp; e);</span><span style="color:#a31515">\n</span><span style="color:#a31515">&#34;</span>; <span style="color:#008000">// Side effect.
-</span><span style="color:#008000"></span>    x_ = e.x_;
-    y_ = e.y_;
-    z_ = e.z_;
-}
-
-Elide::~Elide()
-{
-    std::cout &lt;&lt; <span style="color:#a31515">&#34;</span><span style="color:#a31515">\t</span><span style="color:#a31515">Elide::~Elide();</span><span style="color:#a31515">\n</span><span style="color:#a31515">&#34;</span>; <span style="color:#008000">// Side effect.
-</span><span style="color:#008000"></span>}
-</code></pre></div><p>The following function, <code>MakeElide()</code>, creates and returns an instance of <code>Elide</code>. It does so via copy-elision, because
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#00f">class</span> <span style="color:#2b91af">Elide</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span><span style="color:#00f">public</span>:
+</span></span><span style="display:flex;"><span>    Elide();                <span style="color:#008000">// Constructor.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    Elide(<span style="color:#00f">const</span> Elide&amp; e);  <span style="color:#008000">// Copy constructor.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    ~Elide();               <span style="color:#008000">// Destructor.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">private</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">int</span> x_;
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">int</span> y_;
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">int</span> z_;
+</span></span><span style="display:flex;"><span>};
+</span></span></code></pre></div><p>As a side effect, each function writes a message to <code>stdout</code> when called.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>Elide::Elide() : x_{1}, y_{2}, z_{3}
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    std::cout &lt;&lt; <span style="color:#a31515">&#34;</span><span style="color:#a31515">\t</span><span style="color:#a31515">Elide::Elide();</span><span style="color:#a31515">\n</span><span style="color:#a31515">&#34;</span>; <span style="color:#008000">// Side effect.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Elide::Elide(<span style="color:#00f">const</span> Elide&amp; e)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    std::cout &lt;&lt; <span style="color:#a31515">&#34;</span><span style="color:#a31515">\t</span><span style="color:#a31515">Elide::Elide(const Elide&amp; e);</span><span style="color:#a31515">\n</span><span style="color:#a31515">&#34;</span>; <span style="color:#008000">// Side effect.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    x_ = e.x_;
+</span></span><span style="display:flex;"><span>    y_ = e.y_;
+</span></span><span style="display:flex;"><span>    z_ = e.z_;
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Elide::~Elide()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    std::cout &lt;&lt; <span style="color:#a31515">&#34;</span><span style="color:#a31515">\t</span><span style="color:#a31515">Elide::~Elide();</span><span style="color:#a31515">\n</span><span style="color:#a31515">&#34;</span>; <span style="color:#008000">// Side effect.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>}
+</span></span></code></pre></div><p>The following function, <code>MakeElide()</code>, creates and returns an instance of <code>Elide</code>. It does so via copy-elision, because
 this is a <em>&ldquo;return statement, when the operand is a prvalue of the same class type (ignoring cv-qualification) as the
-function return type.&quot;</em></p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Elide MakeElide()
-{
-    <span style="color:#00f">return</span> Elide();
-}
-</code></pre></div><h3 id="demonstration">Demonstration</h3>
+function return type.&rdquo;</em></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>Elide MakeElide()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> Elide();
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="demonstration">Demonstration</h3>
 <p>We can see the effects of copy elision when using <code>Elide</code> by running the following code&hellip;</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">{
-    Elide e1;                             <span style="color:#008000">// Calls Elide&#39;s constructor only.
-</span><span style="color:#008000"></span>    Elide e2(MakeElide());                <span style="color:#008000">// Calls Elide&#39;s constructor only. Copy elision occurs.
-</span><span style="color:#008000"></span>    Elide e3(e2);                         <span style="color:#008000">// Calls Elide&#39;s copy constructor.
-</span><span style="color:#008000"></span>    Elide e4 = e3;                        <span style="color:#008000">// Calls Elide&#39;s copy constructor.
-</span><span style="color:#008000"></span>    Elide e5 = Elide(Elide(MakeElide())); <span style="color:#008000">// Calls Elide&#39;s constructor only. Copy elision occurs.
-</span><span style="color:#008000"></span>}
-</code></pre></div><p>Here&rsquo;s the output.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">        Elide::Elide();
-        Elide::Elide();
-        Elide::Elide(const Elide&amp; e);
-        Elide::Elide(const Elide&amp; e);
-        Elide::Elide();
-        Elide::~Elide();
-        Elide::~Elide();
-        Elide::~Elide();
-        Elide::~Elide();
-        Elide::~Elide();
-</code></pre></div><h3 id="explanation">Explanation</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    Elide e1;                             <span style="color:#008000">// Calls Elide&#39;s constructor only.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    Elide e2(MakeElide());                <span style="color:#008000">// Calls Elide&#39;s constructor only. Copy elision occurs.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    Elide e3(e2);                         <span style="color:#008000">// Calls Elide&#39;s copy constructor.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    Elide e4 = e3;                        <span style="color:#008000">// Calls Elide&#39;s copy constructor.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    Elide e5 = Elide(Elide(MakeElide())); <span style="color:#008000">// Calls Elide&#39;s constructor only. Copy elision occurs.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>}
+</span></span></code></pre></div><p>Here&rsquo;s the output.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>        Elide::Elide();
+</span></span><span style="display:flex;"><span>        Elide::Elide();
+</span></span><span style="display:flex;"><span>        Elide::Elide(const Elide&amp; e);
+</span></span><span style="display:flex;"><span>        Elide::Elide(const Elide&amp; e);
+</span></span><span style="display:flex;"><span>        Elide::Elide();
+</span></span><span style="display:flex;"><span>        Elide::~Elide();
+</span></span><span style="display:flex;"><span>        Elide::~Elide();
+</span></span><span style="display:flex;"><span>        Elide::~Elide();
+</span></span><span style="display:flex;"><span>        Elide::~Elide();
+</span></span><span style="display:flex;"><span>        Elide::~Elide();
+</span></span></code></pre></div><h3 id="explanation">Explanation</h3>
 <p>So, what happened here? Let&rsquo;s take the statements one at a time.</p>
 <p>This runs the default constructor only. No surprises here.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">    Elide e1;
-</code></pre></div><p>This also runs the default constructor only, even though it looks as if copy construction is taking place. Instead, we
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    Elide e1;
+</span></span></code></pre></div><p>This also runs the default constructor only, even though it looks as if copy construction is taking place. Instead, we
 get copy-elision because <em>&ldquo;the intializer expression is a prvalue value of the same class type (ignoring
-cv-qualification) as the variable type.&quot;</em></p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">    Elide e2(MakeElide());
-</code></pre></div><p>Here we get to see the copy constructor run, because <code>e2</code> is an lvalue, not a prvalue. The requirements for mandatory
+cv-qualification) as the variable type.&rdquo;</em></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    Elide e2(MakeElide());
+</span></span></code></pre></div><p>Here we get to see the copy constructor run, because <code>e2</code> is an lvalue, not a prvalue. The requirements for mandatory
 copy elision are not met.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">    Elide e3(e2);
-</code></pre></div><p>It runs here again, because <code>Elide</code> doesn&rsquo;t have a copy assignment operator, and <code>e3</code> is an lvalue
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    Elide e3(e2);
+</span></span></code></pre></div><p>It runs here again, because <code>Elide</code> doesn&rsquo;t have a copy assignment operator, and <code>e3</code> is an lvalue
 expression.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">    Elide e4 = e3;
-</code></pre></div><p>This runs the default constructor only, and it runs it just once, because copy elision is taking place.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">    Elide e5 = Elide(Elide(MakeElide()));
-</code></pre></div><p>Finally, the destructors run when <code>e1</code>, <code>e2</code>, <code>e3</code>, <code>e4</code>, and <code>e5</code> go out of scope.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">        Elide::~Elide();
-        Elide::~Elide();
-        Elide::~Elide();
-        Elide::~Elide();
-        Elide::~Elide();
-</code></pre></div><h2 id="behind-the-scenes">Behind the scenes</h2>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    Elide e4 = e3;
+</span></span></code></pre></div><p>This runs the default constructor only, and it runs it just once, because copy elision is taking place.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    Elide e5 = Elide(Elide(MakeElide()));
+</span></span></code></pre></div><p>Finally, the destructors run when <code>e1</code>, <code>e2</code>, <code>e3</code>, <code>e4</code>, and <code>e5</code> go out of scope.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>        Elide::~Elide();
+</span></span><span style="display:flex;"><span>        Elide::~Elide();
+</span></span><span style="display:flex;"><span>        Elide::~Elide();
+</span></span><span style="display:flex;"><span>        Elide::~Elide();
+</span></span><span style="display:flex;"><span>        Elide::~Elide();
+</span></span></code></pre></div><h2 id="behind-the-scenes">Behind the scenes</h2>
 <p>We can look at the generated assembly language to understand this better. In the example below,
 <a href="https://gcc.gnu.org">gcc</a> has been used to compile it to x64, with no optimization otherwise there wouldn&rsquo;t be much to
 see.</p>
 <p>Here&rsquo;s some code that initializes <code>e2</code> with the result of a call to <code>MakeElide()</code>.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">    Elide e2(MakeElide());                <span style="color:#008000">// Calls Elide&#39;s constructor only. Copy elision occurs.
-</span></code></pre></div><p>Here&rsquo;s the corresponding assembly language. It is using the <a href="https://en.wikipedia.org/wiki/X86_calling_conventions#cite_note-AMD-25">System V AMD64 ABI</a>,
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    Elide e2(MakeElide());                <span style="color:#008000">// Calls Elide&#39;s constructor only. Copy elision occurs.
+</span></span></span></code></pre></div><p>Here&rsquo;s the corresponding assembly language. It is using the <a href="https://en.wikipedia.org/wiki/X86_calling_conventions#cite_note-AMD-25">System V AMD64 ABI</a>,
 so the first (hidden) parameter to <code>MakeElide()</code> is passed in <code>RDI</code>. Looking at the following code, when <code>MakeElide()</code> is called, <code>RDI</code>
 holds the address of <code>e2</code>.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-asm" data-lang="asm">    lea     rax, [rbp-40]   <span style="color:#008000">; put the address of e2 into RAX
-</span><span style="color:#008000"></span>    mov     rdi, rax        <span style="color:#008000">; copy it into RDI, so now RDI holds the address of e2
-</span><span style="color:#008000"></span>    call    MakeElide()     <span style="color:#008000">; call MakeElide
-</span></code></pre></div><p>Here&rsquo;s <code>MakeElide()</code> itself.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Elide MakeElide()
-{
-    <span style="color:#00f">return</span> Elide();
-}
-</code></pre></div><p>Here&rsquo;s the corresponding assembly language. When <code>MakeElide()</code> was called above, <code>RDI</code> held the address of <code>e2</code>, and
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span>    lea     rax, [rbp-40]   <span style="color:#008000">; put the address of e2 into RAX
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    mov     rdi, rax        <span style="color:#008000">; copy it into RDI, so now RDI holds the address of e2
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    call    MakeElide()     <span style="color:#008000">; call MakeElide
+</span></span></span></code></pre></div><p>Here&rsquo;s <code>MakeElide()</code> itself.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>Elide MakeElide()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> Elide();
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Here&rsquo;s the corresponding assembly language. When <code>MakeElide()</code> was called above, <code>RDI</code> held the address of <code>e2</code>, and
 here <code>MakeElide()</code> passes it through to <code>Elide</code>&rsquo;s constructor.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-asm" data-lang="asm">    push    rbp
-    mov     rbp, rsp
-    sub     rsp, 16    
-    mov     QWORD PTR [rbp-8], rdi  <span style="color:#008000">; save RDI (which holds the address of e2) on the stack
-</span><span style="color:#008000"></span>    mov     rax, QWORD PTR [rbp-8]
-    mov     rdi, rax                <span style="color:#008000">; RDI holds the address of e2
-</span><span style="color:#008000"></span>    call    Elide::Elide()          <span style="color:#008000">; call Elide&#39;s constructor with RDI holding the address of e2
-</span><span style="color:#008000"></span>    mov     rax, QWORD PTR [rbp-8]
-    leave
-    ret          
-</code></pre></div><p>Here&rsquo;s <code>Elide</code>&rsquo;s constructor.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Elide::Elide() : x_{1}, y_{2}, z_{3}
-{
-    std::cout &lt;&lt; <span style="color:#a31515">&#34;</span><span style="color:#a31515">\t</span><span style="color:#a31515">Elide::Elide();</span><span style="color:#a31515">\n</span><span style="color:#a31515">&#34;</span>; <span style="color:#008000">// Side effect.
-</span><span style="color:#008000"></span>}
-</code></pre></div><p>Here&rsquo;s the corresponding assembly language. As before, <code>RDI</code> holds the address of <code>e2</code>, so the following code directly
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span>    push    rbp
+</span></span><span style="display:flex;"><span>    mov     rbp, rsp
+</span></span><span style="display:flex;"><span>    sub     rsp, 16    
+</span></span><span style="display:flex;"><span>    mov     QWORD PTR [rbp-8], rdi  <span style="color:#008000">; save RDI (which holds the address of e2) on the stack
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    mov     rax, QWORD PTR [rbp-8]
+</span></span><span style="display:flex;"><span>    mov     rdi, rax                <span style="color:#008000">; RDI holds the address of e2
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    call    Elide::Elide()          <span style="color:#008000">; call Elide&#39;s constructor with RDI holding the address of e2
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    mov     rax, QWORD PTR [rbp-8]
+</span></span><span style="display:flex;"><span>    leave
+</span></span><span style="display:flex;"><span>    ret          
+</span></span></code></pre></div><p>Here&rsquo;s <code>Elide</code>&rsquo;s constructor.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>Elide::Elide() : x_{1}, y_{2}, z_{3}
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    std::cout &lt;&lt; <span style="color:#a31515">&#34;</span><span style="color:#a31515">\t</span><span style="color:#a31515">Elide::Elide();</span><span style="color:#a31515">\n</span><span style="color:#a31515">&#34;</span>; <span style="color:#008000">// Side effect.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>}
+</span></span></code></pre></div><p>Here&rsquo;s the corresponding assembly language. As before, <code>RDI</code> holds the address of <code>e2</code>, so the following code directly
 initializes <code>e2</code> and <strong>no copy takes place</strong>. In other words, the copy was elided.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-asm" data-lang="asm">    push    rbp
-    mov     rbp, rsp
-    sub     rsp, 16
-    mov     QWORD PTR [rbp-8], rdi  <span style="color:#008000">; save RDI on the stack
-</span><span style="color:#008000"></span>    
-    <span style="color:#008000">; x_{1}
-</span><span style="color:#008000"></span>    mov     rax, QWORD PTR [rbp-8]
-    mov     DWORD PTR [rax], 1
-    
-    <span style="color:#008000">; y_{2}
-</span><span style="color:#008000"></span>    mov     rax, QWORD PTR [rbp-8]
-    mov     DWORD PTR [rax<span style="">+</span>4], 2
-    
-    <span style="color:#008000">; z_{3}
-</span><span style="color:#008000"></span>    mov     rax, QWORD PTR [rbp-8]  <span style="color:#008000">; z_{3}
-</span><span style="color:#008000"></span>    mov     DWORD PTR [rax<span style="">+</span>8], 3 
-
-    <span style="color:#008000">; std::cout &lt;&lt; &#34;\t...&#34;;
-</span><span style="color:#008000"></span>    mov     esi, OFFSET FLAT:.LC0
-    mov     edi, OFFSET FLAT:_ZSt4cout
-    call    std::basic_ostream<span style="">&lt;</span>char, std::char_traits<span style="">&lt;</span>char<span style="">&gt;</span> <span style="">&gt;&amp;</span> std::operator<span style="">&lt;&lt;</span> <span style="">&lt;</span>std::char_traits<span style="">&lt;</span>char<span style="">&gt;</span> <span style="">&gt;</span>(std::basic_ostream<span style="">&lt;</span>char, std::char_traits<span style="">&lt;</span>char<span style="">&gt;</span> <span style="">&gt;&amp;</span>, char const*)   
-
-    nop
-    leave
-    ret
-<span style="">}</span>
-</code></pre></div><h2 id="conclusion">Conclusion</h2>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span>    push    rbp
+</span></span><span style="display:flex;"><span>    mov     rbp, rsp
+</span></span><span style="display:flex;"><span>    sub     rsp, 16
+</span></span><span style="display:flex;"><span>    mov     QWORD PTR [rbp-8], rdi  <span style="color:#008000">; save RDI on the stack
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">; x_{1}
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    mov     rax, QWORD PTR [rbp-8]
+</span></span><span style="display:flex;"><span>    mov     DWORD PTR [rax], 1
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">; y_{2}
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    mov     rax, QWORD PTR [rbp-8]
+</span></span><span style="display:flex;"><span>    mov     DWORD PTR [rax<span style="">+</span>4], 2
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">; z_{3}
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    mov     rax, QWORD PTR [rbp-8]  <span style="color:#008000">; z_{3}
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    mov     DWORD PTR [rax<span style="">+</span>8], 3 
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">; std::cout &lt;&lt; &#34;\t...&#34;;
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    mov     esi, OFFSET FLAT:.LC0
+</span></span><span style="display:flex;"><span>    mov     edi, OFFSET FLAT:_ZSt4cout
+</span></span><span style="display:flex;"><span>    call    std::basic_ostream<span style="">&lt;</span>char, std::char_traits<span style="">&lt;</span>char<span style="">&gt;</span> <span style="">&gt;&amp;</span> std::operator<span style="">&lt;&lt;</span> <span style="">&lt;</span>std::char_traits<span style="">&lt;</span>char<span style="">&gt;</span> <span style="">&gt;</span>(std::basic_ostream<span style="">&lt;</span>char, std::char_traits<span style="">&lt;</span>char<span style="">&gt;</span> <span style="">&gt;&amp;</span>, char const*)   
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    nop
+</span></span><span style="display:flex;"><span>    leave
+</span></span><span style="display:flex;"><span>    ret
+</span></span><span style="display:flex;"><span><span style="">}</span>
+</span></span></code></pre></div><h2 id="conclusion">Conclusion</h2>
 <p>Mandatory copy elision makes pass-by-value in C++ practical and efficient as it allows objects to be constructed
 directly by omitting the copy. Without it, pass-by-value would be far less practical.</p>
 <h1 id="further-reading">Further Reading</h1>
@@ -223,6 +223,8 @@ directly by omitting the copy. Without it, pass-by-value would be far less pract
         <div>
             <ul>
                 
+                <li><a href="/posts/2023/04/07/time-to-learn-rust/">It&#39;s time to learn Rust</a></li>
+                
                 <li><a href="/posts/2022/02/27/mandatory-copy-elision/">Mandatory Copy Elision in C&#43;&#43;</a></li>
                 
                 <li><a href="/posts/2022/01/23/ctad/">CTAD and Deduction Guides in C&#43;&#43;</a></li>
@@ -231,14 +233,12 @@ directly by omitting the copy. Without it, pass-by-value would be far less pract
                 
                 <li><a href="/posts/2021/12/30/monotonic_buffer_resource/">Bump Allocators in C&#43;&#43;</a></li>
                 
-                <li><a href="/posts/2021/12/28/allocators/">Polymorphic Allocators in C&#43;&#43;</a></li>
-                
             </ul>
         </div>
     </div>
 </aside> 
 	<footer class="wrapper">
-	<p>&copy; 2022 <a href="https://badlydrawnrod.github.io">Badly Drawn Rod</a></p>
+	<p>&copy; 2023 <a href="https://badlydrawnrod.github.io">Badly Drawn Rod</a></p>
 </footer>
 
 </body>

@@ -43,25 +43,25 @@
 <p>When I did finally learn C (ironically, to write a LISP interpreter), I had mixed feelings about it. I liked the sparse syntax. It was refreshingly brief, and used braces rather than cumbersome keywords, so it made Modula-2 look astonishingly verbose. My fingers certainly enjoyed the break - there are only so many times that you can type <code>IMPLEMENTATION MODULE</code> before you get RSI.</p>
 <p>This wasn&rsquo;t the ANSI C / C90 that many people seem to associate with C. No, this was old school <a href="https://archive.org/details/TheCProgrammingLanguageFirstEdition">K&amp;R C</a>, and it had some quirky syntax around function definitions in which argument names were separated from their types.</p>
 <p>Here&rsquo;s a simple example - a function that adds two integers. Note that the default return type is <code>int</code>.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C">add(x, y)               <span style="color:#008000">/* name ( argument list, if any ) */</span>
-<span style="color:#2b91af">int</span> x;                  <span style="color:#008000">/* argument declaration */</span>
-<span style="color:#2b91af">int</span> y;                  <span style="color:#008000">/* argument declaration */</span>
-{
-    <span style="color:#008000">/* Local variables, if any, had to go here, before the code. This is also
-</span><span style="color:#008000">     * true of ANSI-C / C90.
-</span><span style="color:#008000">     */</span>
-    <span style="color:#00f">return</span> x + y;
-}
-</code></pre></div><p>Here&rsquo;s its modern-day equivalent.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C"><span style="color:#2b91af">int</span> add(<span style="color:#2b91af">int</span> x, <span style="color:#2b91af">int</span> y)
-{
-    <span style="color:#00f">return</span> x + y;
-}
-</code></pre></div><p>There were no function prototypes. If you had a function that returned a non-<code>int</code> value then you&rsquo;d have to declare it, but you didn&rsquo;t declare the arguments. To illustrate, here&rsquo;s a declaration for <code>atof()</code> in K&amp;R C.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C"><span style="color:#2b91af">double</span> atof();  <span style="color:#008000">/* Convert a string to a double. */</span>
-</code></pre></div><p>And here&rsquo;s the modern day equivalent.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C"><span style="color:#2b91af">double</span> atof(<span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* str);   <span style="color:#008000">// Convert a string to a double.
-</span></code></pre></div><p>So, C was brief, and easy on the fingers, but it was primitive, even compared to its current incarnation. By comparison, Modula-2 was verbose, and stricter about types, but it had two features that C didn&rsquo;t, namely modules and co-routines.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C" data-lang="C"><span style="display:flex;"><span>add(x, y)               <span style="color:#008000">/* name ( argument list, if any ) */</span>
+</span></span><span style="display:flex;"><span><span style="color:#2b91af">int</span> x;                  <span style="color:#008000">/* argument declaration */</span>
+</span></span><span style="display:flex;"><span><span style="color:#2b91af">int</span> y;                  <span style="color:#008000">/* argument declaration */</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">/* Local variables, if any, had to go here, before the code. This is also
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">     * true of ANSI-C / C90.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">     */</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> x + y;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Here&rsquo;s its modern-day equivalent.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C" data-lang="C"><span style="display:flex;"><span><span style="color:#2b91af">int</span> add(<span style="color:#2b91af">int</span> x, <span style="color:#2b91af">int</span> y)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> x + y;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>There were no function prototypes. If you had a function that returned a non-<code>int</code> value then you&rsquo;d have to declare it, but you didn&rsquo;t declare the arguments. To illustrate, here&rsquo;s a declaration for <code>atof()</code> in K&amp;R C.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C" data-lang="C"><span style="display:flex;"><span><span style="color:#2b91af">double</span> atof();  <span style="color:#008000">/* Convert a string to a double. */</span>
+</span></span></code></pre></div><p>And here&rsquo;s the modern day equivalent.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C" data-lang="C"><span style="display:flex;"><span><span style="color:#2b91af">double</span> atof(<span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* str);   <span style="color:#008000">// Convert a string to a double.
+</span></span></span></code></pre></div><p>So, C was brief, and easy on the fingers, but it was primitive, even compared to its current incarnation. By comparison, Modula-2 was verbose, and stricter about types, but it had two features that C didn&rsquo;t, namely modules and co-routines.</p>
 <p>Modula-2 let you define a public interface to your code in a <code>DEFINITION MODULE</code> (it was a truly shouty language) and implement it in a private <code>IMPLEMENTATION MODULE</code>. Many modern programming languages have modules, but this was the first time that I&rsquo;d seen them, and had naively expected that they would become a feature of most modern programming languages.</p>
 <p>C, by comparison, had (and has) the very primitive notion of using a preprocessor to include header files. This preprocessor isn&rsquo;t part of the C language. It is just a way of including more text into the thing that you&rsquo;re compiling, partly so that you don&rsquo;t have to keep typing common declarations over and over.</p>
 <p>Co-routines are less easy to describe succinctly, but if you&rsquo;ve used a language with <code>async</code>/<code>await</code>, or used <code>yield</code> in Python then you&rsquo;ve probably got the idea.</p>
@@ -90,6 +90,8 @@
         <div>
             <ul>
                 
+                <li><a href="/posts/2023/04/07/time-to-learn-rust/">It&#39;s time to learn Rust</a></li>
+                
                 <li><a href="/posts/2022/02/27/mandatory-copy-elision/">Mandatory Copy Elision in C&#43;&#43;</a></li>
                 
                 <li><a href="/posts/2022/01/23/ctad/">CTAD and Deduction Guides in C&#43;&#43;</a></li>
@@ -98,14 +100,12 @@
                 
                 <li><a href="/posts/2021/12/30/monotonic_buffer_resource/">Bump Allocators in C&#43;&#43;</a></li>
                 
-                <li><a href="/posts/2021/12/28/allocators/">Polymorphic Allocators in C&#43;&#43;</a></li>
-                
             </ul>
         </div>
     </div>
 </aside> 
 	<footer class="wrapper">
-	<p>&copy; 2022 <a href="https://badlydrawnrod.github.io">Badly Drawn Rod</a></p>
+	<p>&copy; 2023 <a href="https://badlydrawnrod.github.io">Badly Drawn Rod</a></p>
 </footer>
 
 </body>

@@ -47,7 +47,7 @@
 <p>In <strong>CLion</strong>, go to <em>File -&gt; Open&hellip;</em> and open your project by selecting the directory containing <code>CMakeLists.txt</code>.</p>
 <p><strong>CLion</strong> will detect <code>CMakeLists.txt</code> and attempt to load it with <strong>CMake</strong>, using its default toolchain. On my Windows dev box, this is <strong>MinGW</strong>, so that&rsquo;s what I&rsquo;m showing here.</p>
 <p>If <strong>CLion</strong> already has a <strong>MinGW</strong> toolchain configured, then you will see output similar to the following in its <strong>CMake</strong> tool window.</p>
-<pre tabindex="0"><code>C:\Users\Rod\AppData\Local\JetBrains\Toolbox\apps\CLion\ch-0\201.6668.126\bin\cmake\win\bin\cmake.exe -DCMAKE_BUILD_TYPE=Debug -G &quot;CodeBlocks - MinGW Makefiles&quot; D:\Users\Rod\Projects\c++\demo
+<pre tabindex="0"><code>C:\Users\Rod\AppData\Local\JetBrains\Toolbox\apps\CLion\ch-0\201.6668.126\bin\cmake\win\bin\cmake.exe -DCMAKE_BUILD_TYPE=Debug -G &#34;CodeBlocks - MinGW Makefiles&#34; D:\Users\Rod\Projects\c++\demo
 -- The C compiler identification is GNU 7.1.0
 -- The CXX compiler identification is GNU 7.1.0
 -- Check for working C compiler: D:/Tools/emsdk/mingw/7.1.0_64bit/bin/gcc.exe
@@ -116,7 +116,7 @@
 
 <p>Click <em>OK</em> to dismiss the window.</p>
 <p><strong>CMake</strong> will run yet again. This time it should show the same output that you would see if you had you run <code>emcmake</code> from the command line.</p>
-<pre tabindex="0"><code>C:\Users\Rod\AppData\Local\JetBrains\Toolbox\apps\CLion\ch-0\201.6668.126\bin\cmake\win\bin\cmake.exe -DCMAKE_BUILD_TYPE=Debug -G &quot;CodeBlocks - MinGW Makefiles&quot; D:\Users\Rod\Projects\c++\demo
+<pre tabindex="0"><code>C:\Users\Rod\AppData\Local\JetBrains\Toolbox\apps\CLion\ch-0\201.6668.126\bin\cmake\win\bin\cmake.exe -DCMAKE_BUILD_TYPE=Debug -G &#34;CodeBlocks - MinGW Makefiles&#34; D:\Users\Rod\Projects\c++\demo
 -- Emscripten detected
 -- Build type: CMAKE_BUILD_TYPE=Debug
 -- Compiler: CMAKE_CXX_COMPILER=D:/Tools/emsdk/upstream/emscripten/em++.bat
@@ -137,27 +137,27 @@
 <h2 id="run-your-emscripten-project">Run your Emscripten project</h2>
 <p>To run your <strong>Emscripten</strong> project, you will need a web server that knows how to serve <code>.wasm</code> files as <code>application/wasm</code>.</p>
 <p>Here&rsquo;s a short <strong>Python</strong> script that will do the job.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#008000">#!/usr/bin/env python3</span>
-<span style="color:#008000"># Serve &#34;.wasm&#34; files as &#34;application/wasm&#34;.</span>
-
-<span style="color:#00f">from</span> http.server <span style="color:#00f">import</span> SimpleHTTPRequestHandler, test
-
-<span style="color:#00f">if</span> __name__ == <span style="color:#a31515">&#39;__main__&#39;</span>:
-    <span style="color:#00f">import</span> argparse
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument(<span style="color:#a31515">&#39;--bind&#39;</span>, <span style="color:#a31515">&#39;-b&#39;</span>, default=<span style="color:#a31515">&#39;&#39;</span>, metavar=<span style="color:#a31515">&#39;ADDRESS&#39;</span>,
-                        help=<span style="color:#a31515">&#39;Specify alternate bind address &#39;</span>
-                             <span style="color:#a31515">&#39;[default: all interfaces]&#39;</span>)
-    parser.add_argument(<span style="color:#a31515">&#39;port&#39;</span>, action=<span style="color:#a31515">&#39;store&#39;</span>,
-                        default=8000, type=int,
-                        nargs=<span style="color:#a31515">&#39;?&#39;</span>,
-                        help=<span style="color:#a31515">&#39;Specify alternate port [default: 8000]&#39;</span>)
-    args = parser.parse_args()
-    handler_class = SimpleHTTPRequestHandler
-    handler_class.extensions_map[<span style="color:#a31515">&#34;.wasm&#34;</span>] = <span style="color:#a31515">&#34;application/wasm&#34;</span>
-    test(HandlerClass=handler_class, port=args.port, bind=args.bind)
-</code></pre></div><p>If you want to run it from within <strong>CLion</strong> then&hellip;</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#008000">#!/usr/bin/env python3</span>
+</span></span><span style="display:flex;"><span><span style="color:#008000"># Serve &#34;.wasm&#34; files as &#34;application/wasm&#34;.</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">from</span> http.server <span style="color:#00f">import</span> SimpleHTTPRequestHandler, test
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">if</span> __name__ == <span style="color:#a31515">&#39;__main__&#39;</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">import</span> argparse
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    parser = argparse.ArgumentParser()
+</span></span><span style="display:flex;"><span>    parser.add_argument(<span style="color:#a31515">&#39;--bind&#39;</span>, <span style="color:#a31515">&#39;-b&#39;</span>, default=<span style="color:#a31515">&#39;&#39;</span>, metavar=<span style="color:#a31515">&#39;ADDRESS&#39;</span>,
+</span></span><span style="display:flex;"><span>                        help=<span style="color:#a31515">&#39;Specify alternate bind address &#39;</span>
+</span></span><span style="display:flex;"><span>                             <span style="color:#a31515">&#39;[default: all interfaces]&#39;</span>)
+</span></span><span style="display:flex;"><span>    parser.add_argument(<span style="color:#a31515">&#39;port&#39;</span>, action=<span style="color:#a31515">&#39;store&#39;</span>,
+</span></span><span style="display:flex;"><span>                        default=8000, type=int,
+</span></span><span style="display:flex;"><span>                        nargs=<span style="color:#a31515">&#39;?&#39;</span>,
+</span></span><span style="display:flex;"><span>                        help=<span style="color:#a31515">&#39;Specify alternate port [default: 8000]&#39;</span>)
+</span></span><span style="display:flex;"><span>    args = parser.parse_args()
+</span></span><span style="display:flex;"><span>    handler_class = SimpleHTTPRequestHandler
+</span></span><span style="display:flex;"><span>    handler_class.extensions_map[<span style="color:#a31515">&#34;.wasm&#34;</span>] = <span style="color:#a31515">&#34;application/wasm&#34;</span>
+</span></span><span style="display:flex;"><span>    test(HandlerClass=handler_class, port=args.port, bind=args.bind)
+</span></span></code></pre></div><p>If you want to run it from within <strong>CLion</strong> then&hellip;</p>
 <ul>
 <li>Add it to your <strong>CLion</strong> project.</li>
 <li>Right-click on it in the <em>Project</em> view, and select <em>Create &lsquo;run_server&rsquo;&hellip;</em></li>
@@ -193,6 +193,8 @@
         <div>
             <ul>
                 
+                <li><a href="/posts/2023/04/07/time-to-learn-rust/">It&#39;s time to learn Rust</a></li>
+                
                 <li><a href="/posts/2022/02/27/mandatory-copy-elision/">Mandatory Copy Elision in C&#43;&#43;</a></li>
                 
                 <li><a href="/posts/2022/01/23/ctad/">CTAD and Deduction Guides in C&#43;&#43;</a></li>
@@ -201,14 +203,12 @@
                 
                 <li><a href="/posts/2021/12/30/monotonic_buffer_resource/">Bump Allocators in C&#43;&#43;</a></li>
                 
-                <li><a href="/posts/2021/12/28/allocators/">Polymorphic Allocators in C&#43;&#43;</a></li>
-                
             </ul>
         </div>
     </div>
 </aside> 
 	<footer class="wrapper">
-	<p>&copy; 2022 <a href="https://badlydrawnrod.github.io">Badly Drawn Rod</a></p>
+	<p>&copy; 2023 <a href="https://badlydrawnrod.github.io">Badly Drawn Rod</a></p>
 </footer>
 
 </body>

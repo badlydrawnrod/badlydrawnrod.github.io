@@ -65,100 +65,100 @@
 </ol>
 <h2 id="code">Code</h2>
 <p><strong>ConsoleMode.h</strong></p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#00f">#pragma once
-</span><span style="color:#00f">#include</span> <span style="color:#00f">&lt;Windows.h&gt;</span><span style="color:#00f">
-</span><span style="color:#00f"></span>
-<span style="color:#00f">class</span> <span style="color:#2b91af">ConsoleMode</span>
-{
-<span style="color:#00f">public</span>:
-    <span style="color:#008000">// Valid console devices.
-</span><span style="color:#008000"></span>    <span style="color:#00f">enum</span> <span style="color:#00f">class</span> <span style="color:#2b91af">Device</span> : DWORD
-    {
-        input = STD_INPUT_HANDLE,
-        output = STD_OUTPUT_HANDLE,
-        error = STD_ERROR_HANDLE
-    };
-
-    <span style="color:#00f">explicit</span> ConsoleMode(Device device, DWORD flagsToSet, DWORD flagsToClear);
-    ~ConsoleMode();
-
-    ConsoleMode(<span style="color:#00f">const</span> ConsoleMode&amp;) = <span style="color:#00f">delete</span>;
-    ConsoleMode&amp; <span style="color:#00f">operator</span>=(<span style="color:#00f">const</span> ConsoleMode&amp;) = <span style="color:#00f">delete</span>;
-
-    ConsoleMode(ConsoleMode&amp;&amp;) = <span style="color:#00f">delete</span>;
-    ConsoleMode&amp; <span style="color:#00f">operator</span>=(ConsoleMode&amp;&amp;) = <span style="color:#00f">delete</span>;
-
-<span style="color:#00f">private</span>:
-    Device device_;
-    DWORD previousMode_;
-};
-</code></pre></div><hr>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#00f">#pragma once
+</span></span></span><span style="display:flex;"><span><span style="color:#00f">#include</span> <span style="color:#00f">&lt;Windows.h&gt;</span><span style="color:#00f">
+</span></span></span><span style="display:flex;"><span><span style="color:#00f"></span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">class</span> <span style="color:#2b91af">ConsoleMode</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span><span style="color:#00f">public</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Valid console devices.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">enum</span> <span style="color:#00f">class</span> <span style="color:#2b91af">Device</span> : DWORD
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        input = STD_INPUT_HANDLE,
+</span></span><span style="display:flex;"><span>        output = STD_OUTPUT_HANDLE,
+</span></span><span style="display:flex;"><span>        error = STD_ERROR_HANDLE
+</span></span><span style="display:flex;"><span>    };
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">explicit</span> ConsoleMode(Device device, DWORD flagsToSet, DWORD flagsToClear);
+</span></span><span style="display:flex;"><span>    ~ConsoleMode();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    ConsoleMode(<span style="color:#00f">const</span> ConsoleMode&amp;) = <span style="color:#00f">delete</span>;
+</span></span><span style="display:flex;"><span>    ConsoleMode&amp; <span style="color:#00f">operator</span>=(<span style="color:#00f">const</span> ConsoleMode&amp;) = <span style="color:#00f">delete</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    ConsoleMode(ConsoleMode&amp;&amp;) = <span style="color:#00f">delete</span>;
+</span></span><span style="display:flex;"><span>    ConsoleMode&amp; <span style="color:#00f">operator</span>=(ConsoleMode&amp;&amp;) = <span style="color:#00f">delete</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">private</span>:
+</span></span><span style="display:flex;"><span>    Device device_;
+</span></span><span style="display:flex;"><span>    DWORD previousMode_;
+</span></span><span style="display:flex;"><span>};
+</span></span></code></pre></div><hr>
 <p><strong>ConsoleMode.cpp</strong></p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#00f">#include</span> <span style="color:#00f">&#34;ConsoleMode.h&#34;</span><span style="color:#00f">
-</span><span style="color:#00f"></span>
-<span style="color:#00f">#include</span> <span style="color:#00f">&lt;stdexcept&gt;</span><span style="color:#00f">
-</span><span style="color:#00f"></span>
-ConsoleMode::ConsoleMode(Device device, DWORD flagsToSet, DWORD flagsToClear) : device_{device}
-{
-    <span style="color:#008000">// Get a handle to the console device.
-</span><span style="color:#008000"></span>    HANDLE handle = GetStdHandle(<span style="color:#00f">static_cast</span>&lt;DWORD&gt;(device_));
-    <span style="color:#00f">if</span> (handle == <span style="color:#00f">nullptr</span> || handle == INVALID_HANDLE_VALUE)
-    {
-        <span style="color:#00f">throw</span> std::runtime_error(<span style="color:#a31515">&#34;Can&#39;t get handle to console device&#34;</span>);
-    }
-
-    <span style="color:#008000">// Get the current console mode and save it.
-</span><span style="color:#008000"></span>    DWORD currentMode = 0;
-    <span style="color:#00f">if</span> (!GetConsoleMode(handle, &amp;currentMode))
-    {
-        <span style="color:#00f">throw</span> std::runtime_error(<span style="color:#a31515">&#34;Can&#39;t get current console device mode&#34;</span>);
-    }
-    previousMode_ = currentMode;
-
-    <span style="color:#008000">// Change the console mode.
-</span><span style="color:#008000"></span>    currentMode |= flagsToSet;
-    currentMode &amp;= ~flagsToClear;
-    <span style="color:#00f">if</span> (!SetConsoleMode(handle, currentMode))
-    {
-        <span style="color:#008000">// It failed, so do our best to put it back how it was before bailing.
-</span><span style="color:#008000"></span>        SetConsoleMode(handle, previousMode_);
-        <span style="color:#00f">throw</span> std::runtime_error(<span style="color:#a31515">&#34;Can&#39;t set console mode&#34;</span>);
-    }
-}
-
-ConsoleMode::~ConsoleMode()
-{
-    <span style="color:#008000">// Restore the console mode to its previous value.
-</span><span style="color:#008000"></span>    HANDLE handle = GetStdHandle(<span style="color:#00f">static_cast</span>&lt;DWORD&gt;(device_));
-    <span style="color:#00f">if</span> (handle != <span style="color:#00f">nullptr</span> &amp;&amp; handle != INVALID_HANDLE_VALUE)
-    {
-        SetConsoleMode(handle, previousMode_);
-    }
-}
-</code></pre></div><h2 id="usage">Usage</h2>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#00f">#include</span> <span style="color:#00f">&#34;ConsoleMode.h&#34;</span><span style="color:#00f">
-</span><span style="color:#00f"></span>
-<span style="color:#00f">#include</span> <span style="color:#00f">&lt;Windows.h&gt;</span><span style="color:#00f">
-</span><span style="color:#00f"></span>
-<span style="color:#2b91af">void</span> RunConsoleModeApp()
-{
-    <span style="color:#008000">// Change the console input mode. The console input mode will be restored when inputMode
-</span><span style="color:#008000"></span>    <span style="color:#008000">// goes out of scope.
-</span><span style="color:#008000"></span>    ConsoleMode inputMode(
-        ConsoleMode::Device::input,
-        ENABLE_WINDOW_INPUT | ENABLE_EXTENDED_FLAGS | ENABLE_MOUSE_INPUT,
-        ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_QUICK_EDIT_MODE);
-
-    <span style="color:#008000">// Change the console output mode. The console output mode will be restored when outputMode
-</span><span style="color:#008000"></span>    <span style="color:#008000">// goes out of scope.
-</span><span style="color:#008000"></span>    ConsoleMode outputMode(
-        ConsoleMode::Device::output,
-        ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN,
-        0);
-    
-    <span style="color:#008000">// Put your console mode application here. Who knows, maybe it&#39;ll be the next NetHack.
-</span><span style="color:#008000"></span>}
-</code></pre></div>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#00f">#include</span> <span style="color:#00f">&#34;ConsoleMode.h&#34;</span><span style="color:#00f">
+</span></span></span><span style="display:flex;"><span><span style="color:#00f"></span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">#include</span> <span style="color:#00f">&lt;stdexcept&gt;</span><span style="color:#00f">
+</span></span></span><span style="display:flex;"><span><span style="color:#00f"></span>
+</span></span><span style="display:flex;"><span>ConsoleMode::ConsoleMode(Device device, DWORD flagsToSet, DWORD flagsToClear) : device_{device}
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Get a handle to the console device.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    HANDLE handle = GetStdHandle(<span style="color:#00f">static_cast</span>&lt;DWORD&gt;(device_));
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (handle == <span style="color:#00f">nullptr</span> || handle == INVALID_HANDLE_VALUE)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">throw</span> std::runtime_error(<span style="color:#a31515">&#34;Can&#39;t get handle to console device&#34;</span>);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Get the current console mode and save it.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    DWORD currentMode = 0;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (!GetConsoleMode(handle, &amp;currentMode))
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">throw</span> std::runtime_error(<span style="color:#a31515">&#34;Can&#39;t get current console device mode&#34;</span>);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    previousMode_ = currentMode;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Change the console mode.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    currentMode |= flagsToSet;
+</span></span><span style="display:flex;"><span>    currentMode &amp;= ~flagsToClear;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (!SetConsoleMode(handle, currentMode))
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// It failed, so do our best to put it back how it was before bailing.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        SetConsoleMode(handle, previousMode_);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">throw</span> std::runtime_error(<span style="color:#a31515">&#34;Can&#39;t set console mode&#34;</span>);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>ConsoleMode::~ConsoleMode()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Restore the console mode to its previous value.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    HANDLE handle = GetStdHandle(<span style="color:#00f">static_cast</span>&lt;DWORD&gt;(device_));
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (handle != <span style="color:#00f">nullptr</span> &amp;&amp; handle != INVALID_HANDLE_VALUE)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        SetConsoleMode(handle, previousMode_);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h2 id="usage">Usage</h2>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#00f">#include</span> <span style="color:#00f">&#34;ConsoleMode.h&#34;</span><span style="color:#00f">
+</span></span></span><span style="display:flex;"><span><span style="color:#00f"></span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">#include</span> <span style="color:#00f">&lt;Windows.h&gt;</span><span style="color:#00f">
+</span></span></span><span style="display:flex;"><span><span style="color:#00f"></span>
+</span></span><span style="display:flex;"><span><span style="color:#2b91af">void</span> RunConsoleModeApp()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Change the console input mode. The console input mode will be restored when inputMode
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#008000">// goes out of scope.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    ConsoleMode inputMode(
+</span></span><span style="display:flex;"><span>        ConsoleMode::Device::input,
+</span></span><span style="display:flex;"><span>        ENABLE_WINDOW_INPUT | ENABLE_EXTENDED_FLAGS | ENABLE_MOUSE_INPUT,
+</span></span><span style="display:flex;"><span>        ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_QUICK_EDIT_MODE);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Change the console output mode. The console output mode will be restored when outputMode
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#008000">// goes out of scope.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    ConsoleMode outputMode(
+</span></span><span style="display:flex;"><span>        ConsoleMode::Device::output,
+</span></span><span style="display:flex;"><span>        ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN,
+</span></span><span style="display:flex;"><span>        0);
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Put your console mode application here. Who knows, maybe it&#39;ll be the next NetHack.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>}
+</span></span></code></pre></div>
         </div>
         
         <div>
@@ -185,6 +185,8 @@ ConsoleMode::~ConsoleMode()
         <div>
             <ul>
                 
+                <li><a href="/posts/2023/04/07/time-to-learn-rust/">It&#39;s time to learn Rust</a></li>
+                
                 <li><a href="/posts/2022/02/27/mandatory-copy-elision/">Mandatory Copy Elision in C&#43;&#43;</a></li>
                 
                 <li><a href="/posts/2022/01/23/ctad/">CTAD and Deduction Guides in C&#43;&#43;</a></li>
@@ -193,14 +195,12 @@ ConsoleMode::~ConsoleMode()
                 
                 <li><a href="/posts/2021/12/30/monotonic_buffer_resource/">Bump Allocators in C&#43;&#43;</a></li>
                 
-                <li><a href="/posts/2021/12/28/allocators/">Polymorphic Allocators in C&#43;&#43;</a></li>
-                
             </ul>
         </div>
     </div>
 </aside> 
 	<footer class="wrapper">
-	<p>&copy; 2022 <a href="https://badlydrawnrod.github.io">Badly Drawn Rod</a></p>
+	<p>&copy; 2023 <a href="https://badlydrawnrod.github.io">Badly Drawn Rod</a></p>
 </footer>
 
 </body>

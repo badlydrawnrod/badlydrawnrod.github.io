@@ -77,31 +77,31 @@ as null unless an initial buffer is provided.</li>
 <p>In this example, the resource is given an initial buffer and the buffer size. When the
 initial buffer is exhausted then the resource will use the resource returned by
 <code>std::pmr::get_default_resource()</code> to get more memory.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">std::array&lt;std::byte, 2048&gt; buffer;                                    <span style="color:#008000">// The initial buffer.
-</span><span style="color:#008000"></span>std::pmr::monotonic_buffer_resource mbr{buffer.data(), buffer.size()}; <span style="color:#008000">// The resource itself.
-</span></code></pre></div><p>Here&rsquo;s a polymorphic allocator that uses the monotonic buffer resource, and a vector that uses the
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>std::array&lt;std::byte, 2048&gt; buffer;                                    <span style="color:#008000">// The initial buffer.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>std::pmr::monotonic_buffer_resource mbr{buffer.data(), buffer.size()}; <span style="color:#008000">// The resource itself.
+</span></span></span></code></pre></div><p>Here&rsquo;s a polymorphic allocator that uses the monotonic buffer resource, and a vector that uses the
 allocator. Note that <code>std::pmr::vector&lt;T&gt;</code> is an alias for <code>std::vector&lt;T, std::pmr::polymorphic_allocator&lt;T&gt;&gt;</code>.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">std::pmr::polymorphic_allocator&lt;<span style="color:#2b91af">int</span>&gt; bumpAllocator{&amp;mbr}; <span style="color:#008000">// An allocator using the resource.
-</span><span style="color:#008000"></span>std::pmr::vector&lt;<span style="color:#2b91af">int</span>&gt; vectorOfInt{bumpAllocator};         <span style="color:#008000">// A vector using the allocator.
-</span></code></pre></div><h2 id="using-an-upstream-resource">Using an upstream resource</h2>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>std::pmr::polymorphic_allocator&lt;<span style="color:#2b91af">int</span>&gt; bumpAllocator{&amp;mbr}; <span style="color:#008000">// An allocator using the resource.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>std::pmr::vector&lt;<span style="color:#2b91af">int</span>&gt; vectorOfInt{bumpAllocator};         <span style="color:#008000">// A vector using the allocator.
+</span></span></span></code></pre></div><h2 id="using-an-upstream-resource">Using an upstream resource</h2>
 <p>Here&rsquo;s a resource, <code>upstream</code>, backed by a vector that is used as its initial buffer. When this
 resource&rsquo;s buffer is exhausted then it will use <code>std::pmr::get_default_resource()</code> to get more
 memory.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">std::vector&lt;std::byte&gt; bigBuffer{65536};
-std::pmr::monotonic_buffer_resource upstream{bigBuffer.data(), bigBuffer.size()};
-</code></pre></div><p>Here&rsquo;s another resource that uses <code>upstream</code> as its upstream resource. When this resource is
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>std::vector&lt;std::byte&gt; bigBuffer{65536};
+</span></span><span style="display:flex;"><span>std::pmr::monotonic_buffer_resource upstream{bigBuffer.data(), bigBuffer.size()};
+</span></span></code></pre></div><p>Here&rsquo;s another resource that uses <code>upstream</code> as its upstream resource. When this resource is
 exhausted then it will use the <code>upstream</code> resource to get more memory.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">std::pmr::monotonic_buffer_resource mbr{&amp;upstream};
-</code></pre></div><h2 id="limiting-allocations-with-the-null-memory-resource">Limiting allocations with the null memory resource</h2>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>std::pmr::monotonic_buffer_resource mbr{&amp;upstream};
+</span></span></code></pre></div><h2 id="limiting-allocations-with-the-null-memory-resource">Limiting allocations with the null memory resource</h2>
 <p>Sometimes you may want <strong>to limit the amount of memory that a resource can use</strong>. Do this by
 setting its upstream resource to the return value of 
 <a href="https://en.cppreference.com/w/cpp/memory/null_memory_resource"><code>std::pmr::null_memory_resource()</code></a>.</p>
 <p>When the resource in the following example is exhausted then it will attempt to use the null memory
 resource to get more memory, but that will throw <code>std::bad_alloc</code>.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">std::vector&lt;std::byte&gt; bigBuffer{65536};
-std::pmr::monotonic_buffer_resource mbr{bigBuffer.data(), bigBuffer.size(),
-                                        std::pmr::null_memory_resource()};
-</code></pre></div><h1 id="tradeoffs">Tradeoffs</h1>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>std::vector&lt;std::byte&gt; bigBuffer{65536};
+</span></span><span style="display:flex;"><span>std::pmr::monotonic_buffer_resource mbr{bigBuffer.data(), bigBuffer.size(),
+</span></span><span style="display:flex;"><span>                                        std::pmr::null_memory_resource()};
+</span></span></code></pre></div><h1 id="tradeoffs">Tradeoffs</h1>
 <p>There are tradeoffs to using bump allocators, particularly with containers that resize. Consider
 <code>std::vector</code>&rsquo;s behaviour when it exceeds its capacity. It allocates new memory, copies its contents
 to that memory, and deallocates the old memory.</p>
@@ -110,50 +110,50 @@ to that memory, and deallocates the old memory.</p>
 <p>Take the following example. There&rsquo;s a 128 byte buffer that has capacity for 32 x 4-byte integers,
 a bump allocator backed by a memory resource that uses the buffer, and a vector that uses the bump
 allocator.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#008000">// A buffer with capacity for 32 x 4-byte integers.
-</span><span style="color:#008000"></span>std::array&lt;std::byte, 128&gt; tinyBuffer;
-
-<span style="color:#008000">// A memory resource that uses it, with its upstream resource set to the null resource.
-</span><span style="color:#008000"></span>std::pmr::monotonic_buffer_resource tinyMbr{tinyBuffer.data(), tinyBuffer.size(),
-                                            std::pmr::null_memory_resource()};
-
-<span style="color:#008000">// A bump allocator, backed by the memory resource.
-</span><span style="color:#008000"></span>std::pmr::polymorphic_allocator&lt;<span style="color:#2b91af">int</span>&gt; bumpAllocator{&amp;tinyMbr};
-
-<span style="color:#008000">// A vector that uses the bump allocator.
-</span><span style="color:#008000"></span>std::pmr::vector&lt;<span style="color:#2b91af">int</span>&gt; v{bumpAllocator};
-</code></pre></div><p>The following code will throw <code>std::bad_alloc</code> long before the vector contains 32 integers.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#00f">try</span>
-{
-    <span style="color:#00f">for</span> (<span style="color:#00f">auto</span> i = 0; i &lt; 32; i++)
-    {
-        <span style="color:#008000">// Show the offset of the vector&#39;s data relative to the start of the buffer, the
-</span><span style="color:#008000"></span>        <span style="color:#008000">// vector&#39;s size and capacity, and what we&#39;re trying to push onto it.
-</span><span style="color:#008000"></span>        std::ptrdiff_t offset = <span style="color:#00f">reinterpret_cast</span>&lt;std::byte*&gt;(v.data()) - tinyBuffer.data();
-        std::cout &lt;&lt; <span style="color:#a31515">&#34;offset &#34;</span> &lt;&lt; (offset &gt; 0 ? offset : 0) &lt;&lt; <span style="color:#a31515">&#34;, size &#34;</span> &lt;&lt; v.size()
-                    &lt;&lt; <span style="color:#a31515">&#34;, capacity &#34;</span> &lt;&lt; v.capacity() &lt;&lt; <span style="color:#a31515">&#34; - pushing &#34;</span> &lt;&lt; i &lt;&lt; <span style="color:#a31515">&#39;\n&#39;</span>;
-
-        v.push_back(i);
-    }
-}
-<span style="color:#00f">catch</span> (<span style="color:#00f">const</span> std::bad_alloc&amp;)
-{
-    std::cout &lt;&lt; <span style="color:#a31515">&#34;Earth shattering kaboom!</span><span style="color:#a31515">\n</span><span style="color:#a31515">&#34;</span>;
-}
-</code></pre></div><p>Here&rsquo;s the output from running the above with a 32-bit debug build. It threw <code>std::bad_alloc</code> when
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#008000">// A buffer with capacity for 32 x 4-byte integers.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>std::array&lt;std::byte, 128&gt; tinyBuffer;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#008000">// A memory resource that uses it, with its upstream resource set to the null resource.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>std::pmr::monotonic_buffer_resource tinyMbr{tinyBuffer.data(), tinyBuffer.size(),
+</span></span><span style="display:flex;"><span>                                            std::pmr::null_memory_resource()};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#008000">// A bump allocator, backed by the memory resource.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>std::pmr::polymorphic_allocator&lt;<span style="color:#2b91af">int</span>&gt; bumpAllocator{&amp;tinyMbr};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#008000">// A vector that uses the bump allocator.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>std::pmr::vector&lt;<span style="color:#2b91af">int</span>&gt; v{bumpAllocator};
+</span></span></code></pre></div><p>The following code will throw <code>std::bad_alloc</code> long before the vector contains 32 integers.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#00f">try</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">for</span> (<span style="color:#00f">auto</span> i = 0; i &lt; 32; i++)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Show the offset of the vector&#39;s data relative to the start of the buffer, the
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#008000">// vector&#39;s size and capacity, and what we&#39;re trying to push onto it.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        std::ptrdiff_t offset = <span style="color:#00f">reinterpret_cast</span>&lt;std::byte*&gt;(v.data()) - tinyBuffer.data();
+</span></span><span style="display:flex;"><span>        std::cout &lt;&lt; <span style="color:#a31515">&#34;offset &#34;</span> &lt;&lt; (offset &gt; 0 ? offset : 0) &lt;&lt; <span style="color:#a31515">&#34;, size &#34;</span> &lt;&lt; v.size()
+</span></span><span style="display:flex;"><span>                    &lt;&lt; <span style="color:#a31515">&#34;, capacity &#34;</span> &lt;&lt; v.capacity() &lt;&lt; <span style="color:#a31515">&#34; - pushing &#34;</span> &lt;&lt; i &lt;&lt; <span style="color:#a31515">&#39;\n&#39;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        v.push_back(i);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#00f">catch</span> (<span style="color:#00f">const</span> std::bad_alloc&amp;)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    std::cout &lt;&lt; <span style="color:#a31515">&#34;Earth shattering kaboom!</span><span style="color:#a31515">\n</span><span style="color:#a31515">&#34;</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Here&rsquo;s the output from running the above with a 32-bit debug build. It threw <code>std::bad_alloc</code> when
 trying to push the 10th element onto the vector.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">offset 0, size 0, capacity 0 - pushing 0
-offset 8, size 1, capacity 1 - pushing 1
-offset 12, size 2, capacity 2 - pushing 2
-offset 20, size 3, capacity 3 - pushing 3
-offset 32, size 4, capacity 4 - pushing 4
-offset 48, size 5, capacity 6 - pushing 5
-offset 48, size 6, capacity 6 - pushing 6
-offset 72, size 7, capacity 9 - pushing 7
-offset 72, size 8, capacity 9 - pushing 8
-offset 72, size 9, capacity 9 - pushing 9
-Earth shattering kaboom!
-</code></pre></div><p>Used in this manner, the 128-byte buffer will never be able to hold 32 x 4-byte integers, because
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>offset 0, size 0, capacity 0 - pushing 0
+</span></span><span style="display:flex;"><span>offset 8, size 1, capacity 1 - pushing 1
+</span></span><span style="display:flex;"><span>offset 12, size 2, capacity 2 - pushing 2
+</span></span><span style="display:flex;"><span>offset 20, size 3, capacity 3 - pushing 3
+</span></span><span style="display:flex;"><span>offset 32, size 4, capacity 4 - pushing 4
+</span></span><span style="display:flex;"><span>offset 48, size 5, capacity 6 - pushing 5
+</span></span><span style="display:flex;"><span>offset 48, size 6, capacity 6 - pushing 6
+</span></span><span style="display:flex;"><span>offset 72, size 7, capacity 9 - pushing 7
+</span></span><span style="display:flex;"><span>offset 72, size 8, capacity 9 - pushing 8
+</span></span><span style="display:flex;"><span>offset 72, size 9, capacity 9 - pushing 9
+</span></span><span style="display:flex;"><span>Earth shattering kaboom!
+</span></span></code></pre></div><p>Used in this manner, the 128-byte buffer will never be able to hold 32 x 4-byte integers, because
 the vector resizes each time it exceeds its capacity. The vector is using a bump allocator, so the
 memory that it used previously is never deallocated and is never reused. The next point of
 allocation always moves forward - that&rsquo;s one of the reasons why bump allocators are so quick.</p>
@@ -179,16 +179,16 @@ because allocations have a cost in terms of time, but for a bump allocator the c
 because allocations are not deallocated.</p>
 <p>Taking the same example, and adding a single line before the loop to reserve capacity in the vector,
 the number of allocations is greatly reduced because the vector never has to resize.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">v.reserve(32); <span style="color:#008000">// Give the vector an initial capacity of 32.
-</span></code></pre></div><p>Here&rsquo;s the output from running the modified code with a 32-bit release build. This time there has
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>v.reserve(32); <span style="color:#008000">// Give the vector an initial capacity of 32.
+</span></span></span></code></pre></div><p>Here&rsquo;s the output from running the modified code with a 32-bit release build. This time there has
 been just one allocation, and the entire buffer has been successfully populated with 32 x 4-byte
 integers.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">offset 0, size 0, capacity 32 - pushing 0
-offset 0, size 1, capacity 32 - pushing 1
-...
-offset 0, size 30, capacity 32 - pushing 30
-offset 0, size 31, capacity 32 - pushing 31
-</code></pre></div><h1 id="futher-reading">Futher Reading</h1>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>offset 0, size 0, capacity 32 - pushing 0
+</span></span><span style="display:flex;"><span>offset 0, size 1, capacity 32 - pushing 1
+</span></span><span style="display:flex;"><span>...
+</span></span><span style="display:flex;"><span>offset 0, size 30, capacity 32 - pushing 30
+</span></span><span style="display:flex;"><span>offset 0, size 31, capacity 32 - pushing 31
+</span></span></code></pre></div><h1 id="futher-reading">Futher Reading</h1>
 <ul>
 <li><a href="https://en.cppreference.com/w/cpp/memory">Dynamic Memory Management</a> on cppreference.com</li>
 <li><a href="https://twitter.com/TheGingerBill">gingerBill</a>&rsquo;s series <a href="https://www.gingerbill.org/series/memory-allocation-strategies/">on Memory Allocation Strategies</a></li>
@@ -219,6 +219,8 @@ offset 0, size 31, capacity 32 - pushing 31
         <div>
             <ul>
                 
+                <li><a href="/posts/2023/04/07/time-to-learn-rust/">It&#39;s time to learn Rust</a></li>
+                
                 <li><a href="/posts/2022/02/27/mandatory-copy-elision/">Mandatory Copy Elision in C&#43;&#43;</a></li>
                 
                 <li><a href="/posts/2022/01/23/ctad/">CTAD and Deduction Guides in C&#43;&#43;</a></li>
@@ -227,14 +229,12 @@ offset 0, size 31, capacity 32 - pushing 31
                 
                 <li><a href="/posts/2021/12/30/monotonic_buffer_resource/">Bump Allocators in C&#43;&#43;</a></li>
                 
-                <li><a href="/posts/2021/12/28/allocators/">Polymorphic Allocators in C&#43;&#43;</a></li>
-                
             </ul>
         </div>
     </div>
 </aside> 
 	<footer class="wrapper">
-	<p>&copy; 2022 <a href="https://badlydrawnrod.github.io">Badly Drawn Rod</a></p>
+	<p>&copy; 2023 <a href="https://badlydrawnrod.github.io">Badly Drawn Rod</a></p>
 </footer>
 
 </body>

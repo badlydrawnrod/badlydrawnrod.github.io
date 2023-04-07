@@ -40,71 +40,71 @@
 <h2 id="install-cmake">Install CMake</h2>
 <p>It may seem obvious, but first you should install <strong>CMake</strong> and make sure it&rsquo;s on your path.</p>
 <p>Here&rsquo;s how to install <strong>CMake</strong> with the <a href="https://scoop.sh"><strong>scoop</strong></a> package manager.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:&gt; scoop install cmake
-</code></pre></div><p>Similarly, here&rsquo;s how to install <strong>CMake</strong> with the <a href="https://chocolatey.org"><strong>chocolatey</strong></a> package manager.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:&gt; choco install -y cmake --installargs &#39;ADD_CMAKE_TO_PATH=User&#39;
-</code></pre></div><p>The <code>--installargs 'ADD_CMAKE_TO_PATH=User</code> parameter tells <strong>chocolatey</strong> to add the <strong>CMake</strong> binaries such as <code>cmake</code> and <code>cmake-gui</code> to your path.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>C:&gt; scoop install cmake
+</span></span></code></pre></div><p>Similarly, here&rsquo;s how to install <strong>CMake</strong> with the <a href="https://chocolatey.org"><strong>chocolatey</strong></a> package manager.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>C:&gt; choco install -y cmake --installargs &#39;ADD_CMAKE_TO_PATH=User&#39;
+</span></span></code></pre></div><p>The <code>--installargs 'ADD_CMAKE_TO_PATH=User</code> parameter tells <strong>chocolatey</strong> to add the <strong>CMake</strong> binaries such as <code>cmake</code> and <code>cmake-gui</code> to your path.</p>
 <p>If you don&rsquo;t have <strong>chocolatey</strong> or <strong>scoop</strong>, or don&rsquo;t want to use them, then there are other options such as downloading and installing <a href="https://cmake.org/install/">CMake binaries</a>.</p>
 <h2 id="set-your-emscripten-environment">Set your Emscripten environment</h2>
 <p>Run <code>emsdk_env.bat</code> from the <strong>Emscripten SDK</strong> to set the environment.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:&gt; D:\Tools\emsdk\emsdk_env.bat
-Adding directories to PATH:
-PATH += D:\Tools\emsdk
-PATH += D:\Tools\emsdk\upstream\emscripten
-PATH += D:\Tools\emsdk\node\12.9.1_64bit\bin
-PATH += D:\Tools\emsdk\java\8.152_64bit\bin
-
-Setting environment variables:
-EMSDK = D:/Tools/emsdk
-EM_CONFIG = C:\Users\Rod\.emscripten
-EMSDK_NODE = D:\Tools\emsdk\node\12.9.1_64bit\bin\node.exe
-EMSDK_PYTHON = D:\Tools\emsdk\python\3.7.4-pywin32_64bit\python.exe
-JAVA_HOME = D:\Tools\emsdk\java\8.152_64bit
-</code></pre></div><h2 id="run-cmake-via-emcmake">Run CMake via <code>emcmake</code></h2>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>C:&gt; D:\Tools\emsdk\emsdk_env.bat
+</span></span><span style="display:flex;"><span>Adding directories to PATH:
+</span></span><span style="display:flex;"><span>PATH += D:\Tools\emsdk
+</span></span><span style="display:flex;"><span>PATH += D:\Tools\emsdk\upstream\emscripten
+</span></span><span style="display:flex;"><span>PATH += D:\Tools\emsdk\node\12.9.1_64bit\bin
+</span></span><span style="display:flex;"><span>PATH += D:\Tools\emsdk\java\8.152_64bit\bin
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Setting environment variables:
+</span></span><span style="display:flex;"><span>EMSDK = D:/Tools/emsdk
+</span></span><span style="display:flex;"><span>EM_CONFIG = C:\Users\Rod\.emscripten
+</span></span><span style="display:flex;"><span>EMSDK_NODE = D:\Tools\emsdk\node\12.9.1_64bit\bin\node.exe
+</span></span><span style="display:flex;"><span>EMSDK_PYTHON = D:\Tools\emsdk\python\3.7.4-pywin32_64bit\python.exe
+</span></span><span style="display:flex;"><span>JAVA_HOME = D:\Tools\emsdk\java\8.152_64bit
+</span></span></code></pre></div><h2 id="run-cmake-via-emcmake">Run CMake via <code>emcmake</code></h2>
 <p>Use <code>emcmake cmake</code> to run <strong>CMake</strong> with an environment suitable for <strong>Emscripten</strong>.</p>
 <h3 id="using-ninja">Using Ninja</h3>
 <p>If you want to use <a href="https://ninja-build.org"><strong>Ninja</strong></a> to build your projects, then run the following from your source directory:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:&gt; emcmake cmake . -B cmake-build-emscripten -G Ninja
-</code></pre></div><p>This runs <code>cmake</code> via the <code>emcmake</code> tool which sets up the environment that <strong>CMake</strong> needs to use <strong>Emscripten</strong>. It uses <code>-G Ninja</code> to tell <strong>CMake</strong> to generate a build pipeline that uses <strong>Ninja</strong>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>C:&gt; emcmake cmake . -B cmake-build-emscripten -G Ninja
+</span></span></code></pre></div><p>This runs <code>cmake</code> via the <code>emcmake</code> tool which sets up the environment that <strong>CMake</strong> needs to use <strong>Emscripten</strong>. It uses <code>-G Ninja</code> to tell <strong>CMake</strong> to generate a build pipeline that uses <strong>Ninja</strong>.</p>
 <p>If you don&rsquo;t have <strong>Ninja</strong> installed, then the easiest way of getting it is to use a package manager such as <strong>chocolatey</strong> or <strong>scoop</strong>.</p>
 <p>Here&rsquo;s how to install <strong>Ninja</strong> with <a href="https://scoop.sh"><strong>scoop</strong></a>.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:&gt; scoop install ninja
-</code></pre></div><p>And here&rsquo;s how to install <strong>Ninja</strong> with <a href="https://chocolatey.org"><strong>chocolatey</strong></a>.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:&gt; choco install ninja
-</code></pre></div><h3 id="using-makefiles">Using Makefiles</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>C:&gt; scoop install ninja
+</span></span></code></pre></div><p>And here&rsquo;s how to install <strong>Ninja</strong> with <a href="https://chocolatey.org"><strong>chocolatey</strong></a>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>C:&gt; choco install ninja
+</span></span></code></pre></div><h3 id="using-makefiles">Using Makefiles</h3>
 <p>If you would like to use traditional makefiles to build your projects, then run the following from your source directory:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:&gt; emcmake cmake . -B cmake-build-emscripten -G &#34;CodeBlocks - MinGW Makefiles&#34;
-</code></pre></div><p>This runs <code>cmake</code> via the <code>emcmake</code> tool which sets up the environment that <strong>CMake</strong> needs to use <strong>Emscripten</strong>. It uses <code>-G &quot;CodeBlocks - MinGW Makefiles&quot;</code> to tell <strong>CMake</strong> to generate a build pipeline that uses makefiles.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>C:&gt; emcmake cmake . -B cmake-build-emscripten -G &#34;CodeBlocks - MinGW Makefiles&#34;
+</span></span></code></pre></div><p>This runs <code>cmake</code> via the <code>emcmake</code> tool which sets up the environment that <strong>CMake</strong> needs to use <strong>Emscripten</strong>. It uses <code>-G &quot;CodeBlocks - MinGW Makefiles&quot;</code> to tell <strong>CMake</strong> to generate a build pipeline that uses makefiles.</p>
 <p>If you don&rsquo;t have a suitable <strong>make</strong> program installed (<strong>nmake</strong> is <em>not</em> suitable), then one of the simplest ways to get one is to add <strong>MinGW</strong> to your Emscripten SDK.</p>
 <p>Run <code>emsdk list</code> to get a list of available packages, and find <code>mingw</code> in the output.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:&gt; emsdk list
-...
-The following precompiled tool packages are available for download:
-     *     releases-upstream-048cf9424790cc525a7ea6da340820aae226f3b9-64bit     INSTALLED
-     *     releases-upstream-3b8cff670e9233a6623563add831647e8689a86b-64bit     INSTALLED
-           releases-fastcomp-048cf9424790cc525a7ea6da340820aae226f3b9-64bit
-           releases-fastcomp-3b8cff670e9233a6623563add831647e8689a86b-64bit
-           fastcomp-clang-e1.38.30-64bit
-           fastcomp-clang-e1.38.31-64bit
-           node-4.1.1-64bit
-           node-8.9.1-64bit
-     *     node-12.9.1-64bit            INSTALLED
-           python-2.7.13.1-64bit
-           python-3.7.4-64bit
-     *     python-3.7.4-pywin32-64bit   INSTALLED
-     *     java-8.152-64bit             INSTALLED
-           emscripten-1.38.30
-           emscripten-1.38.31
-           gnu-2.5.4
-           mingw-7.1.0-64bit
-</code></pre></div><p>Install and activate <code>mingw</code>.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:&gt; emsdk install mingw-7.1.0-64bit
-C:&gt; emsdk activate mingw-7.1.0-64bit
-</code></pre></div><p>This gets you a <code>make</code> program. The <strong>MinGW</strong> version of this is called <code>mingw32-make</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>C:&gt; emsdk list
+</span></span><span style="display:flex;"><span>...
+</span></span><span style="display:flex;"><span>The following precompiled tool packages are available for download:
+</span></span><span style="display:flex;"><span>     *     releases-upstream-048cf9424790cc525a7ea6da340820aae226f3b9-64bit     INSTALLED
+</span></span><span style="display:flex;"><span>     *     releases-upstream-3b8cff670e9233a6623563add831647e8689a86b-64bit     INSTALLED
+</span></span><span style="display:flex;"><span>           releases-fastcomp-048cf9424790cc525a7ea6da340820aae226f3b9-64bit
+</span></span><span style="display:flex;"><span>           releases-fastcomp-3b8cff670e9233a6623563add831647e8689a86b-64bit
+</span></span><span style="display:flex;"><span>           fastcomp-clang-e1.38.30-64bit
+</span></span><span style="display:flex;"><span>           fastcomp-clang-e1.38.31-64bit
+</span></span><span style="display:flex;"><span>           node-4.1.1-64bit
+</span></span><span style="display:flex;"><span>           node-8.9.1-64bit
+</span></span><span style="display:flex;"><span>     *     node-12.9.1-64bit            INSTALLED
+</span></span><span style="display:flex;"><span>           python-2.7.13.1-64bit
+</span></span><span style="display:flex;"><span>           python-3.7.4-64bit
+</span></span><span style="display:flex;"><span>     *     python-3.7.4-pywin32-64bit   INSTALLED
+</span></span><span style="display:flex;"><span>     *     java-8.152-64bit             INSTALLED
+</span></span><span style="display:flex;"><span>           emscripten-1.38.30
+</span></span><span style="display:flex;"><span>           emscripten-1.38.31
+</span></span><span style="display:flex;"><span>           gnu-2.5.4
+</span></span><span style="display:flex;"><span>           mingw-7.1.0-64bit
+</span></span></code></pre></div><p>Install and activate <code>mingw</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>C:&gt; emsdk install mingw-7.1.0-64bit
+</span></span><span style="display:flex;"><span>C:&gt; emsdk activate mingw-7.1.0-64bit
+</span></span></code></pre></div><p>This gets you a <code>make</code> program. The <strong>MinGW</strong> version of this is called <code>mingw32-make</code>.</p>
 <h2 id="build-your-project">Build your project</h2>
 <p>Now you should be able to build your project by running <code>cmake --build</code> followed by the name of the directory that <strong>CMake</strong> created earlier.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:&gt; cmake --build cmake-build-emscripten
-</code></pre></div><p>If you opted to use makefiles and got an error saying that it can&rsquo;t find <code>mingw32-make</code>, then re-run <code>emsdk-env.bat</code> to add the <strong>MinGW</strong> binaries to the path and try again.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>C:&gt; cmake --build cmake-build-emscripten
+</span></span></code></pre></div><p>If you opted to use makefiles and got an error saying that it can&rsquo;t find <code>mingw32-make</code>, then re-run <code>emsdk-env.bat</code> to add the <strong>MinGW</strong> binaries to the path and try again.</p>
         </div>
         
         <div>
@@ -133,6 +133,8 @@ C:&gt; emsdk activate mingw-7.1.0-64bit
         <div>
             <ul>
                 
+                <li><a href="/posts/2023/04/07/time-to-learn-rust/">It&#39;s time to learn Rust</a></li>
+                
                 <li><a href="/posts/2022/02/27/mandatory-copy-elision/">Mandatory Copy Elision in C&#43;&#43;</a></li>
                 
                 <li><a href="/posts/2022/01/23/ctad/">CTAD and Deduction Guides in C&#43;&#43;</a></li>
@@ -141,14 +143,12 @@ C:&gt; emsdk activate mingw-7.1.0-64bit
                 
                 <li><a href="/posts/2021/12/30/monotonic_buffer_resource/">Bump Allocators in C&#43;&#43;</a></li>
                 
-                <li><a href="/posts/2021/12/28/allocators/">Polymorphic Allocators in C&#43;&#43;</a></li>
-                
             </ul>
         </div>
     </div>
 </aside> 
 	<footer class="wrapper">
-	<p>&copy; 2022 <a href="https://badlydrawnrod.github.io">Badly Drawn Rod</a></p>
+	<p>&copy; 2023 <a href="https://badlydrawnrod.github.io">Badly Drawn Rod</a></p>
 </footer>
 
 </body>

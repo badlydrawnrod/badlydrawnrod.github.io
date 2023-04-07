@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>It&#39;s time to learn Rust</title>
+	
+	
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu|Lora">
+	<link rel="stylesheet" href="/css/style.css">
+	
+</head>
+<body>
+	<header class="wrapper">
+    <nav>
+        <a href="https://badlydrawnrod.github.io">Home</a>
+        <ul>
+			
+            
+            <li><a href="/page/about/">About</a></li>
+            
+            <li><a href="/posts/">All posts</a></li>
+            
+        </ul>
+    </nav>
+    
+</header>
+	
+<main class="wrapper">
+    <article>
+        <p></p>
+        
+        <div class="date">7 April, 2023</div>
+        
+        <div>
+            <h1 id="its-time-to-learn-rust">It&rsquo;s time to learn Rust</h1>
+<h2 id="the-challenge---100-days-of-rust">The challenge - 100 days of Rust</h2>
+<p>On the 4th of December, 2022, I set myself the following challenge.</p>
+<blockquote>
+<p><em>Do at least 15 minutes of programming in Rust every day for 100 days. Today is the 4th of December so that will take me to the 14th of March.</em></p>
+</blockquote>
+<h2 id="background">Background</h2>
+<p>I&rsquo;d played with Rust about 3 or 4 years ago and had written a couple of command line tools with it. I&rsquo;d started learning it because I&rsquo;d heard a lot of buzz about a new systems programming language and I was curious to see how it stacked up against C++. I&rsquo;d go as far as to say that I really liked the language, but I wondered if it was worth my while to continue with it.</p>
+<p>When I heard that a team at my work was evaluating Rust and had even used it for a shipping project, I contacted them, curious to know what they thought. However, it was discouraging to find that there was little appetite for future investment in Rust and that there wouldn&rsquo;t be any more Rust projects for the time being.</p>
+<p>If you don&rsquo;t work on a large, established codebase then you might ask why a company would be so conservative, but the reality is that companies have to make decisions as to where they invest their time and money. The team perceived Rust as having an immature ecosystem and very few advantages over C++. There are some very experienced C++ devs where I work, and with modern C++, RAII, and a wealth of experience it&rsquo;s a lot harder to fall into some of the more obvious safety traps.</p>
+<p>When people tout the benefits of Rust they often emphasise safety over other language features, and with good reason as Rust certainly has a good story around safety. However, persuading experienced C++ developers to switch to Rust on safety alone is a tough sell when those people have been shipping high quality software in C++ for over 20 years. It also doesn&rsquo;t help that Rust has a steep learning curve. You may be able to convince a Python developer to choose Rust over C or C++, as C is rather spartan and C++ is a notoriously tricky language to learn. However, you&rsquo;re going to have a far tougher time persuading an experienced C++ developer that Rust is worth their time.</p>
+<h2 id="the-perspective-from-a-c-developer">The perspective from a C++ developer</h2>
+<p>If you want to persuade seasoned C++ developers to use Rust then you need to use more convincing arguments.</p>
+<p>If you&rsquo;re a Rust developer then this may sound like heresy. But put yourself in their shoes. Imagine yourself writing Rust 20 years from now&hellip;</p>
+<p>Your company is established and profitable, you&rsquo;re good at what you do, the language keeps evolving and you continue to keep your multi-million line codebase up to date&hellip; and then you keep hearing about a new language whose advocates say that it solves a problem that you&rsquo;ve largely overcome. And the path to that language isn&rsquo;t straightforward. Would you switch to this new, untried language on their say-so? Of course you wouldn&rsquo;t. Why would you?</p>
+<p>This sounds negative. It isn&rsquo;t meant to be. But it&rsquo;s the perspective that you&rsquo;ll get from many experienced C++ developers who successfully make a living shipping high quality software to millions of customer devices.</p>
+<h2 id="why-give-rust-a-second-chance">Why give Rust a second chance?</h2>
+<p>So with that in mind, why give Rust another try? Why not continue to improve my C++ skills?</p>
+<p>Well, I <em>do</em> continue to improve my C++ skills. I&rsquo;m paid to write C++ and I also teach C++ to interns, so I need to be able to explain it. Sometimes I play around with newer C++ features in my free time. And I take advantage of learning days at work to learn more. That&rsquo;s how I learned how to use C++20&rsquo;s ranges and views.</p>
+<p>But I would be a poor developer if I closed my mind to new ideas. If I&rsquo;d stuck with the first language that I coded in professionally then I&rsquo;d still be a Fortran programmer. Yes, I am old. The interns that I teach are younger than my daughter (who is a nascent C++ developer) but I&rsquo;ve made a good career out of investing in my skills and keeping them relevant.</p>
+<p>And as part of that journey, I came back to reconsidering Rust. The question in front of me was, <em>&ldquo;Should I invest my free time into learning Rust?&rdquo;</em></p>
+<p>There were two things that answered that question for me.</p>
+<h3 id="1-its-a-nice-language">1) It&rsquo;s a nice language</h3>
+<p>Firstly, I had liked Rust when I&rsquo;d tried it previously. Its move semantics took me a little time to understand as they&rsquo;re different to C++&rsquo;s move semantics. And yes, we all know that Rust&rsquo;s borrow checker can be frustrating at first. But I remembered liking traits very much, and I liked the expressive simplicity of Rust&rsquo;s iterators. And I appreciated that Rust allowed me to write code with the same peformance characteristics as C++ but without the need for the tacit knowledge of language trivia that is required for C++. What other language has a 275 page book on initialization!</p>
+<blockquote>
+<p><strong>Hint:</strong> If you want to persuade C++ developers to use Rust, show them traits. They&rsquo;re awesome.</p>
+</blockquote>
+<h3 id="2-the-market-for-rust-developers-is-growing">2) The market for Rust developers is growing</h3>
+<p>Secondly, there&rsquo;s the question of employability. Are there jobs out there for Rust developers? Well, yes, it certainly looks that way, and if the stories in the media about major companies switching to Rust rather than C++ for new projects are anything to go by then it looks like there will be many more opportunities in the future.</p>
+<blockquote>
+<p><strong>Note:</strong> I&rsquo;ve no doubt that one or two of those stories need to be taken with a pinch of salt, because in some of the comparisons they make of Rust vs C++ it is hard to recognise the C++ that they&rsquo;re talking about. It&rsquo;s the equivalent of arguing that another spoken language is better than modern English, but making all the comparisons against Shakespeare&rsquo;s English.</p>
+</blockquote>
+<p>Taking all of that into account, I think we&rsquo;re now reaching the point where Rust has picked up enough traction for there to be a good market for Rust developers.</p>
+<h2 id="conclusion">Conclusion</h2>
+<p>In short, Rust is enjoyable to use and there are Rust jobs out there. It&rsquo;s time to learn Rust.</p>
+        </div>
+        
+        <div>
+            <ul id="tags">
+                
+                <li><a href="/tags/c&#43;&#43;">c&#43;&#43;</a></li>
+                
+                <li><a href="/tags/rust">rust</a></li>
+                
+            </ul>
+        </div>
+        
+    </article>
+</main>
+<aside class="wrapper">
+    <div>
+        <div>
+            <h3>Latest Posts</h3>
+        </div>
+        <div>
+            <ul>
+                
+                <li><a href="/posts/2023/04/07/time-to-learn-rust/">It&#39;s time to learn Rust</a></li>
+                
+                <li><a href="/posts/2022/02/27/mandatory-copy-elision/">Mandatory Copy Elision in C&#43;&#43;</a></li>
+                
+                <li><a href="/posts/2022/01/23/ctad/">CTAD and Deduction Guides in C&#43;&#43;</a></li>
+                
+                <li><a href="/posts/2022/01/16/git/">Forgettable Git</a></li>
+                
+                <li><a href="/posts/2021/12/30/monotonic_buffer_resource/">Bump Allocators in C&#43;&#43;</a></li>
+                
+            </ul>
+        </div>
+    </div>
+</aside> 
+	<footer class="wrapper">
+	<p>&copy; 2023 <a href="https://badlydrawnrod.github.io">Badly Drawn Rod</a></p>
+</footer>
+
+</body>
+</html>

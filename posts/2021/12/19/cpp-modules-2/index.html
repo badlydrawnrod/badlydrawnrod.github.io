@@ -47,175 +47,175 @@ and not get a name clash.</p>
 <p><em>tl;dr - it works with MSVC and gcc, but fails with clang.</em></p>
 <p>Here&rsquo;s a module interface unit, <code>Module1.cpp</code>. It exports a function <code>Module1Greeter()</code> which calls
 an unexported function <code>SayHello()</code>.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#008000">// Module1.cpp
-</span><span style="color:#008000"></span><span style="color:#00f">export</span> module Module1;
-
-<span style="color:#00f">export</span> <span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* Module1Greeter();
-
-<span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* SayHello()
-{
-    <span style="color:#00f">return</span> <span style="color:#a31515">&#34;Hello from Module1&#34;</span>;
-}
-
-<span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* Module1Greeter()
-{
-    <span style="color:#00f">return</span> SayHello();
-}
-</code></pre></div><p>Here&rsquo;s another module interface unit, <code>Module2.cpp</code>. It exports a function <code>Module2Greeter()</code> which
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#008000">// Module1.cpp
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span><span style="color:#00f">export</span> module Module1;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">export</span> <span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* Module1Greeter();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* SayHello()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> <span style="color:#a31515">&#34;Hello from Module1&#34;</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* Module1Greeter()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> SayHello();
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Here&rsquo;s another module interface unit, <code>Module2.cpp</code>. It exports a function <code>Module2Greeter()</code> which
 calls an unexported function <code>SayHello()</code>. This is clearly not the same <code>SayHello()</code> as the one in
 <code>Module1.cpp</code>. They&rsquo;re both in separate modules and aren&rsquo;t exported, so should therefore have module
 linkage.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#008000">// Module2.cpp
-</span><span style="color:#008000"></span><span style="color:#00f">export</span> module Module2;
-
-<span style="color:#00f">export</span> <span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* Module2Greeter();
-
-<span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* SayHello()
-{
-    <span style="color:#00f">return</span> <span style="color:#a31515">&#34;Hello from Module2&#34;</span>;
-}
-
-<span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* Module2Greeter()
-{
-    <span style="color:#00f">return</span> SayHello();
-}
-</code></pre></div><p>Here&rsquo;s a short program that uses both of these modules.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#008000">// main.cpp
-</span><span style="color:#008000"></span>import Module1;
-import Module2;
-
-<span style="color:#00f">#include</span> <span style="color:#00f">&lt;iostream&gt;</span><span style="color:#00f">
-</span><span style="color:#00f"></span>
-<span style="color:#2b91af">int</span> main()
-{
-	std::cout &lt;&lt; Module1Greeter() &lt;&lt; <span style="color:#a31515">&#39;\n&#39;</span>;
-	std::cout &lt;&lt; Module2Greeter() &lt;&lt; <span style="color:#a31515">&#39;\n&#39;</span>;
-}
-</code></pre></div><p>But there&rsquo;s a discrepancy here between compilers.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#008000">// Module2.cpp
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span><span style="color:#00f">export</span> module Module2;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">export</span> <span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* Module2Greeter();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* SayHello()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> <span style="color:#a31515">&#34;Hello from Module2&#34;</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* Module2Greeter()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> SayHello();
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Here&rsquo;s a short program that uses both of these modules.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#008000">// main.cpp
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>import Module1;
+</span></span><span style="display:flex;"><span>import Module2;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">#include</span> <span style="color:#00f">&lt;iostream&gt;</span><span style="color:#00f">
+</span></span></span><span style="display:flex;"><span><span style="color:#00f"></span>
+</span></span><span style="display:flex;"><span><span style="color:#2b91af">int</span> main()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>	std::cout &lt;&lt; Module1Greeter() &lt;&lt; <span style="color:#a31515">&#39;\n&#39;</span>;
+</span></span><span style="display:flex;"><span>	std::cout &lt;&lt; Module2Greeter() &lt;&lt; <span style="color:#a31515">&#39;\n&#39;</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>But there&rsquo;s a discrepancy here between compilers.</p>
 <h3 id="heres-msvc-cl-193030706">Here&rsquo;s MSVC (cl 19.30.30706)</h3>
 <p>It compiles and runs.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">C:&gt; cl /EHsc /c /std:c++20 /interface /TP Module1.cpp
-C:&gt; cl /EHsc /c /std:c++20 /interface /TP Module2.cpp
-C:&gt; cl /EHsc /std:c++20 main.cpp Module1.obj Module2.obj
-C:&gt; main.exe
-Hello from Module1
-Hello from Module2
-</code></pre></div><h3 id="heres-gcc-gcc-1120---mingw">Here&rsquo;s gcc (gcc 11.2.0 - mingw)</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>C:&gt; cl /EHsc /c /std:c++20 /interface /TP Module1.cpp
+</span></span><span style="display:flex;"><span>C:&gt; cl /EHsc /c /std:c++20 /interface /TP Module2.cpp
+</span></span><span style="display:flex;"><span>C:&gt; cl /EHsc /std:c++20 main.cpp Module1.obj Module2.obj
+</span></span><span style="display:flex;"><span>C:&gt; main.exe
+</span></span><span style="display:flex;"><span>Hello from Module1
+</span></span><span style="display:flex;"><span>Hello from Module2
+</span></span></code></pre></div><h3 id="heres-gcc-gcc-1120---mingw">Here&rsquo;s gcc (gcc 11.2.0 - mingw)</h3>
 <p>It compiles and runs.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">C:&gt; g++ -c --std=c++20 -fmodules-ts Module1.cpp
-C:&gt; g++ -c --std=c++20 -fmodules-ts Module2.cpp
-C:&gt; g++ --std=c++20 -fmodules-ts main.cpp Module1.o Module2.o -o main.exe
-C:&gt; main
-Hello from Module1
-Hello from Module2
-</code></pre></div><h3 id="heres-clang-clang-1300">Here&rsquo;s clang (clang 13.0.0)</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>C:&gt; g++ -c --std=c++20 -fmodules-ts Module1.cpp
+</span></span><span style="display:flex;"><span>C:&gt; g++ -c --std=c++20 -fmodules-ts Module2.cpp
+</span></span><span style="display:flex;"><span>C:&gt; g++ --std=c++20 -fmodules-ts main.cpp Module1.o Module2.o -o main.exe
+</span></span><span style="display:flex;"><span>C:&gt; main
+</span></span><span style="display:flex;"><span>Hello from Module1
+</span></span><span style="display:flex;"><span>Hello from Module2
+</span></span></code></pre></div><h3 id="heres-clang-clang-1300">Here&rsquo;s clang (clang 13.0.0)</h3>
 <p>It fails to compile, stating that <code>SayHello()</code> has different definitions in different modules.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:&gt; clang -c -std=c++20 -Xclang -emit-module-interface Module1.cpp -o Module1.pcm
-C:&gt; clang -c -std=c++20 -Xclang -emit-module-interface Module2.cpp -o Module2.pcm
-C:&gt; clang -std=c++20 -fprebuilt-module-path=. main.cpp Module1.pcm Module2.pcm -o main.exe
-In file included from main.cpp:2:
-Module2.cpp:5:13: error: &#39;SayHello&#39; has different definitions in different modules; definition in
-module &#39;Module2&#39; first difference is function body
-const char* SayHello()
-~~~~~~~~~~~~^~~~~~~~~~
-Module1.cpp:5:13: note: but in &#39;Module1&#39; found a different body
-const char* SayHello()
-~~~~~~~~~~~~^~~~~~~~~~
-1 error generated.#
-</code></pre></div><h2 id="modules-with-a-separate-implementation-unit">Modules with a separate implementation unit</h2>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>C:&gt; clang -c -std=c++20 -Xclang -emit-module-interface Module1.cpp -o Module1.pcm
+</span></span><span style="display:flex;"><span>C:&gt; clang -c -std=c++20 -Xclang -emit-module-interface Module2.cpp -o Module2.pcm
+</span></span><span style="display:flex;"><span>C:&gt; clang -std=c++20 -fprebuilt-module-path=. main.cpp Module1.pcm Module2.pcm -o main.exe
+</span></span><span style="display:flex;"><span>In file included from main.cpp:2:
+</span></span><span style="display:flex;"><span>Module2.cpp:5:13: error: &#39;SayHello&#39; has different definitions in different modules; definition in
+</span></span><span style="display:flex;"><span>module &#39;Module2&#39; first difference is function body
+</span></span><span style="display:flex;"><span>const char* SayHello()
+</span></span><span style="display:flex;"><span>~~~~~~~~~~~~^~~~~~~~~~
+</span></span><span style="display:flex;"><span>Module1.cpp:5:13: note: but in &#39;Module1&#39; found a different body
+</span></span><span style="display:flex;"><span>const char* SayHello()
+</span></span><span style="display:flex;"><span>~~~~~~~~~~~~^~~~~~~~~~
+</span></span><span style="display:flex;"><span>1 error generated.#
+</span></span></code></pre></div><h2 id="modules-with-a-separate-implementation-unit">Modules with a separate implementation unit</h2>
 <p><em>tl;dr - it works with g++ and clang (Linux) but fails with MSVC and clang (Windows).</em></p>
 <p>Let&rsquo;s take the module interface units from the previous example and split them into interface and
 implementation.</p>
 <p>Here&rsquo;s module interface unit, <code>Module1.cpp</code>. It exports a function <code>Module1Greeter()</code>.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#008000">// Module1.cpp
-</span><span style="color:#008000"></span><span style="color:#00f">export</span> module Module1;
-
-<span style="color:#00f">export</span> <span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* Module1Greeter();
-</code></pre></div><p>Here&rsquo;s its implementation unit, <code>Module1_impl.cpp</code>. It contains a definition for the exported
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#008000">// Module1.cpp
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span><span style="color:#00f">export</span> module Module1;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">export</span> <span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* Module1Greeter();
+</span></span></code></pre></div><p>Here&rsquo;s its implementation unit, <code>Module1_impl.cpp</code>. It contains a definition for the exported
 function <code>Module1Greeter()</code>, and an unexported function <code>SayHello()</code>.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#008000">// Module1_impl.cpp
-</span><span style="color:#008000"></span>module Module1;
-
-<span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* SayHello()
-{
-    <span style="color:#00f">return</span> <span style="color:#a31515">&#34;Hello from Module1&#34;</span>;
-}
-
-<span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* Module1Greeter()
-{
-    <span style="color:#00f">return</span> SayHello();
-}
-</code></pre></div><p>Similarly, here&rsquo;s module interface unit, <code>Module2.cpp</code>. It exports a function <code>Module2Greeter()</code>.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#008000">// Module2.cpp
-</span><span style="color:#008000"></span><span style="color:#00f">export</span> module Module2;
-
-<span style="color:#00f">export</span> <span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* Module2Greeter();
-</code></pre></div><p>Here&rsquo;s its implementation unit, <code>Module2_impl.cpp</code>. It contains a definition for the exported
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#008000">// Module1_impl.cpp
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>module Module1;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* SayHello()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> <span style="color:#a31515">&#34;Hello from Module1&#34;</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* Module1Greeter()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> SayHello();
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Similarly, here&rsquo;s module interface unit, <code>Module2.cpp</code>. It exports a function <code>Module2Greeter()</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#008000">// Module2.cpp
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span><span style="color:#00f">export</span> module Module2;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">export</span> <span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* Module2Greeter();
+</span></span></code></pre></div><p>Here&rsquo;s its implementation unit, <code>Module2_impl.cpp</code>. It contains a definition for the exported
 function <code>Module2Greeter()</code>, and an unexported function <code>SayHello()</code>. As before, <code>SayHello()</code> is
 in a module unit and therefore should have module linkage.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#008000">// Module2_impl.cpp
-</span><span style="color:#008000"></span>module Module2;
-
-<span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* SayHello()
-{
-    <span style="color:#00f">return</span> <span style="color:#a31515">&#34;Hello from Module2&#34;</span>;
-}
-
-<span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* Module2Greeter()
-{
-    <span style="color:#00f">return</span> SayHello();
-}
-</code></pre></div><p>I won&rsquo;t show <code>main.cpp</code> as it&rsquo;s the same as the previous example.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#008000">// Module2_impl.cpp
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>module Module2;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* SayHello()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> <span style="color:#a31515">&#34;Hello from Module2&#34;</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* Module2Greeter()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> SayHello();
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>I won&rsquo;t show <code>main.cpp</code> as it&rsquo;s the same as the previous example.</p>
 <h3 id="heres-msvc-cl-193030706-1">Here&rsquo;s MSVC (cl 19.30.30706)</h3>
 <p>It fails to link due to multiply defined symbols.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:&gt; cl /EHsc /c /std:c++20 /interface /TP Module1.cpp
-C:&gt; cl /EHsc /c /std:c++20 /interface /TP Module2.cpp
-C:&gt; cl /EHsc /c /std:c++20 Module1_impl.cpp
-C:&gt; cl /EHsc /c /std:c++20 Module2_impl.cpp
-C:&gt; cl /EHsc /std:c++20 main.cpp Module1.obj Module1_impl.obj Module2.obj Module2_impl.obj
-...
-Module2_impl.obj : error LNK2005: &#34;char const * __cdecl SayHello(void)&#34; (?SayHello@@YAPBDXZ)
-already defined in Module1_impl.obj
-main.exe : fatal error LNK1169: one or more multiply defined symbols found
-</code></pre></div><h3 id="heres-gcc-gcc-1120---mingw-1">Here&rsquo;s gcc (gcc 11.2.0 - mingw)</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>C:&gt; cl /EHsc /c /std:c++20 /interface /TP Module1.cpp
+</span></span><span style="display:flex;"><span>C:&gt; cl /EHsc /c /std:c++20 /interface /TP Module2.cpp
+</span></span><span style="display:flex;"><span>C:&gt; cl /EHsc /c /std:c++20 Module1_impl.cpp
+</span></span><span style="display:flex;"><span>C:&gt; cl /EHsc /c /std:c++20 Module2_impl.cpp
+</span></span><span style="display:flex;"><span>C:&gt; cl /EHsc /std:c++20 main.cpp Module1.obj Module1_impl.obj Module2.obj Module2_impl.obj
+</span></span><span style="display:flex;"><span>...
+</span></span><span style="display:flex;"><span>Module2_impl.obj : error LNK2005: &#34;char const * __cdecl SayHello(void)&#34; (?SayHello@@YAPBDXZ)
+</span></span><span style="display:flex;"><span>already defined in Module1_impl.obj
+</span></span><span style="display:flex;"><span>main.exe : fatal error LNK1169: one or more multiply defined symbols found
+</span></span></code></pre></div><h3 id="heres-gcc-gcc-1120---mingw-1">Here&rsquo;s gcc (gcc 11.2.0 - mingw)</h3>
 <p>It compiles and runs.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">C:&gt; g++ -c --std=c++20 -fmodules-ts Module1.cpp
-C:&gt; g++ -c --std=c++20 -fmodules-ts Module2.cpp
-C:&gt; g++ -c --std=c++20 -fmodules-ts Module1_impl.cpp
-C:&gt; g++ -c --std=c++20 -fmodules-ts Module2_impl.cpp
-C:&gt; g++ --std=c++20 -fmodules-ts main.cpp Module1.o Module1_impl.o Module2.o Module2_impl.o -o main.exe
-C:&gt; main
-Hello from Module1
-Hello from Module2
-</code></pre></div><h3 id="heres-clang-clang-1300-on-windows">Here&rsquo;s clang (clang 13.0.0) on Windows</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>C:&gt; g++ -c --std=c++20 -fmodules-ts Module1.cpp
+</span></span><span style="display:flex;"><span>C:&gt; g++ -c --std=c++20 -fmodules-ts Module2.cpp
+</span></span><span style="display:flex;"><span>C:&gt; g++ -c --std=c++20 -fmodules-ts Module1_impl.cpp
+</span></span><span style="display:flex;"><span>C:&gt; g++ -c --std=c++20 -fmodules-ts Module2_impl.cpp
+</span></span><span style="display:flex;"><span>C:&gt; g++ --std=c++20 -fmodules-ts main.cpp Module1.o Module1_impl.o Module2.o Module2_impl.o -o main.exe
+</span></span><span style="display:flex;"><span>C:&gt; main
+</span></span><span style="display:flex;"><span>Hello from Module1
+</span></span><span style="display:flex;"><span>Hello from Module2
+</span></span></code></pre></div><h3 id="heres-clang-clang-1300-on-windows">Here&rsquo;s clang (clang 13.0.0) on Windows</h3>
 <p>It fails to link due to multiply defined symbols.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:&gt; clang -c -std=c++20 -Xclang -emit-module-interface Module1.cpp -o Module1.pcm
-C:&gt; clang -c -std=c++20 -Xclang -emit-module-interface Module2.cpp -o Module2.pcm
-C:&gt; clang -c -std=c++20 -fmodule-file=Module1.pcm Module1_impl.cpp
-C:&gt; clang -c -std=c++20 -fmodule-file=Module2.pcm Module2_impl.cpp
-C:&gt; clang++ -std=c++20 -fprebuilt-module-path=. main.cpp Module1.pcm Module2.pcm Module1_impl.o \
-    Module2_impl.o -o main.exe
-Module2_impl.o : error LNK2005: &#34;char const * __cdecl SayHello(void)&#34; (?SayHello@@YAPEBDXZ) already
-defined in Module1_impl.o
-main.exe : fatal error LNK1169: one or more multiply defined symbols found
-clang: error: linker command failed with exit code 1169 (use -v to see invocation)
-</code></pre></div><p>I also tried this with <code>-fuse-ld=lld</code> to use a different linker and got a similar error.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">lld-link: error: duplicate symbol: char const * __cdecl SayHello(void)
-&gt;&gt;&gt; defined at Module1_impl.o
-&gt;&gt;&gt; defined at Module2_impl.o
-clang: error: linker command failed with exit code 1 (use -v to see invocation)
-</code></pre></div><h3 id="heres-clang-clang-1302-on-linux">Here&rsquo;s clang (clang 13.0.2) on Linux</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>C:&gt; clang -c -std=c++20 -Xclang -emit-module-interface Module1.cpp -o Module1.pcm
+</span></span><span style="display:flex;"><span>C:&gt; clang -c -std=c++20 -Xclang -emit-module-interface Module2.cpp -o Module2.pcm
+</span></span><span style="display:flex;"><span>C:&gt; clang -c -std=c++20 -fmodule-file=Module1.pcm Module1_impl.cpp
+</span></span><span style="display:flex;"><span>C:&gt; clang -c -std=c++20 -fmodule-file=Module2.pcm Module2_impl.cpp
+</span></span><span style="display:flex;"><span>C:&gt; clang++ -std=c++20 -fprebuilt-module-path=. main.cpp Module1.pcm Module2.pcm Module1_impl.o \
+</span></span><span style="display:flex;"><span>    Module2_impl.o -o main.exe
+</span></span><span style="display:flex;"><span>Module2_impl.o : error LNK2005: &#34;char const * __cdecl SayHello(void)&#34; (?SayHello@@YAPEBDXZ) already
+</span></span><span style="display:flex;"><span>defined in Module1_impl.o
+</span></span><span style="display:flex;"><span>main.exe : fatal error LNK1169: one or more multiply defined symbols found
+</span></span><span style="display:flex;"><span>clang: error: linker command failed with exit code 1169 (use -v to see invocation)
+</span></span></code></pre></div><p>I also tried this with <code>-fuse-ld=lld</code> to use a different linker and got a similar error.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>lld-link: error: duplicate symbol: char const * __cdecl SayHello(void)
+</span></span><span style="display:flex;"><span>&gt;&gt;&gt; defined at Module1_impl.o
+</span></span><span style="display:flex;"><span>&gt;&gt;&gt; defined at Module2_impl.o
+</span></span><span style="display:flex;"><span>clang: error: linker command failed with exit code 1 (use -v to see invocation)
+</span></span></code></pre></div><h3 id="heres-clang-clang-1302-on-linux">Here&rsquo;s clang (clang 13.0.2) on Linux</h3>
 <p>It compiles and runs.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">$ clang -c -std=c++20 -Xclang -emit-module-interface Module1.cpp -o Module1.pcm
-$ clang -c -std=c++20 -Xclang -emit-module-interface Module2.cpp -o Module2.pcm
-$ clang -c -std=c++20 -fmodule-file=Module1.pcm Module1_impl.cpp
-$ clang -c -std=c++20 -fmodule-file=Module2.pcm Module2_impl.cpp
-$ clang++ -std=c++20 -fprebuilt-module-path=. main.cpp Module1.pcm Module2.pcm Module1_impl.o \
-  Module2_impl.o -o main.exe
-$ ./main
-Hello from Module1
-Hello from Module2
-</code></pre></div><h2 id="whats-happening-here">What&rsquo;s happening here?</h2>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ clang -c -std=c++20 -Xclang -emit-module-interface Module1.cpp -o Module1.pcm
+</span></span><span style="display:flex;"><span>$ clang -c -std=c++20 -Xclang -emit-module-interface Module2.cpp -o Module2.pcm
+</span></span><span style="display:flex;"><span>$ clang -c -std=c++20 -fmodule-file=Module1.pcm Module1_impl.cpp
+</span></span><span style="display:flex;"><span>$ clang -c -std=c++20 -fmodule-file=Module2.pcm Module2_impl.cpp
+</span></span><span style="display:flex;"><span>$ clang++ -std=c++20 -fprebuilt-module-path=. main.cpp Module1.pcm Module2.pcm Module1_impl.o \
+</span></span><span style="display:flex;"><span>  Module2_impl.o -o main.exe
+</span></span><span style="display:flex;"><span>$ ./main
+</span></span><span style="display:flex;"><span>Hello from Module1
+</span></span><span style="display:flex;"><span>Hello from Module2
+</span></span></code></pre></div><h2 id="whats-happening-here">What&rsquo;s happening here?</h2>
 <p>I&rsquo;m new to C++ modules, so it&rsquo;s entirely possible that I&rsquo;ve misunderstood something about module
 linkage or even that I&rsquo;m simply using the wrong flags to compile. If this is the case, then please
 let me know.</p>
@@ -249,6 +249,8 @@ not have got around to implementing this particular aspect of module linkage.</p
         <div>
             <ul>
                 
+                <li><a href="/posts/2023/04/07/time-to-learn-rust/">It&#39;s time to learn Rust</a></li>
+                
                 <li><a href="/posts/2022/02/27/mandatory-copy-elision/">Mandatory Copy Elision in C&#43;&#43;</a></li>
                 
                 <li><a href="/posts/2022/01/23/ctad/">CTAD and Deduction Guides in C&#43;&#43;</a></li>
@@ -257,14 +259,12 @@ not have got around to implementing this particular aspect of module linkage.</p
                 
                 <li><a href="/posts/2021/12/30/monotonic_buffer_resource/">Bump Allocators in C&#43;&#43;</a></li>
                 
-                <li><a href="/posts/2021/12/28/allocators/">Polymorphic Allocators in C&#43;&#43;</a></li>
-                
             </ul>
         </div>
     </div>
 </aside> 
 	<footer class="wrapper">
-	<p>&copy; 2022 <a href="https://badlydrawnrod.github.io">Badly Drawn Rod</a></p>
+	<p>&copy; 2023 <a href="https://badlydrawnrod.github.io">Badly Drawn Rod</a></p>
 </footer>
 
 </body>

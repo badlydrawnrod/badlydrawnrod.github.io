@@ -41,32 +41,32 @@
 <p>To show the <strong>CMake</strong> targets for a package, just re-run <code>vcpkg install</code> on it.</p>
 <p>When you install a package, <code>vcpkg</code> tells you the <strong>CMake</strong> targets to put in <code>CMakeLists.txt</code>.</p>
 <p>For example, here&rsquo;s the output after installing <code>sdl2-image:x64-windows</code> for the first time.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:&gt; vcpkg install sdl2-image:x64-windows
-...
-The package sdl2-image:x64-windows provides **CMake** targets:
-
-    find_package(sdl2-image CONFIG REQUIRED)
-    target_link_libraries(main PRIVATE SDL2::SDL2_image)
-</code></pre></div><p>It will show the same information if you re-run <code>vcpkg install</code> on a package that is already installed.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>C:&gt; vcpkg install sdl2-image:x64-windows
+</span></span><span style="display:flex;"><span>...
+</span></span><span style="display:flex;"><span>The package sdl2-image:x64-windows provides **CMake** targets:
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    find_package(sdl2-image CONFIG REQUIRED)
+</span></span><span style="display:flex;"><span>    target_link_libraries(main PRIVATE SDL2::SDL2_image)
+</span></span></code></pre></div><p>It will show the same information if you re-run <code>vcpkg install</code> on a package that is already installed.</p>
 <blockquote>
 <p>Don&rsquo;t laugh, but it took me about an hour to figure this out.</p>
 </blockquote>
 <h2 id="dependencies">Dependencies</h2>
 <p>Some packages have dependencies that are useful in their own right, so you might also want to use those with <strong>CMake</strong>. To find the dependencies for a <code>vcpkg</code> package, run <code>vckpg depend-info</code>.</p>
 <p>For example, here are the dependencies for <code>sdl2-image:x64-windows</code>.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:&gt; vcpkg depend-info sdl2-image:x64-windows
-zlib:
-libpng: zlib
-sdl2:
-sdl2-image: libpng, sdl2
-</code></pre></div><p>One of the dependencies is <code>libpng</code>. You can find its <strong>CMake</strong> targets by running <code>vcpkg install</code>.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:&gt; vcpkg install libpng:x64-windows
-...
-The package libpng:x64-windows provides CMake targets:
-
-    find_package(libpng CONFIG REQUIRED)
-    target_link_libraries(main PRIVATE png)
-</code></pre></div>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>C:&gt; vcpkg depend-info sdl2-image:x64-windows
+</span></span><span style="display:flex;"><span>zlib:
+</span></span><span style="display:flex;"><span>libpng: zlib
+</span></span><span style="display:flex;"><span>sdl2:
+</span></span><span style="display:flex;"><span>sdl2-image: libpng, sdl2
+</span></span></code></pre></div><p>One of the dependencies is <code>libpng</code>. You can find its <strong>CMake</strong> targets by running <code>vcpkg install</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>C:&gt; vcpkg install libpng:x64-windows
+</span></span><span style="display:flex;"><span>...
+</span></span><span style="display:flex;"><span>The package libpng:x64-windows provides CMake targets:
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    find_package(libpng CONFIG REQUIRED)
+</span></span><span style="display:flex;"><span>    target_link_libraries(main PRIVATE png)
+</span></span></code></pre></div>
         </div>
         
         <div>
@@ -91,6 +91,8 @@ The package libpng:x64-windows provides CMake targets:
         <div>
             <ul>
                 
+                <li><a href="/posts/2023/04/07/time-to-learn-rust/">It&#39;s time to learn Rust</a></li>
+                
                 <li><a href="/posts/2022/02/27/mandatory-copy-elision/">Mandatory Copy Elision in C&#43;&#43;</a></li>
                 
                 <li><a href="/posts/2022/01/23/ctad/">CTAD and Deduction Guides in C&#43;&#43;</a></li>
@@ -99,14 +101,12 @@ The package libpng:x64-windows provides CMake targets:
                 
                 <li><a href="/posts/2021/12/30/monotonic_buffer_resource/">Bump Allocators in C&#43;&#43;</a></li>
                 
-                <li><a href="/posts/2021/12/28/allocators/">Polymorphic Allocators in C&#43;&#43;</a></li>
-                
             </ul>
         </div>
     </div>
 </aside> 
 	<footer class="wrapper">
-	<p>&copy; 2022 <a href="https://badlydrawnrod.github.io">Badly Drawn Rod</a></p>
+	<p>&copy; 2023 <a href="https://badlydrawnrod.github.io">Badly Drawn Rod</a></p>
 </footer>
 
 </body>

@@ -6,7 +6,16 @@
     <description>Recent content in c&#43;&#43; on Badly Drawn Rod</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Sun, 27 Feb 2022 15:00:00 +0000</lastBuildDate><atom:link href="https://badlydrawnrod.github.io/tags/c++/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 07 Apr 2023 18:28:49 +0100</lastBuildDate><atom:link href="https://badlydrawnrod.github.io/tags/c++/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>It&#39;s time to learn Rust</title>
+      <link>https://badlydrawnrod.github.io/posts/2023/04/07/time-to-learn-rust/</link>
+      <pubDate>Fri, 07 Apr 2023 18:28:49 +0100</pubDate>
+      
+      <guid>https://badlydrawnrod.github.io/posts/2023/04/07/time-to-learn-rust/</guid>
+      <description></description>
+    </item>
+    
     <item>
       <title>Mandatory Copy Elision in C&#43;&#43;</title>
       <link>https://badlydrawnrod.github.io/posts/2022/02/27/mandatory-copy-elision/</link>

@@ -3,10 +3,22 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://badlydrawnrod.github.io/</loc>
-    <lastmod>2022-02-27T15:00:00+00:00</lastmod>
+    <lastmod>2023-04-07T18:28:49+01:00</lastmod>
   </url><url>
     <loc>https://badlydrawnrod.github.io/tags/c&#43;&#43;/</loc>
-    <lastmod>2022-02-27T15:00:00+00:00</lastmod>
+    <lastmod>2023-04-07T18:28:49+01:00</lastmod>
+  </url><url>
+    <loc>https://badlydrawnrod.github.io/posts/2023/04/07/time-to-learn-rust/</loc>
+    <lastmod>2023-04-07T18:28:49+01:00</lastmod>
+  </url><url>
+    <loc>https://badlydrawnrod.github.io/posts/</loc>
+    <lastmod>2023-04-07T18:28:49+01:00</lastmod>
+  </url><url>
+    <loc>https://badlydrawnrod.github.io/tags/rust/</loc>
+    <lastmod>2023-04-07T18:28:49+01:00</lastmod>
+  </url><url>
+    <loc>https://badlydrawnrod.github.io/tags/</loc>
+    <lastmod>2023-04-07T18:28:49+01:00</lastmod>
   </url><url>
     <loc>https://badlydrawnrod.github.io/categories/</loc>
     <lastmod>2022-02-27T15:00:00+00:00</lastmod>
@@ -18,12 +30,6 @@
     <lastmod>2022-02-27T15:00:00+00:00</lastmod>
   </url><url>
     <loc>https://badlydrawnrod.github.io/categories/notes/</loc>
-    <lastmod>2022-02-27T15:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://badlydrawnrod.github.io/posts/</loc>
-    <lastmod>2022-02-27T15:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://badlydrawnrod.github.io/tags/</loc>
     <lastmod>2022-02-27T15:00:00+00:00</lastmod>
   </url><url>
     <loc>https://badlydrawnrod.github.io/tags/ctad/</loc>
