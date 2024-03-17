@@ -74,6 +74,26 @@ div.highlight {
     overflow-x: auto;
 }
 
+table {
+    border: 1px solid black;
+    border-collapse: collapse;
+    
+}
+
+thead {
+    border: 1px solid black;
+    background: #eee;
+}
+
+tbody {
+    font-family: Ubuntu, Arial, Helvetica, sans-serif;
+}
+
+td, th {
+    border: 1px solid black;
+    padding: 4px;
+}
+
 pre,
 code {
     overflow-x: auto;

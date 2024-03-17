@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Let&#39;s build a virtual machine: Part 0 - Introduction</title>
+	
+	
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu|Lora">
+	<link rel="stylesheet" href="/css/style.css">
+	
+</head>
+<body>
+	<header class="wrapper">
+    <nav>
+        <a href="https://badlydrawnrod.github.io">Home</a>
+        <ul>
+			
+            
+            <li><a href="/page/about/">About</a></li>
+            
+            <li><a href="/posts/">All posts</a></li>
+            
+        </ul>
+    </nav>
+    
+</header>
+	
+<main class="wrapper">
+    <article>
+        <p></p>
+        
+        <div class="date">17 March, 2024</div>
+        
+        <div>
+            <p>In this series we&rsquo;re going to implement a virtual machine from scratch.</p>
+<h1 id="lets-build-a-virtual-machine-part-0---introduction">Let&rsquo;s Build a Virtual Machine: Part 0 - Introduction</h1>
+<p>In this series we&rsquo;re going to implement a virtual machine. We&rsquo;ll start by creating a virtual CPU in software, and implementing its instruction set. We&rsquo;ll write assembly language programs for our virtual CPU and run those programs on a virtual machine that we create. And over time we will build things up so that we can write programs for our virtual machine using languages such as C, C++, Rust or Swift.</p>
+<p>Let&rsquo;s see where that journey takes us.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<p>There aren&rsquo;t many prerequisites for this series. My assumption is that you have at least a passing acquaintance with a language such as C, C++, Rust, or Swift, and that you&rsquo;re reasonably familiar with ideas such as bits, bytes, addresses, and registers.</p>
+<p>The initial implementation will be written in C++, largely because that&rsquo;s what I use for my day job. Other fine languages are also available. If I use a C++ specific feature in the code then I will try my best to explain it.</p>
+<h2 id="owls-say-what">Owls say what?</h2>
+<p>My writing will be incredibly verbose if I have to say things like &ldquo;the virtual machine that we&rsquo;re implementing&rdquo; or &ldquo;the virtual CPU that&rsquo;s at the heart of the virtual machine that we&rsquo;re implementing&rdquo;.</p>
+<p>Instead, I&rsquo;m going to give this project a name. I&rsquo;ll call it <strong>Owl</strong>, partly as an homage to the logo used on <a href="https://en.wikipedia.org/wiki/BBC_Micro">the BBC Micro</a>, and also because it gives me an excuse to refer to the virtual CPU as the 2820 (two-eight-two-oh).</p>
+<p>Typically I&rsquo;ll describe the project as a whole as <strong>Owl</strong>, but if I need to make a distinction then I might say &ldquo;the Owl VM&rdquo; or &ldquo;the Owl CPU&rdquo;.</p>
+<h1 id="building-a-minimal-virtual-cpu">Building a minimal virtual CPU</h1>
+<p>If we&rsquo;re going to implement a virtual CPU, then we&rsquo;ll need to think about how we could run programs on it. Let&rsquo;s start small, and consider how to implement enough of a CPU to run a program that generates <a href="https://en.wikipedia.org/wiki/Fibonacci_sequence">the Fibonacci sequence</a> for unsigned 32-bit integers.</p>
+<p>To do that, let&rsquo;s take a look at what a real CPU would do, by writing a program in C, then looking at the assembly language that it generates.</p>
+<h2 id="fibonacci-in-c">Fibonacci in C</h2>
+<p>Here&rsquo;s a C program that displays numbers in the Fibonacci sequence, starting with <code>fib(0)</code> and ending with the prime number <code>fib(47)</code>. It stops after displaying <code>fib(47)</code> because calculating <code>fib(48)</code> would overflow an unsigned 32-bit integer.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#00f">#include</span> <span style="color:#00f">&lt;stdint.h&gt;</span><span style="color:#00f">
+</span></span></span><span style="display:flex;"><span><span style="color:#00f">#include</span> <span style="color:#00f">&lt;stdio.h&gt;</span><span style="color:#00f">
+</span></span></span><span style="display:flex;"><span><span style="color:#00f"></span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">static</span> <span style="color:#2b91af">uint32_t</span> fib(<span style="color:#2b91af">uint32_t</span> n)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (n &lt; 2)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> n;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">uint32_t</span> previous = 0;
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">uint32_t</span> current = 1;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">for</span> (; n &gt; 1; --n)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#2b91af">uint32_t</span> next = current + previous;
+</span></span><span style="display:flex;"><span>        previous = current;
+</span></span><span style="display:flex;"><span>        current = next;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> current;
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#2b91af">int</span> main(<span style="color:#2b91af">void</span>)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">for</span> (<span style="color:#2b91af">uint32_t</span> i = 0; i &lt; 48; i++)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#2b91af">uint32_t</span> result = fib(i);
+</span></span><span style="display:flex;"><span>        printf(<span style="color:#a31515">&#34;fib(%u) = %u</span><span style="color:#a31515">\n</span><span style="color:#a31515">&#34;</span>, i, result);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> 0;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>I chose this implementation because it&rsquo;s simple to understand, even when compiled into assembly language. We&rsquo;ll see what that looks like a little later.</p>
+<p>Here&rsquo;s what it outputs (abbreviated).</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>fib(0) = 0
+</span></span><span style="display:flex;"><span>fib(1) = 1
+</span></span><span style="display:flex;"><span>fib(2) = 1
+</span></span><span style="display:flex;"><span>fib(3) = 2
+</span></span><span style="display:flex;"><span>fib(4) = 3
+</span></span><span style="display:flex;"><span>fib(5) = 5
+</span></span><span style="display:flex;"><span>fib(6) = 8
+</span></span><span style="display:flex;"><span>fib(7) = 13
+</span></span><span style="display:flex;"><span>fib(8) = 21
+</span></span><span style="display:flex;"><span>...
+</span></span><span style="display:flex;"><span>fib(46) = 1836311903
+</span></span><span style="display:flex;"><span>fib(47) = 2971215073
+</span></span></code></pre></div><h2 id="fibonacci-in-assembly-language">Fibonacci in assembly language</h2>
+<p>Here&rsquo;s a link to <a href="https://godbolt.org/z/zj36Edbh8">our program in Compiler Explorer</a>.</p>
+<p>If you click the link then you&rsquo;ll see the C program in the panel on the left, and the equivalent assembly language in the panel on the right. What you&rsquo;re looking at is <a href="https://en.wikipedia.org/wiki/RISC-V">RISC-V</a> assembly language, specifically the 32-bit base integer instruction set known as <strong>RV32I</strong>.</p>
+<p>There are many different <a href="https://en.wikipedia.org/wiki/Instruction_set_architecture">instruction set architectures</a>, including <a href="https://en.wikipedia.org/wiki/X86-64">x64</a> and <a href="https://en.wikipedia.org/wiki/ARM_architecture_family">ARM</a>, but I&rsquo;ve picked RV32I as it&rsquo;s far smaller and easier to explain than either of those.</p>
+<p>Here&rsquo;s a walkthrough of the assembly language that the compiler generated. I&rsquo;ve commented it and changed the names of some of the labels to make things clearer. If you don&rsquo;t know assembly language then it may still look very complicated, but I can promise you that it isn&rsquo;t, and it won&rsquo;t be long before we can write a program that can run this.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span>main:
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">; Enter main(), saving the registers that it uses onto the stack.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        addi    sp, sp, -32
+</span></span><span style="display:flex;"><span>        sw      ra, 28(sp)
+</span></span><span style="display:flex;"><span>        sw      s0, 24(sp)
+</span></span><span style="display:flex;"><span>        sw      s1, 20(sp)
+</span></span><span style="display:flex;"><span>        sw      s2, 16(sp)
+</span></span><span style="display:flex;"><span>        sw      s3, 12(sp)
+</span></span><span style="display:flex;"><span>        sw      s4, 8(sp)
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">; ------------------------------------------------------------------------------------------
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        li      s0, 0                       <span style="color:#008000">; i = 0
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        li      s2, 2                       <span style="color:#008000">; s2 = 2
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        lui     a0, %hi(format_str)
+</span></span><span style="display:flex;"><span>        addi    s1, a0, %lo(format_str)     <span style="color:#008000">; s1 = the address of the printf format string
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        li      s3, 48                      <span style="color:#008000">; s3 = 48
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        li      s4, 1                       <span style="color:#008000">; s4 = 1
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        j       fib                         <span style="color:#008000">; go to fib
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>print_loop:
+</span></span><span style="display:flex;"><span>        mv      a0, s1                      <span style="color:#008000">; arg0 = the address of the printf format string
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        mv      a1, s0                      <span style="color:#008000">; arg1 = i
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>                                            <span style="color:#008000">; arg2 is already set to current
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        call    printf                      <span style="color:#008000">; call printf
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        addi    s0, s0, 1                   <span style="color:#008000">; i = i + 1
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        beq     s0, s3, done                <span style="color:#008000">; if i == 48 go to done
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>fib:
+</span></span><span style="display:flex;"><span>        mv      a2, s0                      <span style="color:#008000">; current = i
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        bltu    s0, s2, print_loop          <span style="color:#008000">; if i &lt; 2 go to print_loop
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        li      a0, 0                       <span style="color:#008000">; previous = 0
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        li      a2, 1                       <span style="color:#008000">; current = 1
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        mv      a1, s0                      <span style="color:#008000">; n = i
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>fib_loop:
+</span></span><span style="display:flex;"><span>        mv      a3, a2                      <span style="color:#008000">; tmp = current
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        addi    a1, a1, -1                  <span style="color:#008000">; n = n - 1
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        add     a2, a0, a2                  <span style="color:#008000">; current = current + prev
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        mv      a0, a3                      <span style="color:#008000">; previous = tmp
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        bltu    s4, a1, fib_loop            <span style="color:#008000">; if n &gt; 1 go to fib_loop
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        j       print_loop                  <span style="color:#008000">; go to print_loop
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>done:
+</span></span><span style="display:flex;"><span>        li      a0, 0                       <span style="color:#008000">; set the return value of main() to 0
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#008000">; ------------------------------------------------------------------------------------------
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#008000">; Restore registers from the stack and return from main().
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        lw      ra, 28(sp)
+</span></span><span style="display:flex;"><span>        lw      s0, 24(sp)
+</span></span><span style="display:flex;"><span>        lw      s1, 20(sp)
+</span></span><span style="display:flex;"><span>        lw      s2, 16(sp)
+</span></span><span style="display:flex;"><span>        lw      s3, 12(sp)
+</span></span><span style="display:flex;"><span>        lw      s4, 8(sp)
+</span></span><span style="display:flex;"><span>        addi    sp, sp, 32
+</span></span><span style="display:flex;"><span>        ret                                 <span style="color:#008000">; return
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>format_str:
+</span></span><span style="display:flex;"><span>        .asciz  <span style="color:#a31515">&#34;fib(%u) = %u\n&#34;</span>            <span style="color:#008000">; the printf format string, terminated by &#39;\0&#39;
+</span></span></span></code></pre></div><h2 id="registers">Registers</h2>
+<p>To understand the assembly language output better, we need to understand how RV32I names and uses registers.</p>
+<p>RV32I has 32 integer registers, named x0 - x31, which are all 32-bit registers. The first of these, <em>x0</em>, always contains zero, and writing to it has no effect. The remaining registers are theoretically general purpose registers, but in practice certain conventions apply. The <a href="https://github.com/riscv-non-isa/riscv-elf-psabi-doc/blob/master/riscv-cc.adoc">RISC-V integer register naming convention</a> documentation on GitHub contains a table with the names of the integer registers and how they&rsquo;re used. I&rsquo;ve reproduced it in part here.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Register</th>
+<th style="text-align:left">Name</th>
+<th style="text-align:left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">x0</td>
+<td style="text-align:left">zero</td>
+<td style="text-align:left">always contains zero (writing to <em>x0</em> has no effect)</td>
+</tr>
+<tr>
+<td style="text-align:left">x1</td>
+<td style="text-align:left">ra</td>
+<td style="text-align:left">return address</td>
+</tr>
+<tr>
+<td style="text-align:left">x2</td>
+<td style="text-align:left">sp</td>
+<td style="text-align:left">stack pointer</td>
+</tr>
+<tr>
+<td style="text-align:left">x3</td>
+<td style="text-align:left">gp</td>
+<td style="text-align:left">global pointer</td>
+</tr>
+<tr>
+<td style="text-align:left">x4</td>
+<td style="text-align:left">tp</td>
+<td style="text-align:left">thread pointer</td>
+</tr>
+<tr>
+<td style="text-align:left">x5 - x7</td>
+<td style="text-align:left">t0 - t2</td>
+<td style="text-align:left">temporary registers</td>
+</tr>
+<tr>
+<td style="text-align:left">x8 - x9</td>
+<td style="text-align:left">s0 - s1</td>
+<td style="text-align:left">callee-saved registers</td>
+</tr>
+<tr>
+<td style="text-align:left">x10 - x17</td>
+<td style="text-align:left">a0 - a7</td>
+<td style="text-align:left">argument registers</td>
+</tr>
+<tr>
+<td style="text-align:left">x18 - x27</td>
+<td style="text-align:left">s2 - s11</td>
+<td style="text-align:left">callee-saved registers</td>
+</tr>
+<tr>
+<td style="text-align:left">x28 - x31</td>
+<td style="text-align:left">t3 - t6</td>
+<td style="text-align:left">temporary registers</td>
+</tr>
+</tbody>
+</table>
+<h2 id="the-stack-frame">The stack frame</h2>
+<p>Now we know that <em>sp</em> is the stack pointer, <em>ra</em> is the return address register, and <em>s0</em> thru <em>s11</em> are callee-saved registers, we can get a better understanding of the code in the listing above that comes before the first horizontal line, and the code in the listing above that comes after the second horizontal line.</p>
+<p>These pieces of code are compiler-generated boilerplate that set up the <a href="https://en.wikipedia.org/wiki/Call_stack#STACK-FRAME">stack frame</a> on entry to <code>main()</code> and tear it down on exit from <code>main()</code>.</p>
+<p>Here&rsquo;s the first piece of code, before the first horizontal line in the listing above:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span>main:
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">; Enter main(), saving the registers that it uses onto the stack.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        addi    sp, sp, -32
+</span></span><span style="display:flex;"><span>        sw      ra, 28(sp)
+</span></span><span style="display:flex;"><span>        sw      s0, 24(sp)
+</span></span><span style="display:flex;"><span>        sw      s1, 20(sp)
+</span></span><span style="display:flex;"><span>        sw      s2, 16(sp)
+</span></span><span style="display:flex;"><span>        sw      s3, 12(sp)
+</span></span><span style="display:flex;"><span>        sw      s4, 8(sp)
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">; ------------------------------------------------------------------------------------------
+</span></span></span></code></pre></div><p>It sets up the stack frame by reserving some space in the stack, then saving the return address <em>ra</em> and the callee-saved registers <em>s0</em> thru <em>s4</em> into that space.</p>
+<p>To save registers to the stack, it uses the <em>sw</em> (store word) instruction. For example, <code>sw ra, 28(sp)</code> means store the value in register <em>ra</em> into memory at the address pointed to the value in register <em>sp</em> plus 28 bytes.</p>
+<p>To visualize this, think of memory as an array of 32-bit integers, and registers <em>sp</em> and <em>ra</em> as 32-bit integer variables.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span>mem[sp + 28/4] = ra; <span style="color:#008000">// sw ra, 28(sp)
+</span></span></span></code></pre></div><p>The fact that it saves <em>s0</em> thru <em>s4</em> onto the stack is a good indication that those registers are used in <code>main()</code>&rsquo;s body, and therefore need to be saved onto the stack to be restored later when <code>main()</code> returns.</p>
+<p>Here&rsquo;s the second piece of code, after the second horizontal line in the listing above:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span>        <span style="color:#008000">; ------------------------------------------------------------------------------------------
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#008000">; Restore registers from the stack and return from main().
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        lw      ra, 28(sp)
+</span></span><span style="display:flex;"><span>        lw      s0, 24(sp)
+</span></span><span style="display:flex;"><span>        lw      s1, 20(sp)
+</span></span><span style="display:flex;"><span>        lw      s2, 16(sp)
+</span></span><span style="display:flex;"><span>        lw      s3, 12(sp)
+</span></span><span style="display:flex;"><span>        lw      s4, 8(sp)
+</span></span><span style="display:flex;"><span>        addi    sp, sp, 32
+</span></span><span style="display:flex;"><span>        ret                                 <span style="color:#008000">; return
+</span></span></span></code></pre></div><p>It tears down the stack frame by restoring the return address register <em>ra</em> and the caller saved registers <em>s0</em> thru <em>s4</em> from where they were previously saved on the stack, before restoring the previously reserved space on the stack and returning to the caller via the <em>ret</em> instruction.</p>
+<p>To restore registers from the stack, it uses the <em>lw</em> (load word) instruction. For example, <code>lw s4, 8(sp)</code> means load the value in memory at the address pointed to by the value in register <em>sp</em> plus 8 bytes into register <em>s4</em>.</p>
+<p>To visualize this, use the same trick as before and think of memory as an array of 32-bit integers, and registers <em>sp</em> and <em>s4</em> as 32-bit integer variables.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span>s4 = mem[sp + 8/4]; <span style="color:#008000">// lw s4, 8(sp)
+</span></span></span></code></pre></div><p>We don&rsquo;t need to worry about these pieces of code any further, as they&rsquo;re essentially boilerplate that the compiler generates at the start and end of each function. They won&rsquo;t help us to generate the Fibonacci sequence.</p>
+<p>However, there is one important observation to make. Our original program had two functions, <code>main()</code> and <code>fib()</code>, but there is no stack frame setup and teardown code for <code>fib()</code> as it has been <strong>inlined by the compiler</strong>. In other words, <code>fib()</code> doesn&rsquo;t exist as a separate function in the generated assembly language, so there&rsquo;s no need for a stack frame.</p>
+<h2 id="the-fibonacci-code">The Fibonacci code</h2>
+<p>Let&rsquo;s look at <code>main()</code>&rsquo;s body, which is the code between the two horizontal lines in the earlier listing. Here&rsquo;s where we can find the code that we would like to run on our CPU. This is the code that displays the Fibonacci numbers from <code>fib(0)</code> to <code>fib(47)</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span>        li      s0, 0                       <span style="color:#008000">; i = 0
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        li      s2, 2                       <span style="color:#008000">; s2 = 2
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        lui     a0, %hi(format_str)
+</span></span><span style="display:flex;"><span>        addi    s1, a0, %lo(format_str)     <span style="color:#008000">; s1 = the address of the printf format string
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        li      s3, 48                      <span style="color:#008000">; s3 = 48
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        li      s4, 1                       <span style="color:#008000">; s4 = 1
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        j       fib                         <span style="color:#008000">; go to fib
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>print_loop:
+</span></span><span style="display:flex;"><span>        mv      a0, s1                      <span style="color:#008000">; arg0 = the address of the printf format string
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        mv      a1, s0                      <span style="color:#008000">; arg1 = i
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>                                            <span style="color:#008000">; arg2 is already set to current
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        call    printf                      <span style="color:#008000">; call printf
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        addi    s0, s0, 1                   <span style="color:#008000">; i = i + 1
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        beq     s0, s3, done                <span style="color:#008000">; if i == 48 go to done
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>fib:
+</span></span><span style="display:flex;"><span>        mv      a2, s0                      <span style="color:#008000">; current = i
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        bltu    s0, s2, print_loop          <span style="color:#008000">; if i &lt; 2 go to print_loop
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        li      a0, 0                       <span style="color:#008000">; previous = 0
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        li      a2, 1                       <span style="color:#008000">; current = 1
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        mv      a1, s0                      <span style="color:#008000">; n = i
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>fib_loop:
+</span></span><span style="display:flex;"><span>        mv      a3, a2                      <span style="color:#008000">; tmp = current
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        addi    a1, a1, -1                  <span style="color:#008000">; n = n - 1
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        add     a2, a0, a2                  <span style="color:#008000">; current = current + prev
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        mv      a0, a3                      <span style="color:#008000">; previous = tmp
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        bltu    s4, a1, fib_loop            <span style="color:#008000">; if n &gt; 1 go to fib_loop
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        j       print_loop                  <span style="color:#008000">; go to print_loop
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>done:
+</span></span><span style="display:flex;"><span>        li      a0, 0                       <span style="color:#008000">; set the return value of main() to 0
+</span></span></span></code></pre></div><p>There are twenty-four instructions here. It may feel like a lot, but each instruction takes the form of an opcode, followed by zero or more operands. If we count the opcodes, then we&rsquo;ll find that the code in <code>main()</code>&rsquo;s body uses just eight of them.</p>
+<p>Here they are.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Opcode</th>
+<th style="text-align:left">Meaning</th>
+<th style="text-align:left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">addi</td>
+<td style="text-align:left">Add Immediate</td>
+<td style="text-align:left">adds an immediate value and a register and stores the result in another register</td>
+</tr>
+<tr>
+<td style="text-align:left">beq</td>
+<td style="text-align:left">Branch if EQual</td>
+<td style="text-align:left">compares the content of two registers and jumps to a different location if they&rsquo;re equal</td>
+</tr>
+<tr>
+<td style="text-align:left">bltu</td>
+<td style="text-align:left">Branch if Less Than (Unsigned)</td>
+<td style="text-align:left">compares the unsigned values in two registers and jumps to a different location if the first is less than the second</td>
+</tr>
+<tr>
+<td style="text-align:left">call</td>
+<td style="text-align:left">Call</td>
+<td style="text-align:left">calls a function</td>
+</tr>
+<tr>
+<td style="text-align:left">li</td>
+<td style="text-align:left">Load Immediate</td>
+<td style="text-align:left">loads an immediate value into a register</td>
+</tr>
+<tr>
+<td style="text-align:left">lui</td>
+<td style="text-align:left">Load Upper Immediate</td>
+<td style="text-align:left">loads an immediate value into the upper bits of a register</td>
+</tr>
+<tr>
+<td style="text-align:left">j</td>
+<td style="text-align:left">Jump</td>
+<td style="text-align:left">jumps to a location</td>
+</tr>
+<tr>
+<td style="text-align:left">mv</td>
+<td style="text-align:left">Move</td>
+<td style="text-align:left">copies the value in one register into another register</td>
+</tr>
+</tbody>
+</table>
+<p>Modern CPUs can have hundreds of opcodes. Writing an emulator for one of them would be quite daunting. Fortunately, if we want our CPU to run the code in <code>main()</code>&rsquo;s body then we&rsquo;ll only need to implement the eight opcodes in the table above.</p>
+<p>In the next post in this series, we&rsquo;ll take a look at how we can do that.</p>
+        </div>
+        
+    </article>
+</main>
+<aside class="wrapper">
+    <div>
+        <div>
+            <h3>Latest Posts</h3>
+        </div>
+        <div>
+            <ul>
+                
+                <li><a href="/posts/2024/03/17/lbavm-000-intro/">Let&#39;s build a virtual machine: Part 0 - Introduction</a></li>
+                
+                <li><a href="/posts/2023/04/07/time-to-learn-rust/">It&#39;s time to learn Rust</a></li>
+                
+                <li><a href="/posts/2022/02/27/mandatory-copy-elision/">Mandatory Copy Elision in C&#43;&#43;</a></li>
+                
+                <li><a href="/posts/2022/01/23/ctad/">CTAD and Deduction Guides in C&#43;&#43;</a></li>
+                
+                <li><a href="/posts/2022/01/16/git/">Forgettable Git</a></li>
+                
+            </ul>
+        </div>
+    </div>
+</aside> 
+	<footer class="wrapper">
+	<p>&copy; 2024 <a href="https://badlydrawnrod.github.io">My Badly Drawn Self</a></p>
+</footer>
+
+</body>
+</html>
