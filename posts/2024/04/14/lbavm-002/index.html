@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Let&#39;s build a virtual machine: Part 2 - The Main Loop</title>
+	
+	
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu|Lora">
+	<link rel="stylesheet" href="/css/style.css">
+	
+</head>
+<body>
+	<header class="wrapper">
+    <nav>
+        <a href="http://localhost:1313/">Home</a>
+        <ul>
+			
+            
+            <li><a href="/page/about/">About</a></li>
+            
+            <li><a href="/posts/">All posts</a></li>
+            
+        </ul>
+    </nav>
+    
+</header>
+	
+<main class="wrapper">
+    <article>
+        <p></p>
+        
+        <div class="date">2 April, 2024</div>
+        
+        <div>
+            <p>Implementing the main loop.</p>
+<h1 id="implementing-the-main-loop">Implementing the main loop</h1>
+<h2 id="overview">Overview</h2>
+<p>By now we&rsquo;ve learned:</p>
+<ul>
+<li>how we can represent registers</li>
+<li>how we can implement instructions</li>
+<li>how we can encode and decode instructions into opcodes and operands</li>
+</ul>
+<p>Now let&rsquo;s put it all together and implement a main loop that will read instructions from memory, decode them into an opcode and its operands, and execute them.</p>
+<p>When a CPU fetches an instruction from memory, it reads it from the address pointed to by the program counter, then it decodes it and executes it. Once it has finished executing the instruction then it sets the program counter to the address of the next instruction, and continues.</p>
+<p>In our initial implementation of the Owl CPU, we&rsquo;re going to have it stop when it reaches an illegal instruction. Later, we&rsquo;ll expand the code so that it&rsquo;ll stop for other reasons, for example, after it has run a given number of instructions.</p>
+<p>By the end of this section, we&rsquo;ll have implemented an Owl CPU that can read illegal instructions from memory and execute them. It may not seem like much, but as we&rsquo;ll expand this over the course of this post, it will be worth taking your time to understand it.</p>
+<h2 id="main-loop---outline">Main loop - outline</h2>
+<p>We can write the main loop as a <code>Run()</code> function that contains a <code>while</code>-loop that terminates when it hits an illegal instruction.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">void</span> Run(<span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span>* code)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">bool</span> done = false;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">while</span> (!done)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Fetch a 32-bit word from memory at the address pointed to by the program counter.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Decode the word.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Execute it.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Stop the loop if we hit an illegal instruction.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The <code>code</code> parameter represents a view of memory as an array of 32-bit words. Memory in Owl is byte-addressable, but for simplicity, we&rsquo;re going to represent memory that contains code as word-addressable.</p>
+<h2 id="fetching">Fetching</h2>
+<p>We need a representation of the program counter, <em>pc</em>. This register is typically incremented to go to the next instruction, but some instructions such as <code>beq</code>, <code>bltu</code>, <code>call</code> and <code>j</code> can set this to another value. We&rsquo;ll use another 32-bit value, <em>nextPc</em>, to represent the address that <em>pc</em> will be set to at the start of each instruction.</p>
+<p>When our Owl CPU goes to fetch another instruction from memory, it first copies the value in <em>nextPc</em> into <em>pc</em> then immediately updates <em>nextPc</em> to point to the next instruction. This value will be used next time around the loop, unless it is modified by an instruction such as a conditional branch, a call, or a jump. This implementation  means that <em>pc</em> is only ever updated at the start of the loop, so that its value can be used by any instructions that need to read it.</p>
+<p>Now <code>Run()</code> looks like this.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">void</span> Run(<span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span>* code)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Set pc and nextPc to their initial values.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#2b91af">uint32_t</span> pc = 0;     <span style="color:#008000">// The program counter.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#2b91af">uint32_t</span> nextPc = 0; <span style="color:#008000">// The address of the next instruction.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">bool</span> done = false;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">while</span> (!done)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Fetch a 32-bit word from memory at the address pointed to by the program counter.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        pc = nextPc;
+</span></span><span style="display:flex;"><span>        nextPc += wordSize;
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> ins = code[pc / wordSize];
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Decode the word.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Execute it.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Stop the loop if we hit an illegal instruction.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>We&rsquo;ve declared <code>pc</code> and <code>nextPc</code>, and added the code to fetch a 32-bit word from memory. As <code>nextPc</code> represents a register which points to byte-addressable memory, and <code>code</code> is addressed by 32-bit words, we have to increment <code>nextPc</code> by the word size. Likewise, we need to divide <code>pc</code> by the word size when reading from <code>code</code>.</p>
+<h2 id="decoding-and-dispatching">Decoding and dispatching</h2>
+<p>Once the word containing the instruction has been fetched from memory, we need to decode it, then dispatch it an instruction handler for the opcode.</p>
+<p>The first part of this is to extract the opcode which, as we saw previously, is a simple operation.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    Opcode opc = Opcode(ins &amp; 0x7f);
+</span></span></code></pre></div><p>We can use a <code>switch</code> statement to dispatch on the opcode to an instruction handler. This will decode the operands required by the opcode, then perform a simple opcode-specific operation on them, for example, adding them together.</p>
+<p>Now <code>Run()</code> looks like this.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">void</span> Run(<span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span>* code)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Set pc and nextPc to their initial values.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#2b91af">uint32_t</span> pc = 0;     <span style="color:#008000">// The program counter.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#2b91af">uint32_t</span> nextPc = 0; <span style="color:#008000">// The address of the next instruction.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">bool</span> done = false;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">while</span> (!done)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Fetch a 32-bit word from memory at the address pointed to by the program counter.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        pc = nextPc;
+</span></span><span style="display:flex;"><span>        nextPc += wordSize;
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> ins = code[pc / wordSize];
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Decode the word.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">const</span> Opcode opcode = Opcode(ins &amp; 0x7f);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Execute it.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">switch</span> (opcode)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Add:
+</span></span><span style="display:flex;"><span>            <span style="color:#008000">// Implement add.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>            <span style="color:#00f">break</span>;            
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Addi
+</span></span><span style="display:flex;"><span>            <span style="color:#008000">// Implement addi.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>            <span style="color:#00f">break</span>;            
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#008000">// ... etc
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Stop the loop if we hit an illegal instruction.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">default</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#008000">// If we don&#39;t recognise the opcode then by default we have an illegal instruction.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>            done = true;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h2 id="executing">Executing</h2>
+<p>We saw previously that many of the instructions operate on Owl&rsquo;s integer registers, and that we can represent them by a C-style array.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#2b91af">uint32_t</span> x[32] = {}; <span style="color:#008000">// The integer registers.
+</span></span></span></code></pre></div><p>We haven&rsquo;t implemented these yet, so let&rsquo;s introduce them before the start of the loop.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">void</span> Run(<span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span>* code)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Set pc and nextPc to their initial values.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#2b91af">uint32_t</span> pc = 0;     <span style="color:#008000">// The program counter.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#2b91af">uint32_t</span> nextPc = 0; <span style="color:#008000">// The address of the next instruction.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Set all the integer registers to zero.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#2b91af">uint32_t</span> x[32] = {}; <span style="color:#008000">// The integer registers.
+</span></span></span></code></pre></div><p>Implementing each instruction is very straightforward. We already know how to decode the operands, and we&rsquo;ve seen how each instruction is implemented.</p>
+<p>To illustrate just how simple, here the handler for <code>add</code> in its entirety. It decodes the operands <em>rd</em>, <em>rs1</em>, and <em>rs2</em>, then it uses them as indexes to the <em>x</em>-registers, adding <em>x[rs1]</em> to <em>x[rs2]</em>, then storing the result in <em>x[rd]</em>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#00f">case</span> Opcode::Add: {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Implement `Add`.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> rd = (ins &gt;&gt; 7) &amp; 0x1f;   <span style="color:#008000">// Extract rd.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> rs1 = (ins &gt;&gt; 12) &amp; 0x1f; <span style="color:#008000">// Extract rs1.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> rs2 = (ins &gt;&gt; 17) &amp; 0x1f; <span style="color:#008000">// Extract rs2.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        x[rd] = x[rs1] + x[rs2];                 <span style="color:#008000">// Add the two registers.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        x[0] = 0;                                <span style="color:#008000">// Ensure x0 is always zero.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span></code></pre></div><p>TODO: see <strong>Encoding and decoding</strong> for functions to extract each operand.</p>
+<p>TODO: For the most part, the other instructions are handled by following the same pattern of decoding the operands then executing the instruction, so much so that it&rsquo;s worth our time to write some short functions to decode them.</p>
+<p>The only gotcha is the call to <code>printf()</code>, as that calls into a subroutine that we haven&rsquo;t seen yet.</p>
+<p>However, as we would need to implement many more instructions in order to run <code>printf()</code> on the Owl VM, at this stage I&rsquo;m going to propose that we cheat, and take advantage of the fact that as there&rsquo;s only one <code>call</code> instruction, we can temporarily hard-code it to do a <code>printf()</code>.</p>
+<p>Here&rsquo;s the implementation of <code>call</code>. It has nothing to do with calling a subroutine, but instead uses the values in the two argument registers <em>a1</em> and <em>a2</em> as arguments to <code>std::format</code> as shown below.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#00f">case</span> Opcode::Call {
+</span></span><span style="display:flex;"><span>        std::cout &lt;&lt; std::format(<span style="color:#a31515">&#34;fib({}) = {}</span><span style="color:#a31515">\n</span><span style="color:#a31515">&#34;</span>, x[a1], x[a2]);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span></code></pre></div><p>This may seem somewhat specialized, but surprisingly this isn&rsquo;t without precedent. Some old computers had a highly specialized instruction set. For example, this old British computer, <a href="https://www.emidec.org.uk/emih0hom.htm">the EMIDEC</a>, had an instruction set that included <a href="https://www.emidec.org.uk/emihinst.htm">pounds sterling input and output</a>. Bear in mind that this was from the time of pounds, shillings and pence, not the current decimal pound, and you can see just how specialized this machine was.</p>
+<p>So at this point, I feel that doing a temporary hack to implement <code>printf()</code> is a tradeoff that I&rsquo;m willing to make.</p>
+<p>Finally, <code>Run()</code> looks like this.</p>
+<p>TODO: now draw the rest of the Owl.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#00f">while</span> (!done)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Fetch a 32-bit word from memory at the address pointed to by the program counter.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Decode the word.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Execute it.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">switch</span> (opcode)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">case</span> Opcode::Add: {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> rd = (ins &gt;&gt; 7) &amp; 0x1f;   <span style="color:#008000">// Extract rd.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> rs1 = (ins &gt;&gt; 12) &amp; 0x1f; <span style="color:#008000">// Extract rs1.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> rs2 = (ins &gt;&gt; 17) &amp; 0x1f; <span style="color:#008000">// Extract rs2.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        x[rd] = x[rs1] + x[rs2];                 <span style="color:#008000">// Add the two registers.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        x[0] = 0;                                <span style="color:#008000">// Ensure x0 is always zero.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">case</span> Opcode::Addi: {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> rd = (ins &gt;&gt; 7) &amp; 0x1f;   <span style="color:#008000">// Extract rd.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> rs1 = (ins &gt;&gt; 12) &amp; 0x1f; <span style="color:#008000">// Extract rs1.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>                                                 <span style="color:#008000">// Extract imm12.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> imm12 = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">uint32_t</span>&gt;(<span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;(ins &amp; 0xfff00000) &gt;&gt; 20);
+</span></span><span style="display:flex;"><span>        x[rd] = x[rs1] + imm12;                  <span style="color:#008000">// Perform the addition.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        x[0] = 0;                                <span style="color:#008000">// Ensure x0 is always zero.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">case</span> Opcode::Beq: {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> rs1 = (ins &gt;&gt; 12) &amp; 0x1f; <span style="color:#008000">// Extract rs1.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> rs2 = (ins &gt;&gt; 17) &amp; 0x1f; <span style="color:#008000">// Extract rs2.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>                                                 
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Perform the comparison.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">if</span> (x[rs1] == x[rs2])
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#008000">// Take the branch.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>            <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> offs12 = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">uint32_t</span>&gt;(<span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;(ins &amp; 0xfff00000) &gt;&gt; 19);
+</span></span><span style="display:flex;"><span>            nextPc = pc + offs12;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">case</span> Opcode::Bltu: {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> rs1 = (ins &gt;&gt; 12) &amp; 0x1f; <span style="color:#008000">// Extract rs1.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> rs2 = (ins &gt;&gt; 17) &amp; 0x1f; <span style="color:#008000">// Extract rs2.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>                                                 
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Perform the comparison.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">if</span> (x[rs1] &lt; x[rs2])
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#008000">// Take the branch.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>            <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> offs12 = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">uint32_t</span>&gt;(<span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;(ins &amp; 0xfff00000) &gt;&gt; 19);
+</span></span><span style="display:flex;"><span>            nextPc = pc + offs12;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">case</span> Opcode::Call: {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Extract offs20.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> offs20 = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">uint32_t</span>&gt;(<span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;(ins &amp; 0xfffff000) &gt;&gt; 11);
+</span></span><span style="display:flex;"><span>        x[ra] = pc + 4;       <span style="color:#008000">// Store the return address in `ra`.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        nextPc = pc + offs20;
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">case</span> Opcode::J: {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Extract offs20.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> offs20 = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">uint32_t</span>&gt;(<span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;(ins &amp; 0xfffff000) &gt;&gt; 11);
+</span></span><span style="display:flex;"><span>        nextPc = pc + offs20;
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">case</span> Opcode::Li: {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> rd = (ins &gt;&gt; 7) &amp; 0x1f;   <span style="color:#008000">// Extract rd.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>                                                 <span style="color:#008000">// Extract imm12.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> imm12 = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">uint32_t</span>&gt;(<span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;(ins &amp; 0xfff00000) &gt;&gt; 20);
+</span></span><span style="display:flex;"><span>        x[rd] = imm12;
+</span></span><span style="display:flex;"><span>        x[0] = 0;
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">case</span> Opcode::Lui: {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> rd = (ins &gt;&gt; 7) &amp; 0x1f;   <span style="color:#008000">// Extract rd.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        uimm20 = ins &amp; 0xfffff000;               <span style="color:#008000">// Extract uimm20;                                  
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        x[rd] = uimm20;
+</span></span><span style="display:flex;"><span>        x[0] = 0;
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">case</span> Opcode::Mv: {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> rd = (ins &gt;&gt; 7) &amp; 0x1f;   <span style="color:#008000">// Extract rd.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> rs1 = (ins &gt;&gt; 12) &amp; 0x1f; <span style="color:#008000">// Extract rs1.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        x[rd] = x[rs1];
+</span></span><span style="display:flex;"><span>        x[0] = 0;
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">default</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// We&#39;ve hit an illegal instruction.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        done = (opcode == Opcode::Illegal)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div>
+        </div>
+        
+        <div>
+            <ul id="tags">
+                
+                <li><a href="/tags/vm">vm</a></li>
+                
+                <li><a href="/tags/owl">owl</a></li>
+                
+            </ul>
+        </div>
+        
+    </article>
+</main>
+<aside class="wrapper">
+    <div>
+        <div>
+            <h3>Latest Posts</h3>
+        </div>
+        <div>
+            <ul>
+                
+                <li><a href="/posts/2024/04/02/lbavm-001/">Let&#39;s build a virtual machine: Part 1 - Registers and instructions</a></li>
+                
+                <li><a href="/posts/2024/04/14/lbavm-002/">Let&#39;s build a virtual machine: Part 2 - The Main Loop</a></li>
+                
+                <li><a href="/posts/2024/03/17/lbavm-000-intro/">Let&#39;s build a virtual machine: Part 0 - Introduction</a></li>
+                
+                <li><a href="/posts/2023/04/07/time-to-learn-rust/">It&#39;s time to learn Rust</a></li>
+                
+                <li><a href="/posts/2022/02/27/mandatory-copy-elision/">Mandatory Copy Elision in C&#43;&#43;</a></li>
+                
+            </ul>
+        </div>
+    </div>
+</aside> 
+	<footer class="wrapper">
+	<p>&copy; 2024 <a href="http://localhost:1313/">My Badly Drawn Self</a></p>
+</footer>
+
+</body>
+</html>

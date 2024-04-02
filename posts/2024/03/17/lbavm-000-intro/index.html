@@ -14,7 +14,7 @@
 <body>
 	<header class="wrapper">
     <nav>
-        <a href="https://badlydrawnrod.github.io">Home</a>
+        <a href="https://badlydrawnrod.github.io/">Home</a>
         <ul>
 			
             
@@ -280,7 +280,7 @@
 </span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        j       print_loop                  <span style="color:#008000">; go to print_loop
 </span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>done:
 </span></span><span style="display:flex;"><span>        li      a0, 0                       <span style="color:#008000">; set the return value of main() to 0
-</span></span></span></code></pre></div><p>There are twenty-four instructions here. It may feel like a lot, but each instruction takes the form of an opcode, followed by zero or more operands. If we count the opcodes, then we&rsquo;ll find that the code in <code>main()</code>&rsquo;s body uses just eight of them.</p>
+</span></span></span></code></pre></div><p>There are twenty-four instructions here. It may feel like a lot, but each instruction takes the form of an opcode, followed by zero or more operands. If we count the opcodes, then we&rsquo;ll find that the code in <code>main()</code>&rsquo;s body uses just nine of them.</p>
 <p>Here they are.</p>
 <table>
 <thead>
@@ -291,6 +291,11 @@
 </tr>
 </thead>
 <tbody>
+<tr>
+<td style="text-align:left">add</td>
+<td style="text-align:left">Add registers</td>
+<td style="text-align:left">adds the values in two registers and stores the result into another register</td>
+</tr>
 <tr>
 <td style="text-align:left">addi</td>
 <td style="text-align:left">Add Immediate</td>
@@ -333,8 +338,18 @@
 </tr>
 </tbody>
 </table>
-<p>Modern CPUs can have hundreds of opcodes. Writing an emulator for one of them would be quite daunting. Fortunately, if we want our CPU to run the code in <code>main()</code>&rsquo;s body then we&rsquo;ll only need to implement the eight opcodes in the table above.</p>
-<p>In the next post in this series, we&rsquo;ll take a look at how we can do that.</p>
+<p>Modern CPUs can have hundreds of opcodes. Writing an emulator for one of them would be quite daunting. Fortunately, if we want our CPU to run the code in <code>main()</code>&rsquo;s body then we&rsquo;ll only need to implement the nine opcodes in the table above.</p>
+<p>In the <a href="https://badlydrawnrod.github.io/posts/2024/04/02/lbavm-001/">next post</a> in this series, we&rsquo;ll take a look at how we can do that.</p>
+        </div>
+        
+        <div>
+            <ul id="tags">
+                
+                <li><a href="/tags/vm">vm</a></li>
+                
+                <li><a href="/tags/owl">owl</a></li>
+                
+            </ul>
         </div>
         
     </article>
@@ -347,6 +362,8 @@
         <div>
             <ul>
                 
+                <li><a href="/posts/2024/04/02/lbavm-001/">Let&#39;s build a virtual machine: Part 1 - Registers and instructions</a></li>
+                
                 <li><a href="/posts/2024/03/17/lbavm-000-intro/">Let&#39;s build a virtual machine: Part 0 - Introduction</a></li>
                 
                 <li><a href="/posts/2023/04/07/time-to-learn-rust/">It&#39;s time to learn Rust</a></li>
@@ -355,14 +372,12 @@
                 
                 <li><a href="/posts/2022/01/23/ctad/">CTAD and Deduction Guides in C&#43;&#43;</a></li>
                 
-                <li><a href="/posts/2022/01/16/git/">Forgettable Git</a></li>
-                
             </ul>
         </div>
     </div>
 </aside> 
 	<footer class="wrapper">
-	<p>&copy; 2024 <a href="https://badlydrawnrod.github.io">My Badly Drawn Self</a></p>
+	<p>&copy; 2024 <a href="https://badlydrawnrod.github.io/">My Badly Drawn Self</a></p>
 </footer>
 
 </body>

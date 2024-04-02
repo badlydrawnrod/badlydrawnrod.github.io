@@ -6,240 +6,203 @@
     <description>Recent content in Tags on My Badly Drawn Self</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Fri, 07 Apr 2023 18:28:49 +0100</lastBuildDate><atom:link href="https://badlydrawnrod.github.io/tags/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Tue, 02 Apr 2024 19:00:00 +0100</lastBuildDate>
+    <atom:link href="https://badlydrawnrod.github.io/tags/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>c&#43;&#43;</title>
+      <title>Owl</title>
+      <link>https://badlydrawnrod.github.io/tags/owl/</link>
+      <pubDate>Tue, 02 Apr 2024 19:00:00 +0100</pubDate>
+      <guid>https://badlydrawnrod.github.io/tags/owl/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Vm</title>
+      <link>https://badlydrawnrod.github.io/tags/vm/</link>
+      <pubDate>Tue, 02 Apr 2024 19:00:00 +0100</pubDate>
+      <guid>https://badlydrawnrod.github.io/tags/vm/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>C&#43;&#43;</title>
       <link>https://badlydrawnrod.github.io/tags/c&#43;&#43;/</link>
       <pubDate>Fri, 07 Apr 2023 18:28:49 +0100</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/tags/c&#43;&#43;/</guid>
       <description></description>
     </item>
-    
     <item>
-      <title>rust</title>
+      <title>Rust</title>
       <link>https://badlydrawnrod.github.io/tags/rust/</link>
       <pubDate>Fri, 07 Apr 2023 18:28:49 +0100</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/tags/rust/</guid>
       <description></description>
     </item>
-    
     <item>
-      <title>copy elision</title>
+      <title>Copy Elision</title>
       <link>https://badlydrawnrod.github.io/tags/copy-elision/</link>
       <pubDate>Sun, 27 Feb 2022 15:00:00 +0000</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/tags/copy-elision/</guid>
       <description></description>
     </item>
-    
     <item>
-      <title>ctad</title>
+      <title>Ctad</title>
       <link>https://badlydrawnrod.github.io/tags/ctad/</link>
       <pubDate>Sun, 23 Jan 2022 14:25:00 +0000</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/tags/ctad/</guid>
       <description></description>
     </item>
-    
     <item>
-      <title>git</title>
+      <title>Git</title>
       <link>https://badlydrawnrod.github.io/tags/git/</link>
       <pubDate>Sun, 16 Jan 2022 16:07:39 +0000</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/tags/git/</guid>
       <description></description>
     </item>
-    
     <item>
-      <title>allocators</title>
+      <title>Allocators</title>
       <link>https://badlydrawnrod.github.io/tags/allocators/</link>
       <pubDate>Thu, 30 Dec 2021 16:30:00 +0000</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/tags/allocators/</guid>
       <description></description>
     </item>
-    
     <item>
-      <title>c&#43;&#43;20</title>
+      <title>C&#43;&#43;20</title>
       <link>https://badlydrawnrod.github.io/tags/c&#43;&#43;20/</link>
       <pubDate>Sat, 18 Dec 2021 16:00:00 +0000</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/tags/c&#43;&#43;20/</guid>
       <description></description>
     </item>
-    
     <item>
-      <title>modules</title>
+      <title>Modules</title>
       <link>https://badlydrawnrod.github.io/tags/modules/</link>
       <pubDate>Sat, 18 Dec 2021 16:00:00 +0000</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/tags/modules/</guid>
       <description></description>
     </item>
-    
     <item>
-      <title>arviss</title>
+      <title>Arviss</title>
       <link>https://badlydrawnrod.github.io/tags/arviss/</link>
       <pubDate>Sun, 28 Nov 2021 16:02:20 +0000</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/tags/arviss/</guid>
       <description></description>
     </item>
-    
     <item>
-      <title>c</title>
+      <title>C</title>
       <link>https://badlydrawnrod.github.io/tags/c/</link>
       <pubDate>Sun, 28 Nov 2021 16:02:20 +0000</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/tags/c/</guid>
       <description></description>
     </item>
-    
     <item>
-      <title>emulators</title>
+      <title>Emulators</title>
       <link>https://badlydrawnrod.github.io/tags/emulators/</link>
       <pubDate>Sun, 28 Nov 2021 16:02:20 +0000</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/tags/emulators/</guid>
       <description></description>
     </item>
-    
     <item>
-      <title>risc-v</title>
+      <title>Risc-V</title>
       <link>https://badlydrawnrod.github.io/tags/risc-v/</link>
       <pubDate>Sun, 28 Nov 2021 16:02:20 +0000</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/tags/risc-v/</guid>
       <description></description>
     </item>
-    
     <item>
-      <title>humour</title>
+      <title>Humour</title>
       <link>https://badlydrawnrod.github.io/tags/humour/</link>
       <pubDate>Fri, 12 Nov 2021 22:45:31 +0000</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/tags/humour/</guid>
       <description></description>
     </item>
-    
     <item>
-      <title>handles</title>
+      <title>Handles</title>
       <link>https://badlydrawnrod.github.io/tags/handles/</link>
       <pubDate>Sun, 23 Aug 2020 20:00:00 +0100</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/tags/handles/</guid>
       <description></description>
     </item>
-    
     <item>
-      <title>typesafe</title>
+      <title>Typesafe</title>
       <link>https://badlydrawnrod.github.io/tags/typesafe/</link>
       <pubDate>Sun, 23 Aug 2020 20:00:00 +0100</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/tags/typesafe/</guid>
       <description></description>
     </item>
-    
     <item>
-      <title>console</title>
+      <title>Console</title>
       <link>https://badlydrawnrod.github.io/tags/console/</link>
       <pubDate>Wed, 12 Aug 2020 12:30:00 +0100</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/tags/console/</guid>
       <description></description>
     </item>
-    
     <item>
-      <title>howto</title>
+      <title>Howto</title>
       <link>https://badlydrawnrod.github.io/tags/howto/</link>
       <pubDate>Wed, 12 Aug 2020 12:30:00 +0100</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/tags/howto/</guid>
       <description></description>
     </item>
-    
     <item>
-      <title>windows</title>
+      <title>Windows</title>
       <link>https://badlydrawnrod.github.io/tags/windows/</link>
       <pubDate>Wed, 12 Aug 2020 12:30:00 +0100</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/tags/windows/</guid>
       <description></description>
     </item>
-    
     <item>
-      <title>cmake</title>
+      <title>Cmake</title>
       <link>https://badlydrawnrod.github.io/tags/cmake/</link>
       <pubDate>Sun, 05 Jul 2020 15:43:00 +0100</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/tags/cmake/</guid>
       <description></description>
     </item>
-    
     <item>
-      <title>emscripten</title>
+      <title>Emscripten</title>
       <link>https://badlydrawnrod.github.io/tags/emscripten/</link>
       <pubDate>Sun, 05 Jul 2020 15:43:00 +0100</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/tags/emscripten/</guid>
       <description></description>
     </item>
-    
     <item>
-      <title>idbfs</title>
+      <title>Idbfs</title>
       <link>https://badlydrawnrod.github.io/tags/idbfs/</link>
       <pubDate>Sun, 07 Jun 2020 12:00:00 +0100</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/tags/idbfs/</guid>
       <description></description>
     </item>
-    
     <item>
-      <title>indexeddb</title>
+      <title>Indexeddb</title>
       <link>https://badlydrawnrod.github.io/tags/indexeddb/</link>
       <pubDate>Sun, 07 Jun 2020 12:00:00 +0100</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/tags/indexeddb/</guid>
       <description></description>
     </item>
-    
     <item>
-      <title>clion</title>
+      <title>Clion</title>
       <link>https://badlydrawnrod.github.io/tags/clion/</link>
       <pubDate>Sat, 30 May 2020 10:20:00 +0100</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/tags/clion/</guid>
       <description></description>
     </item>
-    
     <item>
-      <title>mingw</title>
+      <title>Mingw</title>
       <link>https://badlydrawnrod.github.io/tags/mingw/</link>
       <pubDate>Tue, 19 May 2020 21:57:44 +0100</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/tags/mingw/</guid>
       <description></description>
     </item>
-    
     <item>
-      <title>ninja</title>
+      <title>Ninja</title>
       <link>https://badlydrawnrod.github.io/tags/ninja/</link>
       <pubDate>Tue, 19 May 2020 21:57:44 +0100</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/tags/ninja/</guid>
       <description></description>
     </item>
-    
     <item>
-      <title>vcpkg</title>
+      <title>Vcpkg</title>
       <link>https://badlydrawnrod.github.io/tags/vcpkg/</link>
       <pubDate>Mon, 18 May 2020 21:27:46 +0100</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/tags/vcpkg/</guid>
       <description></description>
     </item>
-    
   </channel>
 </rss>

@@ -6,192 +6,154 @@
     <description>Recent content on My Badly Drawn Self</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Sun, 17 Mar 2024 00:00:00 +0000</lastBuildDate><atom:link href="https://badlydrawnrod.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Tue, 02 Apr 2024 19:00:00 +0100</lastBuildDate>
+    <atom:link href="https://badlydrawnrod.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Let&#39;s build a virtual machine: Part 1 - Registers and instructions</title>
+      <link>https://badlydrawnrod.github.io/posts/2024/04/02/lbavm-001/</link>
+      <pubDate>Tue, 02 Apr 2024 19:00:00 +0100</pubDate>
+      <guid>https://badlydrawnrod.github.io/posts/2024/04/02/lbavm-001/</guid>
+      <description>&lt;p&gt;Implementing registers and instructions for the Owl-2820 CPU.&lt;/p&gt;</description>
+    </item>
     <item>
       <title>Let&#39;s build a virtual machine: Part 0 - Introduction</title>
       <link>https://badlydrawnrod.github.io/posts/2024/03/17/lbavm-000-intro/</link>
       <pubDate>Sun, 17 Mar 2024 00:00:00 +0000</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/posts/2024/03/17/lbavm-000-intro/</guid>
       <description>&lt;p&gt;In this series we&amp;rsquo;re going to implement a virtual machine from scratch.&lt;/p&gt;</description>
     </item>
-    
     <item>
       <title>It&#39;s time to learn Rust</title>
       <link>https://badlydrawnrod.github.io/posts/2023/04/07/time-to-learn-rust/</link>
       <pubDate>Fri, 07 Apr 2023 18:28:49 +0100</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/posts/2023/04/07/time-to-learn-rust/</guid>
-      <description></description>
+      <description>It&amp;rsquo;s time to learn Rust The challenge - 100 days of Rust On the 4th of December, 2022, I set myself the following challenge.&#xA;Do at least 15 minutes of programming in Rust every day for 100 days. Today is the 4th of December so that will take me to the 14th of March.&#xA;Background I&amp;rsquo;d played with Rust about 3 or 4 years ago and had written a couple of command line tools with it.</description>
     </item>
-    
     <item>
       <title>Mandatory Copy Elision in C&#43;&#43;</title>
       <link>https://badlydrawnrod.github.io/posts/2022/02/27/mandatory-copy-elision/</link>
       <pubDate>Sun, 27 Feb 2022 15:00:00 +0000</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/posts/2022/02/27/mandatory-copy-elision/</guid>
       <description>&lt;p&gt;A look behind the scenes of mandatory copy elision.&lt;/p&gt;</description>
     </item>
-    
     <item>
       <title>CTAD and Deduction Guides in C&#43;&#43;</title>
       <link>https://badlydrawnrod.github.io/posts/2022/01/23/ctad/</link>
       <pubDate>Sun, 23 Jan 2022 14:25:00 +0000</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/posts/2022/01/23/ctad/</guid>
       <description>&lt;p&gt;A brief look at CTAD and deduction guides.&lt;/p&gt;</description>
     </item>
-    
     <item>
       <title>Forgettable Git</title>
       <link>https://badlydrawnrod.github.io/posts/2022/01/16/git/</link>
       <pubDate>Sun, 16 Jan 2022 16:07:39 +0000</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/posts/2022/01/16/git/</guid>
       <description>&lt;p&gt;Git commands that I usually forget.&lt;/p&gt;</description>
     </item>
-    
     <item>
       <title>Bump Allocators in C&#43;&#43;</title>
       <link>https://badlydrawnrod.github.io/posts/2021/12/30/monotonic_buffer_resource/</link>
       <pubDate>Thu, 30 Dec 2021 16:30:00 +0000</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/posts/2021/12/30/monotonic_buffer_resource/</guid>
       <description>&lt;p&gt;How do I implement a C++ bump allocator that works with standard library containers?&lt;/p&gt;</description>
     </item>
-    
     <item>
       <title>Polymorphic Allocators in C&#43;&#43;</title>
       <link>https://badlydrawnrod.github.io/posts/2021/12/28/allocators/</link>
       <pubDate>Tue, 28 Dec 2021 14:15:00 +0000</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/posts/2021/12/28/allocators/</guid>
       <description>&lt;p&gt;C++17 introduced polymorphic allocators, but what problem do they solve?&lt;/p&gt;</description>
     </item>
-    
     <item>
       <title>Exploring Module Linkage in C&#43;&#43;20</title>
       <link>https://badlydrawnrod.github.io/posts/2021/12/19/cpp-modules-2/</link>
       <pubDate>Sat, 18 Dec 2021 16:00:00 +0000</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/posts/2021/12/19/cpp-modules-2/</guid>
       <description>&lt;p&gt;C++20 introduced the idea of module linkage, but it seems to be somewhat inconsistently implemented.&lt;/p&gt;</description>
     </item>
-    
     <item>
       <title>Compiling C&#43;&#43;20 Modules with clang and MSVC</title>
       <link>https://badlydrawnrod.github.io/posts/2021/12/12/cpp-modules/</link>
       <pubDate>Sun, 12 Dec 2021 11:47:42 +0000</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/posts/2021/12/12/cpp-modules/</guid>
       <description>&lt;p&gt;Command lines for compiling and using C++20 modules from both clang and MSVC.&lt;/p&gt;</description>
     </item>
-    
     <item>
       <title>Why I wrote Arviss</title>
       <link>https://badlydrawnrod.github.io/posts/2021/11/28/why_arviss/</link>
       <pubDate>Sun, 28 Nov 2021 16:02:20 +0000</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/posts/2021/11/28/why_arviss/</guid>
       <description>&lt;p&gt;Why did I write &lt;a href=&#34;https://github.com/badlydrawnrod/arviss&#34;&gt;Arviss&lt;/a&gt;, a RISC-V instruction set simulator?&lt;/p&gt;</description>
     </item>
-    
     <item>
       <title>How I went to C</title>
       <link>https://badlydrawnrod.github.io/posts/2021/11/15/how-i-went-to-c/</link>
       <pubDate>Mon, 15 Nov 2021 23:01:38 +0000</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/posts/2021/11/15/how-i-went-to-c/</guid>
       <description>&lt;p&gt;My Twitter name says that I&amp;rsquo;m the old C dog, so you may be surprised to hear that it took me quite a while to warm to C.&lt;/p&gt;</description>
     </item>
-    
     <item>
       <title>In the beginning</title>
       <link>https://badlydrawnrod.github.io/posts/2021/11/12/in-the-beginning/</link>
       <pubDate>Fri, 12 Nov 2021 22:45:31 +0000</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/posts/2021/11/12/in-the-beginning/</guid>
       <description>&lt;p&gt;When my parents moved house they found an old story that I wrote for my sixth form college&amp;rsquo;s student magazine.&lt;/p&gt;</description>
     </item>
-    
     <item>
       <title>How to expose typesafe handles in a C API</title>
       <link>https://badlydrawnrod.github.io/posts/2020/08/23/handles/</link>
       <pubDate>Sun, 23 Aug 2020 20:00:00 +0100</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/posts/2020/08/23/handles/</guid>
       <description>&lt;p&gt;If you have a C API, how do you pass handles to it in a typesafe manner?&lt;/p&gt;</description>
     </item>
-    
     <item>
       <title>How to save and restore Windows console modes</title>
       <link>https://badlydrawnrod.github.io/posts/2020/08/15/</link>
       <pubDate>Wed, 12 Aug 2020 12:30:00 +0100</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/posts/2020/08/15/</guid>
       <description>&lt;p&gt;How do you save and restore console modes in Windows?&lt;/p&gt;</description>
     </item>
-    
     <item>
       <title>How to detect Emscripten in CMake</title>
       <link>https://badlydrawnrod.github.io/posts/2020/07/05/cmake-detect-emscripten/</link>
       <pubDate>Sun, 05 Jul 2020 15:43:00 +0100</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/posts/2020/07/05/cmake-detect-emscripten/</guid>
-      <description>&lt;h1 id=&#34;problem&#34;&gt;Problem&lt;/h1&gt;
-&lt;p&gt;You&amp;rsquo;re using &lt;strong&gt;Emscripten&lt;/strong&gt; and would like to detect this in your &lt;strong&gt;CMakeLists.txt&lt;/strong&gt; so that you can something different for &lt;strong&gt;Emscripten&lt;/strong&gt; builds.&lt;/p&gt;</description>
+      <description>&lt;h1 id=&#34;problem&#34;&gt;Problem&lt;/h1&gt;&#xA;&lt;p&gt;You&amp;rsquo;re using &lt;strong&gt;Emscripten&lt;/strong&gt; and would like to detect this in your &lt;strong&gt;CMakeLists.txt&lt;/strong&gt; so that you can something different for &lt;strong&gt;Emscripten&lt;/strong&gt; builds.&lt;/p&gt;</description>
     </item>
-    
     <item>
       <title>How to save downloaded files to IndexedDB with Emscripten</title>
       <link>https://badlydrawnrod.github.io/posts/2020/06/07/emscripten-indexeddb/</link>
       <pubDate>Sun, 07 Jun 2020 12:00:00 +0100</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/posts/2020/06/07/emscripten-indexeddb/</guid>
-      <description>&lt;h1 id=&#34;problem&#34;&gt;Problem&lt;/h1&gt;
-&lt;p&gt;You&amp;rsquo;re using &lt;strong&gt;Emscripten&lt;/strong&gt; and would like to cache downloaded files to &lt;strong&gt;IndexedDb&lt;/strong&gt; so that they appear in the &lt;strong&gt;IDBFS&lt;/strong&gt; filesystem.&lt;/p&gt;</description>
+      <description>&lt;h1 id=&#34;problem&#34;&gt;Problem&lt;/h1&gt;&#xA;&lt;p&gt;You&amp;rsquo;re using &lt;strong&gt;Emscripten&lt;/strong&gt; and would like to cache downloaded files to &lt;strong&gt;IndexedDb&lt;/strong&gt; so that they appear in the &lt;strong&gt;IDBFS&lt;/strong&gt; filesystem.&lt;/p&gt;</description>
     </item>
-    
     <item>
       <title>How to build and run an Emscripten project from CLion on Windows</title>
       <link>https://badlydrawnrod.github.io/posts/2020/05/30/emscripten-project-in-clion/</link>
       <pubDate>Sat, 30 May 2020 10:20:00 +0100</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/posts/2020/05/30/emscripten-project-in-clion/</guid>
-      <description>&lt;h1 id=&#34;problem&#34;&gt;Problem&lt;/h1&gt;
-&lt;p&gt;You&amp;rsquo;re developing on Windows and have an existing &lt;strong&gt;Emscripten&lt;/strong&gt; project that builds and runs from the command line, but you&amp;rsquo;d like to do this from the &lt;strong&gt;CLion&lt;/strong&gt; IDE.&lt;/p&gt;</description>
+      <description>&lt;h1 id=&#34;problem&#34;&gt;Problem&lt;/h1&gt;&#xA;&lt;p&gt;You&amp;rsquo;re developing on Windows and have an existing &lt;strong&gt;Emscripten&lt;/strong&gt; project that builds and runs from the command line, but you&amp;rsquo;d like to do this from the &lt;strong&gt;CLion&lt;/strong&gt; IDE.&lt;/p&gt;</description>
     </item>
-    
     <item>
       <title>How to use Emscripten with CMake on Windows</title>
       <link>https://badlydrawnrod.github.io/posts/2020/05/19/emcmake-with-emscripten/</link>
       <pubDate>Tue, 19 May 2020 21:57:44 +0100</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/posts/2020/05/19/emcmake-with-emscripten/</guid>
-      <description>&lt;h1 id=&#34;problem&#34;&gt;Problem&lt;/h1&gt;
-&lt;p&gt;You&amp;rsquo;ve installed &lt;strong&gt;Emscripten&lt;/strong&gt; on Windows, but you can&amp;rsquo;t get it to work with &lt;strong&gt;CMake&lt;/strong&gt;.&lt;/p&gt;</description>
+      <description>&lt;h1 id=&#34;problem&#34;&gt;Problem&lt;/h1&gt;&#xA;&lt;p&gt;You&amp;rsquo;ve installed &lt;strong&gt;Emscripten&lt;/strong&gt; on Windows, but you can&amp;rsquo;t get it to work with &lt;strong&gt;CMake&lt;/strong&gt;.&lt;/p&gt;</description>
     </item>
-    
     <item>
       <title>How to find the CMake targets for a vcpkg package</title>
       <link>https://badlydrawnrod.github.io/posts/2020/05/18/cmake-target-packages-from-vcpkg/</link>
       <pubDate>Mon, 18 May 2020 21:27:46 +0100</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/posts/2020/05/18/cmake-target-packages-from-vcpkg/</guid>
-      <description>&lt;h1 id=&#34;problem&#34;&gt;Problem&lt;/h1&gt;
-&lt;p&gt;When you install a package with &lt;code&gt;vcpkg&lt;/code&gt; it tells you the &lt;strong&gt;CMake&lt;/strong&gt; targets. But if you didn&amp;rsquo;t make a note of them at the time, how do you find out what they are?&lt;/p&gt;
-&lt;p&gt;And what if you want the &lt;strong&gt;CMake&lt;/strong&gt; targets for a package&amp;rsquo;s dependencies?&lt;/p&gt;</description>
+      <description>&lt;h1 id=&#34;problem&#34;&gt;Problem&lt;/h1&gt;&#xA;&lt;p&gt;When you install a package with &lt;code&gt;vcpkg&lt;/code&gt; it tells you the &lt;strong&gt;CMake&lt;/strong&gt; targets. But if you didn&amp;rsquo;t make a note of them at the time, how do you find out what they are?&lt;/p&gt;&#xA;&lt;p&gt;And what if you want the &lt;strong&gt;CMake&lt;/strong&gt; targets for a package&amp;rsquo;s dependencies?&lt;/p&gt;</description>
     </item>
-    
     <item>
       <title>About me</title>
       <link>https://badlydrawnrod.github.io/page/about/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
       <guid>https://badlydrawnrod.github.io/page/about/</guid>
       <description>I work at Sophos as a Principal Software Engineer. All opinions here are mine, not those of my employer.</description>
     </item>
-    
   </channel>
 </rss>

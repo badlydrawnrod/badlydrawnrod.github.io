@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Owl on My Badly Drawn Self</title>
+    <link>https://badlydrawnrod.github.io/tags/owl/</link>
+    <description>Recent content in Owl on My Badly Drawn Self</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en</language>
+    <lastBuildDate>Tue, 02 Apr 2024 19:00:00 +0100</lastBuildDate>
+    <atom:link href="https://badlydrawnrod.github.io/tags/owl/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Let&#39;s build a virtual machine: Part 1 - Registers and instructions</title>
+      <link>https://badlydrawnrod.github.io/posts/2024/04/02/lbavm-001/</link>
+      <pubDate>Tue, 02 Apr 2024 19:00:00 +0100</pubDate>
+      <guid>https://badlydrawnrod.github.io/posts/2024/04/02/lbavm-001/</guid>
+      <description>&lt;p&gt;Implementing registers and instructions for the Owl-2820 CPU.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Let&#39;s build a virtual machine: Part 0 - Introduction</title>
+      <link>https://badlydrawnrod.github.io/posts/2024/03/17/lbavm-000-intro/</link>
+      <pubDate>Sun, 17 Mar 2024 00:00:00 +0000</pubDate>
+      <guid>https://badlydrawnrod.github.io/posts/2024/03/17/lbavm-000-intro/</guid>
+      <description>&lt;p&gt;In this series we&amp;rsquo;re going to implement a virtual machine from scratch.&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Let&#39;s build a virtual machine: Old Part 1 - Owl does Fibonacci</title>
+	
+	
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu|Lora">
+	<link rel="stylesheet" href="/css/style.css">
+	
+</head>
+<body>
+	<header class="wrapper">
+    <nav>
+        <a href="http://localhost:1313/">Home</a>
+        <ul>
+			
+            
+            <li><a href="/page/about/">About</a></li>
+            
+            <li><a href="/posts/">All posts</a></li>
+            
+        </ul>
+    </nav>
+    
+</header>
+	
+<main class="wrapper">
+    <article>
+        <p></p>
+        
+        <div class="date">31 March, 2024</div>
+        
+        <div>
+            <p>Implementing enough of a CPU to calculate the Fibonacci sequence.</p>
+<h1 id="lets-build-a-virtual-machine-part-1---owl-does-fibonacci">Let&rsquo;s Build a Virtual Machine: Part 1 - Owl does Fibonacci</h1>
+<p>In <a href="http://localhost:1313/posts/2024/03/17/lbavm-000-intro/">the previous post</a> in this series, we looked at a C implementation of the Fibonacci sequence, then examined what it looked like when compiled to RISC-V assembly language on an RV32I CPU. We discovered that a CPU capable of running that code would need implementations for a mere handful ofopcodes.</p>
+<p>In this post we&rsquo;ll get into some details and look at how we can implement that CPU.</p>
+<h2 id="the-owl-2820-cpu">The Owl-2820 CPU</h2>
+<p>We&rsquo;ll base the Owl-2820 CPU on RV32I, as it&rsquo;s a good example of a simple RISC CPU. In other words, the Owl CPU will have the same 32 integer registers as RV32I, and it will eventually support the same instructions as RV32I.</p>
+<h1 id="implementing-registers">Implementing registers</h1>
+<h2 id="the-integer-registers">The integer registers</h2>
+<p>In the last post we learned that an RV32I CPU has 32 integer registers, <em>x0</em> - <em>x31</em>, and that they also have symbolic names such as <em>sp</em> for the stack pointer, and <em>ra</em> for the return address.</p>
+<p>The Owl-2820 CPU will have 32 integer registers, <em>x0</em> - <em>x31</em>, just like RV32I. It will use the same register names and usages as RV32I, as that will make it much easier for us to write our code. We&rsquo;ll also ensure that register <em>x0</em> always contains zero.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Register</th>
+<th style="text-align:left">Name</th>
+<th style="text-align:left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">x0</td>
+<td style="text-align:left">zero</td>
+<td style="text-align:left">always contains zero (writing to <em>x0</em> has no effect)</td>
+</tr>
+<tr>
+<td style="text-align:left">x1</td>
+<td style="text-align:left">ra</td>
+<td style="text-align:left">return address</td>
+</tr>
+<tr>
+<td style="text-align:left">x2</td>
+<td style="text-align:left">sp</td>
+<td style="text-align:left">stack pointer</td>
+</tr>
+<tr>
+<td style="text-align:left">x3</td>
+<td style="text-align:left">gp</td>
+<td style="text-align:left">global pointer</td>
+</tr>
+<tr>
+<td style="text-align:left">x4</td>
+<td style="text-align:left">tp</td>
+<td style="text-align:left">thread pointer</td>
+</tr>
+<tr>
+<td style="text-align:left">x5 - x7</td>
+<td style="text-align:left">t0 - t2</td>
+<td style="text-align:left">temporary registers</td>
+</tr>
+<tr>
+<td style="text-align:left">x8 - x9</td>
+<td style="text-align:left">s0 - s1</td>
+<td style="text-align:left">callee-saved registers</td>
+</tr>
+<tr>
+<td style="text-align:left">x10 - x17</td>
+<td style="text-align:left">a0 - a7</td>
+<td style="text-align:left">argument registers</td>
+</tr>
+<tr>
+<td style="text-align:left">x18 - x27</td>
+<td style="text-align:left">s2 - s11</td>
+<td style="text-align:left">callee-saved registers</td>
+</tr>
+<tr>
+<td style="text-align:left">x28 - x31</td>
+<td style="text-align:left">t3 - t6</td>
+<td style="text-align:left">temporary registers</td>
+</tr>
+</tbody>
+</table>
+<p>As there are 32 integer registers in the Owl CPU that all 32-bit, we can represent them in code as a C-style array of <code>uint32_t</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">uint32_t</span> x[32]; <span style="color:#008000">// The integer registers.
+</span></span></span></code></pre></div><p>We can refer to any of the <em>x</em>-registers with a simple array lookup. For example, <code>x[0]</code> refers to the <em>zero</em> register, <code>x[1]</code> refers to the return address register, <em>ra</em>, and <code>x[2]</code> refers to the stack pointer register, <em>sp</em>.</p>
+<p>It will be easier for us if we can use symbolic register names such as <em>sp</em>. To get a step closer to this, we&rsquo;ll define the following <code>enum</code> so that, for example, we can write <code>x[sp]</code> rather than <code>x[2]</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#008000">// Symbolic register names.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span><span style="color:#00f">enum</span> { zero, ra, sp, gp, tp, t0, t1, t2, s0, s1, a0, a1, a2, a3, a4, a5, a6, a7,
+</span></span><span style="display:flex;"><span>        s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, t3, t4, t5, t6 };
+</span></span></code></pre></div><h2 id="the-program-counter">The program counter</h2>
+<p>There&rsquo;s one important register that I haven&rsquo;t mentioned yet, and that&rsquo;s the program counter register, <em>pc</em>. This 32-bit integer register tells the CPU where to read the next instruction from in memory. Some <a href="https://en.wikipedia.org/wiki/Instruction_set_architecture">instruction set architectures</a> use the name instruction pointer, <em>ip</em>, instead of <em>pc</em>. This is arguably a better name, but I&rsquo;ll stick with <em>pc</em> for consistency with RV32I.</p>
+<p>We can represent the program counter in code as a <code>uint32_t</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">uint32_t</span> pc; <span style="color:#008000">// The program counter.
+</span></span></span></code></pre></div><h1 id="implementing-instructions">Implementing instructions</h1>
+<h2 id="overview">Overview</h2>
+<p>In <a href="http://localhost:1313/posts/2024/03/17/lbavm-000-intro/">the previous post</a>, I said that we&rsquo;d only need to implement eight opcodes to be able to run the program that outputs the Fibonacci sequence. However, I had overlooked the <em>add</em> instruction, so there are actually nine opcodes.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Opcode</th>
+<th style="text-align:left">Meaning</th>
+<th style="text-align:left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">add</td>
+<td style="text-align:left">Add registers</td>
+<td style="text-align:left">adds the values in two registers and stores the result into another register</td>
+</tr>
+<tr>
+<td style="text-align:left">addi</td>
+<td style="text-align:left">Add Immediate</td>
+<td style="text-align:left">adds an immediate value and a register and stores the result into another register</td>
+</tr>
+<tr>
+<td style="text-align:left">beq</td>
+<td style="text-align:left">Branch if EQual</td>
+<td style="text-align:left">compares the content of two registers and jumps to a different location if they&rsquo;re equal</td>
+</tr>
+<tr>
+<td style="text-align:left">bltu</td>
+<td style="text-align:left">Branch if Less Than (Unsigned)</td>
+<td style="text-align:left">compares the unsigned values in two registers and jumps to a different location if the first is less than the second</td>
+</tr>
+<tr>
+<td style="text-align:left">call</td>
+<td style="text-align:left">Call</td>
+<td style="text-align:left">calls a function</td>
+</tr>
+<tr>
+<td style="text-align:left">j</td>
+<td style="text-align:left">Jump</td>
+<td style="text-align:left">jumps to a location</td>
+</tr>
+<tr>
+<td style="text-align:left">li</td>
+<td style="text-align:left">Load Immediate</td>
+<td style="text-align:left">loads an immediate value into a register</td>
+</tr>
+<tr>
+<td style="text-align:left">lui</td>
+<td style="text-align:left">Load Upper Immediate</td>
+<td style="text-align:left">loads an immediate value into the upper bits of a register</td>
+</tr>
+<tr>
+<td style="text-align:left">mv</td>
+<td style="text-align:left">Move</td>
+<td style="text-align:left">copies the value in one register into another register</td>
+</tr>
+</tbody>
+</table>
+<p>Instructions consist of an opcode and zero or more operands. Each instruction performs a very simple operation on its operands.</p>
+<p>The nature of that operation is dictated by the opcode, and what it operates on is dictated by the operands. The one key point that I&rsquo;d like to emphasise is that the operation itself is very simple - I can&rsquo;t stress this enough.</p>
+<p>In most cases operands are given explicitly, for example, as register names or immediate values. However, some opcodes have implicit operands. For example, the <code>J</code> opcode implicitly changes the value in the program counter, <em>pc</em>.</p>
+<h2 id="instruction-descriptions">Instruction descriptions</h2>
+<p>Before we can implement each instruction, we will need to know what they do. Let&rsquo;s look at them in turn. For each instruction, we&rsquo;ll describe the following:</p>
+<h3 id="format">Format</h3>
+<p>How the instruction is written in source form. For example: <code>add rs, rs1, rs2</code>.</p>
+<h3 id="encoding">Encoding</h3>
+<p>A table showing how the opcode and its operands are encoded in a 32-bit instruction. I&rsquo;ll go into encoding some more in the next section.</p>
+<p>The header row contains each field&rsquo;s name, followed by the bit positions that it occupies from high to low in square brackets.</p>
+<p>The second row contains each field&rsquo;s value (where appropriate) followed by the number of bits that it occupies.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">rs2 <code>[31:27]</code></th>
+<th style="text-align:right">unused <code>[26:17]</code></th>
+<th style="text-align:right">rs1 <code>[16:12]</code></th>
+<th style="text-align:right">rd <code>[11:7]</code></th>
+<th style="text-align:right">opcode <code>[6:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">5 bits</td>
+<td style="text-align:right">10 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right"><code>Add</code> : 7 bits</td>
+</tr>
+</tbody>
+</table>
+<h3 id="description">Description</h3>
+<p>A short description of what the instruction does, with reference to the format.</p>
+<h3 id="possible-implementation">Possible implementation</h3>
+<p>A short code fragment describing how the instruction might be implemented, written in terms of the <code>uint32_t</code> representations of the <em>x</em>-registers and program counter that we saw earlier.</p>
+<p>Given that I&rsquo;ve emphasised that each instruction performs a simple operation on its operands, I hope that you won&rsquo;t be too surprised by the fact that the implementation of each instruction is typically only a few lines of C++.</p>
+<h2 id="add---add-registers">add - add registers</h2>
+<h3 id="format-1">Format</h3>
+<p><code>add rd, rs1, rs2</code></p>
+<h3 id="encoding-1">Encoding</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">unused <code>[31:22]</code></th>
+<th style="text-align:right">rs2 <code>[21:17]</code></th>
+<th style="text-align:right">rs1 <code>[16:12]</code></th>
+<th style="text-align:right">rd <code>[11:7]</code></th>
+<th style="text-align:right">opcode <code>[6:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">10 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right"><code>Add</code> : 7 bits</td>
+</tr>
+</tbody>
+</table>
+<h3 id="description-1">Description</h3>
+<p>Adds the value in the first source register <em>rs1</em> to the value in the second source register <em>rs2</em>, storing the result in the destination register <em>rd</em>.</p>
+<h3 id="possible-implementation-1">Possible implementation</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    x[rd] = x[rs1] + x[rs2];
+</span></span><span style="display:flex;"><span>    x[0] = 0;
+</span></span></code></pre></div><h2 id="addi---add-immediate">addi - add immediate</h2>
+<h3 id="format-2">Format</h3>
+<p><code>addi rd, rs1, imm12</code></p>
+<h3 id="encoding-2">Encoding</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">imm12 <code>[31:20]</code></th>
+<th style="text-align:right">unused <code>[19:17]</code></th>
+<th style="text-align:right">rs1 <code>[16:12]</code></th>
+<th style="text-align:right">rd <code>[11:7]</code></th>
+<th style="text-align:right">opcode <code>[6:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">12 bits</td>
+<td style="text-align:right">3 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right"><code>Addi</code> : 7 bits</td>
+</tr>
+</tbody>
+</table>
+<h3 id="description-2">Description</h3>
+<p>Adds the value in the source register <em>rs1</em> to the sign-extended 12-bit immediate value <em>imm12</em>, storing the result in the destination register <em>rd</em>.</p>
+<h3 id="possible-implementation-2">Possible implementation</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    x[rd] = x[rs1] + SignExtend(imm12);
+</span></span><span style="display:flex;"><span>    x[0] = 0;
+</span></span></code></pre></div><h2 id="beq---branch-if-equal">beq - branch if equal</h2>
+<h3 id="format-3">Format</h3>
+<p><code>beq rs1, rs2, offs12</code></p>
+<h3 id="encoding-3">Encoding</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">unused <code>[31:22]</code></th>
+<th style="text-align:right">rs2 <code>[21:17]</code></th>
+<th style="text-align:right">rs1 <code>[16:12]</code></th>
+<th style="text-align:right">unused <code>[11:7]</code></th>
+<th style="text-align:right">opcode <code>[6:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">10 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right"><code>Beq</code> : 7 bits</td>
+</tr>
+</tbody>
+</table>
+<h3 id="description-3">Description</h3>
+<p>This is a conditional branch instruction which takes the branch if the value in source register <em>rs1</em> is equal to the value in source register <em>rs2</em>. The branch is given as <em>offs12</em>, which is a sign-extended 12-bit offset in multiples of two bytes relative to the address of the branch instruction.</p>
+<h3 id="possible-implementation-3">Possible implementation</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#00f">if</span> (x[rs1] == x[rs2])
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        nextPc = pc + SignExtend(offs12 &lt;&lt; 1);
+</span></span><span style="display:flex;"><span>    }
+</span></span></code></pre></div><h2 id="bltu---branch-if-less-than-unsigned">bltu - branch if less than (unsigned)</h2>
+<h3 id="format-4">Format</h3>
+<p><code>bltu rs1, rs2, offs12</code></p>
+<h3 id="encoding-4">Encoding</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">unused <code>[31:22]</code></th>
+<th style="text-align:right">rs2 <code>[21:17]</code></th>
+<th style="text-align:right">rs1 <code>[16:12]</code></th>
+<th style="text-align:right">unused <code>[11:7]</code></th>
+<th style="text-align:right">opcode <code>[6:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">10 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right"><code>Bltu</code> : 7 bits</td>
+</tr>
+</tbody>
+</table>
+<h3 id="description-4">Description</h3>
+<p>This is a conditional branch instruction which takes the branch if the value in source register <em>rs1</em> is less than the value in source register <em>rs2</em> using an unsigned comparison. The branch is given as <em>offs12</em>, which is a sign-extended 12-bit offset in multiples of two bytes relative to the address of the branch instruction.</p>
+<h3 id="possible-implementation-4">Possible implementation</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#00f">if</span> (x[rs1] &lt; x[rs2])
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        nextPc = pc + SignExtend(offs12 &lt;&lt; 1);
+</span></span><span style="display:flex;"><span>    }
+</span></span></code></pre></div><h2 id="call---call-a-subroutine">call - call a subroutine</h2>
+<h3 id="format-5">Format</h3>
+<p><code>call offs20</code></p>
+<h3 id="encoding-5">Encoding</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">offs20 <code>[31:12]</code></th>
+<th style="text-align:right">unused <code>[11:7]</code></th>
+<th style="text-align:right">opcode <code>[6:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">20 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right"><code>Call</code> : 7 bits</td>
+</tr>
+</tbody>
+</table>
+<h3 id="description-5">Description</h3>
+<p>Sets the value in the return address register <em>ra</em> to the address of the instruction immediately following this one, then branches by the sign-extended offset <em>offs20</em>, which is a sign-extended 20-bit offset in multiples of two bytes relative to the address of the call instruction.</p>
+<h3 id="possible-implementation-5">Possible implementation</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    x[ra] = pc + 4;
+</span></span><span style="display:flex;"><span>    nextPc = pc + SignExtend(offs20 &lt;&lt; 1);
+</span></span></code></pre></div><h2 id="j---jump">j - jump</h2>
+<h3 id="format-6">Format</h3>
+<p><code>j offs20</code></p>
+<h3 id="encoding-6">Encoding</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">offs20 <code>[31:12]</code></th>
+<th style="text-align:right">unused <code>[11:7]</code></th>
+<th style="text-align:right">opcode <code>[6:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">20 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right"><code>J</code> : 7 bits</td>
+</tr>
+</tbody>
+</table>
+<h3 id="description-6">Description</h3>
+<p>Branches by the sign-extended offset <em>offs20</em>, which is a sign-extended 20-bit offset in multiples of two bytes relative to the address of the jump instruction.</p>
+<h3 id="possible-implementation-6">Possible implementation</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    nextPc = pc + SignExtend(offs20 &lt;&lt; 1);
+</span></span></code></pre></div><h2 id="li---load-immediate">li - load immediate</h2>
+<h3 id="format-7">Format</h3>
+<p><code>li rd, imm12</code></p>
+<h3 id="encoding-7">Encoding</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">imm12 <code>[31:20]</code></th>
+<th style="text-align:right">unused <code>[19:12]</code></th>
+<th style="text-align:right">rd <code>[11:7]</code></th>
+<th style="text-align:right">opcode <code>[6:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">12 bits</td>
+<td style="text-align:right">8 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right"><code>Li</code> : 7 bits</td>
+</tr>
+</tbody>
+</table>
+<h3 id="description-7">Description</h3>
+<p>Stores the sign-extended 12-bit value <em>imm12</em> into the destination register <em>rd</em>.</p>
+<h3 id="possible-implementation-7">Possible implementation</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    x[rd] = SignExtend(imm12);
+</span></span><span style="display:flex;"><span>    x[0] = 0;
+</span></span></code></pre></div><h2 id="lui---load-upper-immediate">lui - load upper immediate</h2>
+<h3 id="format-8">Format</h3>
+<p><code>lui rd, imm20</code></p>
+<h3 id="encoding-8">Encoding</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">uimm20 <code>[31:12]</code></th>
+<th style="text-align:right">rd <code>[11:7]</code></th>
+<th style="text-align:right">opcode <code>[6:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">20 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right"><code>Lui</code> : 7 bits</td>
+</tr>
+</tbody>
+</table>
+<h3 id="description-8">Description</h3>
+<p>Stores the 20-bit immediate value <em>uimm20</em> into the upper 20 bits of the destination register <em>rd</em>, filling its lowest 12 bits with zeros.</p>
+<h3 id="possible-implementation-8">Possible implementation</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    x[rd] = imm20 &lt;&lt; 12;
+</span></span><span style="display:flex;"><span>    x[0] = 0;
+</span></span></code></pre></div><h2 id="mv---move">mv - move</h2>
+<h4 id="format-9">Format</h4>
+<p><code>mv rd, rs1</code></p>
+<h3 id="encoding-9">Encoding</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">unused <code>[31:17]</code></th>
+<th style="text-align:right">rs1 <code>[16:12]</code></th>
+<th style="text-align:right">rd <code>[11:7]</code></th>
+<th style="text-align:right">opcode <code>[6:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">15 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right"><code>Mv</code> : 7 bits</td>
+</tr>
+</tbody>
+</table>
+<h3 id="description-9">Description</h3>
+<p>Copies the value in source register <em>rs1</em> into the destination register <em>rd</em>.</p>
+<h3 id="possible-implementation-9">Possible implementation</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    x[rd] = x[rs1];
+</span></span><span style="display:flex;"><span>    x[0] = 0;
+</span></span></code></pre></div><h1 id="encoding-and-decoding-instructions">Encoding and decoding instructions</h1>
+<p>One thing that I&rsquo;ve glossed over until now is how instructions are represented in Owl&rsquo;s memory. In other words, how does an Owl CPU determine which instruction is which, and how does it know which operands are present?</p>
+<p>On some <a href="https://en.wikipedia.org/wiki/Instruction_set_architecture">ISAs</a>, instructions can be variable length. For example, on x86 an instruction can be as short as a single byte, or it can span multiple bytes. On RV32I, and therefore on Owl-2820, instructions are always encoded into a 32-bit word.</p>
+<p>From what we&rsquo;ve seen so far, we need to be able to represent the following:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Item</th>
+<th style="text-align:left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">opcode</td>
+<td style="text-align:left">what the instruction does, such as <code>Add</code></td>
+</tr>
+<tr>
+<td style="text-align:left">rd</td>
+<td style="text-align:left">an operand that represents the destination register</td>
+</tr>
+<tr>
+<td style="text-align:left">rs1</td>
+<td style="text-align:left">an operand that represents the first source register</td>
+</tr>
+<tr>
+<td style="text-align:left">rs2</td>
+<td style="text-align:left">an operand that represents the second source register if there are more than two source registers</td>
+</tr>
+<tr>
+<td style="text-align:left">imm12</td>
+<td style="text-align:left">an operand that represents a sign-extended 12-bit immediate value</td>
+</tr>
+<tr>
+<td style="text-align:left">offs12</td>
+<td style="text-align:left">an operand that represents a sign-extended 12-bit offset from <em>pc</em> in multiples of two bytes</td>
+</tr>
+<tr>
+<td style="text-align:left">offs20</td>
+<td style="text-align:left">an operand that represents a sign-extended 20-bit offset from <em>pc</em> in multiples of two bytes</td>
+</tr>
+<tr>
+<td style="text-align:left">uimm20</td>
+<td style="text-align:left">a 20-bit unsigned immediate value</td>
+</tr>
+</tbody>
+</table>
+<p>Knowing this, and knowing that instructions are always encoded into a single 32-bit word, we can figure out how to encode and decode each part of an instruction.</p>
+<p>Registers are easy. There are 32 integer registers, so we need 5 bits to determine which register is being used for each of <em>rd</em>, <em>rs1</em>, and <em>rs2</em>.</p>
+<p>The immediate values and offsets have the number of bits that they require built into their names. For example, <em>uimm20</em> occupies 20 bits.</p>
+<p>So that leaves <em>opcode</em>. Given that the instruction with the largest number of bits taken up by operands is <code>lui</code>, which uses <em>uimm20</em> (20 bits) and <em>rd</em> (5 bits), that leaves us with 7 bits to play with for <em>opcode</em>. That gives us the possibility of 128 opcodes. Right now we only need nine, so I think we have sufficient headroom for expansion.</p>
+<h2 id="opcode">Opcode</h2>
+<p>The 7-bit <em>opcode</em> occupies bits 0 thru 6 of an instruction. The <em>opcode</em> field is always present.</p>
+<p>Decoding this is a single AND operation.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    opcode = ins &amp; 0x7f;
+</span></span></code></pre></div><p>We can represent each opcode as an enum class. The opcode <code>Illegal</code>, whose value is zero represents an illegal instruction. I&rsquo;ve chosen this value so that a newly created block of memory will contain nothing but illegal instructions.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#008000">// Opcodes.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span><span style="color:#00f">enum</span> <span style="color:#00f">class</span> <span style="color:#2b91af">Opcode</span> : <span style="color:#2b91af">uint32_t</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    Illegal = 0,
+</span></span><span style="display:flex;"><span>    Add,
+</span></span><span style="display:flex;"><span>    Addi,
+</span></span><span style="display:flex;"><span>    Beq,
+</span></span><span style="display:flex;"><span>    Bltu,
+</span></span><span style="display:flex;"><span>    Call,
+</span></span><span style="display:flex;"><span>    J,
+</span></span><span style="display:flex;"><span>    Li,
+</span></span><span style="display:flex;"><span>    Lui,
+</span></span><span style="display:flex;"><span>    Mv
+</span></span><span style="display:flex;"><span>};
+</span></span></code></pre></div><h2 id="destination-register-rd">Destination register, rd</h2>
+<p>The 5-bit destination register <em>rd</em>, when present, occupies bits 7-11 of an instruction.</p>
+<p>Decoding this is a single AND operation and a single shift operation.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    rd = (ins &gt;&gt; 7) &amp; 0x1f;
+</span></span></code></pre></div><h2 id="first-source-register-rs1">First source register, rs1</h2>
+<p>The 5-bit source register <em>rs1</em>, when present, occupies bits 12-16 of an instruction.</p>
+<p>Decoding this is a single AND operation and a single shift operation.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    rs1 = (ins &gt;&gt; 12) &amp; 0x1f;
+</span></span></code></pre></div><h2 id="second-source-register-rs2">Second source register, rs2</h2>
+<p>The 5-bit source register <em>rs2</em>, when present, occupies bits 17-21 of an instruction.</p>
+<p>Decoding this is a single AND operation and a single shift operation.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    rs2 = (ins &gt;&gt; 17) &amp; 0x1f;
+</span></span></code></pre></div><h2 id="immediate-values-and-offsets">Immediate values and offsets</h2>
+<p>RISC-V has a particular way of encoding instructions which, as far as I can tell, minimises the number of logic gates required to decode them. I&rsquo;m not a hardware person, unless you count playing around with <a href="https://en.wikipedia.org/wiki/7400-series_integrated_circuits">7400 series TTL</a> in my teens, so take that with a pinch of salt. But whatever the reason, sometimes RISC-V&rsquo;s encodings for immediate operands can seem a little weird, with bits being spread all over the place within the instruction.</p>
+<p>To illustrate this, let&rsquo;s look at how RISC-V encodes branch instructions such as <code>beq</code>. These instruction use what RISC-V calls a B-type instruction format. Part of that instruction format includes 12-bits equivalent to Owl&rsquo;s <em>offs12</em>.</p>
+<p>Here&rsquo;s the B-type instruction format, from the <a href="https://five-embeddev.com/riscv-user-isa-manual/Priv-v1.12/rv32.html#rv32">RISC-V User ISA Manual</a>.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">imm[12] <code>[31]</code></th>
+<th style="text-align:left">imm[10:5] <code>[30:25]</code></th>
+<th style="text-align:right">rs2 <code>[24:20]</code></th>
+<th style="text-align:right">rs1 <code>[19:15]</code></th>
+<th style="text-align:right">funct3 <code>[14:12]</code></th>
+<th style="text-align:left">imm[4:1] <code>[11:8]</code></th>
+<th style="text-align:left">imm[11] <code>[7]</code></th>
+<th style="text-align:right">opcode <code>[6:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">1 bits</td>
+<td style="text-align:left">6 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right">3 bits</td>
+<td style="text-align:left">5 bits</td>
+<td style="text-align:left">1 bit</td>
+<td style="text-align:right">7 bits</td>
+</tr>
+</tbody>
+</table>
+<p>The fields for the 12-bit offset <em>imm</em> are scattered throughout the instruction. I suspect that decoding this in hardware is not a problem. However, in software, extracting those fields from the instruction and reassembling them into a sign-extended value that we can use takes several operations.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    imm12   = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;(ins &amp; 0x80000000) &gt;&gt; 19;   <span style="color:#008000">// ins[31] -&gt; sext(imm[12])
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    imm11   = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;((ins &amp; 0x00000080) &lt;&lt; 4);  <span style="color:#008000">// ins[7] -&gt; imm[11]
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    imm10_5 = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;((ins &amp; 0x7e000000) &gt;&gt; 20); <span style="color:#008000">// ins[30:25] -&gt; imm[10:5]
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    imm4_1  = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;((ins &amp; 0x00000f00) &gt;&gt; 7);  <span style="color:#008000">// ins[11:8]  -&gt; imm[4:1]
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    offs12  = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">uint32_t</span>&gt;(imm12 | imm11 | imm10_5 | imm4_1);
+</span></span></code></pre></div><p>That&rsquo;s four ANDs, four shifts, and three ORs. Eleven operations. I won&rsquo;t even try to describe them because it&rsquo;s just too complicated.</p>
+<p>Compare that with how Owl encodes <em>offs12</em>.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">offs12 <code>[31:20]</code></th>
+<th style="text-align:right">unused <code>[19:17]</code></th>
+<th style="text-align:right">rs1 <code>[16:12]</code></th>
+<th style="text-align:right">rs2 <code>[11:7]</code></th>
+<th style="text-align:right">opcode <code>[6:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">12 bits</td>
+<td style="text-align:right">3 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right">7 bits</td>
+</tr>
+</tbody>
+</table>
+<p>The fields for the 12-bit offset <em>offs12</em> are in the upper twelve bits of the instruction. For Owl encoding, I&rsquo;ve chosen to place all immediate values in the upper bits of the instruction, as this makes it very easy to sign-extend them simply by doing an arithmetic shift right.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    offs12 = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">uint32_t</span>&gt;(<span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;(ins &amp; 0xfff00000) &gt;&gt; 19);
+</span></span></code></pre></div><p>This is far simpler. It&rsquo;s one AND and one shift. Two operations.</p>
+<p>We use AND to mask out the lower twenty bits, then we shift the signed value right by nineteen positions rather than twenty so that we end up with a sign-extended offset given in bytes rather than in multiples of two bytes.</p>
+<h2 id="sign-extended-12-bit-immediate-imm12">Sign-extended 12-bit immediate, imm12</h2>
+<p>This sign-extended 12-bit immediate value, when present, occupies bits 20-31 of an instruction.</p>
+<p>Decoding this is a single AND operation and a single shift operation.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    imm12 = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">uint32_t</span>&gt;(<span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;(ins &amp; 0xfff00000) &gt;&gt; 20);
+</span></span></code></pre></div><h2 id="sign-extended-12-bit-offset-offs12">Sign-extended 12-bit offset, offs12</h2>
+<p>This sign-extended 12-bit value represents an offset from the program counter, <em>pc</em>, in multiples of two bytes. When present, it occupies bits 20-31 of an instruction.</p>
+<p>At first glance, it would appear to be identical to <em>imm12</em>. However, it differs in the way that it is used, as <em>imm12</em> represents a signed number, whereas <em>offs12</em> represents multiples of two bytes.</p>
+<p>It is extracted by shifting by 19 bits rather than 20 to convert it into a 13-bit byte offset that always happens to be even.</p>
+<p>Decoding this is a single AND operation and a single shift operation.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    offs12 = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">uint32_t</span>&gt;(<span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;(ins &amp; 0xfff00000) &gt;&gt; 19);
+</span></span></code></pre></div><h2 id="sign-extended-20-bit-offset-offs20">Sign-extended 20-bit offset, offs20</h2>
+<p>This sign-extended 20-bit value represents an offset from the program counter, <em>pc</em>, in multiples of two bytes. When present, it occupies bits 12-31 of an instruction.</p>
+<p>It is extracted by shifting by 11 bits rather than 12 to convert it into a 21-bit byte offset that always happens to be even.</p>
+<p>Decoding this is a single AND operation and a single shift operation.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    offs20 = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">uint32_t</span>&gt;(<span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;(ins &amp; 0xfffff000) &gt;&gt; 11);
+</span></span></code></pre></div><h2 id="unsigned-20-bit-immediate-uimm20">Unsigned 20-bit immediate, uimm20</h2>
+<p>This is an unsigned 20-bit value represents the upper 20-bits of a 32-bit value. When present, it occupies bits 12-31 of an instruction.</p>
+<p>As it represents the upper 20-bits of a 32-bit value, it is extracted by simply masking out the lower 12 bits of the instruction.</p>
+<p>Decoding this is a single AND operation.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    uimm20 = ins &amp; 0xfffff000;
+</span></span></code></pre></div><h1 id="implementing-the-main-loop">Implementing the main loop</h1>
+<h2 id="overview-1">Overview</h2>
+<p>By now we&rsquo;ve learned:</p>
+<ul>
+<li>how we can represent registers</li>
+<li>how we can implement instructions</li>
+<li>how we can encode and decode instructions into opcodes and operands</li>
+</ul>
+<p>Now let&rsquo;s put it all together and implement a main loop that will read instructions from memory, decode them into an opcode and its operands, and execute them.</p>
+<p>When a CPU fetches an instruction from memory, it reads it from the address pointed to by the program counter, then it decodes it and executes it. Once it has finished executing the instruction then it sets the program counter to the address of the next instruction, and continues.</p>
+<p>In our initial implementation of the Owl CPU, we&rsquo;re going to have it stop when it reaches an illegal instruction. Later, we&rsquo;ll expand the code so that it&rsquo;ll stop for other reasons, for example, after it has run a given number of instructions.</p>
+<p>By the end of this section, we&rsquo;ll have implemented an Owl CPU that can read illegal instructions from memory and execute them. It may not seem like much, but as we&rsquo;ll expand this over the course of this post, it will be worth taking your time to understand it.</p>
+<h2 id="main-loop---outline">Main loop - outline</h2>
+<p>We can write the main loop as a <code>Run()</code> function that contains a <code>while</code>-loop that terminates when it hits an illegal instruction.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">void</span> Run(<span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span>* code)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">bool</span> done = false;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">while</span> (!done)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Fetch a 32-bit word from memory at the address pointed to by the program counter.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Decode the word.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Execute it.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Stop the loop if we hit an illegal instruction.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The <code>code</code> parameter represents a view of memory as an array of 32-bit words. Memory in Owl is byte-addressable, but for simplicity, we&rsquo;re going to represent memory that contains code as word-addressable.</p>
+<h2 id="fetching">Fetching</h2>
+<p>We need a representation of the program counter, <em>pc</em>. This register is typically incremented to go to the next instruction, but some instructions such as <code>beq</code>, <code>bltu</code>, <code>call</code> and <code>j</code> can set this to another value. We&rsquo;ll use another 32-bit value, <em>nextPc</em>, to represent the address that <em>pc</em> will be set to at the start of each instruction.</p>
+<p>When our Owl CPU goes to fetch another instruction from memory, it first copies the value in <em>nextPc</em> into <em>pc</em> then immediately updates <em>nextPc</em> to point to the next instruction. This value will be used next time around the loop, unless it is modified by an instruction such as a conditional branch, a call, or a jump. This implementation  means that <em>pc</em> is only ever updated at the start of the loop, so that its value can be used by any instructions that need to read it.</p>
+<p>Now <code>Run()</code> looks like this.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">void</span> Run(<span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span>* code)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Set pc and nextPc to their initial values.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#2b91af">uint32_t</span> pc = 0;     <span style="color:#008000">// The program counter.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#2b91af">uint32_t</span> nextPc = 0; <span style="color:#008000">// The address of the next instruction.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">bool</span> done = false;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">while</span> (!done)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Fetch a 32-bit word from memory at the address pointed to by the program counter.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        pc = nextPc;
+</span></span><span style="display:flex;"><span>        nextPc += wordSize;
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> ins = code[pc / wordSize];
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Decode the word.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Execute it.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Stop the loop if we hit an illegal instruction.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>We&rsquo;ve declared <code>pc</code> and <code>nextPc</code>, and added the code to fetch a 32-bit word from memory. As <code>nextPc</code> represents a register which points to byte-addressable memory, and <code>code</code> is addressed by 32-bit words, we have to increment <code>nextPc</code> by the word size. Likewise, we need to divide <code>pc</code> by the word size when reading from <code>code</code>.</p>
+<h2 id="decoding-and-dispatching">Decoding and dispatching</h2>
+<p>Once the word containing the instruction has been fetched from memory, we need to decode it, then dispatch it an instruction handler for the opcode.</p>
+<p>The first part of this is to extract the opcode which, as we saw previously, is a simple operation.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    Opcode opc = Opcode(ins &amp; 0x7f);
+</span></span></code></pre></div><p>We can use a <code>switch</code> statement to dispatch on the opcode to an instruction handler. This will decode the operands required by the opcode, then perform a simple opcode-specific operation on them, for example, adding them together.</p>
+<p>Now <code>Run()</code> looks like this.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">void</span> Run(<span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span>* code)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Set pc and nextPc to their initial values.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#2b91af">uint32_t</span> pc = 0;     <span style="color:#008000">// The program counter.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#2b91af">uint32_t</span> nextPc = 0; <span style="color:#008000">// The address of the next instruction.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">bool</span> done = false;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">while</span> (!done)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Fetch a 32-bit word from memory at the address pointed to by the program counter.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        pc = nextPc;
+</span></span><span style="display:flex;"><span>        nextPc += wordSize;
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> ins = code[pc / wordSize];
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Decode the word.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">const</span> Opcode opcode = Opcode(ins &amp; 0x7f);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Execute it.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">switch</span> (opcode)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Add:
+</span></span><span style="display:flex;"><span>            <span style="color:#008000">// Implement add.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>            <span style="color:#00f">break</span>;            
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Addi
+</span></span><span style="display:flex;"><span>            <span style="color:#008000">// Implement addi.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>            <span style="color:#00f">break</span>;            
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#008000">// ... etc
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Stop the loop if we hit an illegal instruction.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">default</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#008000">// If we don&#39;t recognise the opcode then by default we have an illegal instruction.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>            done = true;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h2 id="executing">Executing</h2>
+<p>We saw previously that many of the instructions operate on Owl&rsquo;s integer registers, and that we can represent them by a C-style array.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#2b91af">uint32_t</span> x[32] = {}; <span style="color:#008000">// The integer registers.
+</span></span></span></code></pre></div><p>We haven&rsquo;t implemented these yet, so let&rsquo;s introduce them before the start of the loop.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">void</span> Run(<span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span>* code)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Set pc and nextPc to their initial values.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#2b91af">uint32_t</span> pc = 0;     <span style="color:#008000">// The program counter.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#2b91af">uint32_t</span> nextPc = 0; <span style="color:#008000">// The address of the next instruction.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Set all the integer registers to zero.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#2b91af">uint32_t</span> x[32] = {}; <span style="color:#008000">// The integer registers.
+</span></span></span></code></pre></div><p>Implementing each instruction is very straightforward. We already know how to decode the operands, and we&rsquo;ve seen how each instruction is implemented.</p>
+<p>To illustrate just how simple, here the handler for <code>add</code> in its entirety. It decodes the operands <em>rd</em>, <em>rs1</em>, and <em>rs2</em>, then it uses them as indexes to the <em>x</em>-registers, adding <em>x[rs1]</em> to <em>x[rs2]</em>, then storing the result in <em>x[rd]</em>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#00f">case</span> Opcode::Add: {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Implement `Add`.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> rd = (ins &gt;&gt; 7) &amp; 0x1f;   <span style="color:#008000">// Extract rd.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> rs1 = (ins &gt;&gt; 12) &amp; 0x1f; <span style="color:#008000">// Extract rs1.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> rs2 = (ins &gt;&gt; 17) &amp; 0x1f; <span style="color:#008000">// Extract rs2.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        x[rd] = x[rs1] + x[rs2];                 <span style="color:#008000">// Add the two registers.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        x[0] = 0;                                <span style="color:#008000">// Ensure x0 is always zero.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span></code></pre></div><p>TODO: see <strong>Encoding and decoding</strong> for functions to extract each operand.</p>
+<p>TODO: For the most part, the other instructions are handled by following the same pattern of decoding the operands then executing the instruction, so much so that it&rsquo;s worth our time to write some short functions to decode them.</p>
+<p>The only gotcha is the call to <code>printf()</code>, as that calls into a subroutine that we haven&rsquo;t seen yet.</p>
+<p>However, as we would need to implement many more instructions in order to run <code>printf()</code> on the Owl VM, at this stage I&rsquo;m going to propose that we cheat, and take advantage of the fact that as there&rsquo;s only one <code>call</code> instruction, we can temporarily hard-code it to do a <code>printf()</code>.</p>
+<p>Here&rsquo;s the implementation of <code>call</code>. It has nothing to do with calling a subroutine, but instead uses the values in the two argument registers <em>a1</em> and <em>a2</em> as arguments to <code>std::format</code> as shown below.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#00f">case</span> Opcode::Call {
+</span></span><span style="display:flex;"><span>        std::cout &lt;&lt; std::format(<span style="color:#a31515">&#34;fib({}) = {}</span><span style="color:#a31515">\n</span><span style="color:#a31515">&#34;</span>, x[a1], x[a2]);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span></code></pre></div><p>This may seem somewhat specialized, but surprisingly this isn&rsquo;t without precedent. Some old computers had a highly specialized instruction set. For example, this old British computer, <a href="https://www.emidec.org.uk/emih0hom.htm">the EMIDEC</a>, had an instruction set that included <a href="https://www.emidec.org.uk/emihinst.htm">pounds sterling input and output</a>. Bear in mind that this was from the time of pounds, shillings and pence, not the current decimal pound, and you can see just how specialized this machine was.</p>
+<p>So at this point, I feel that doing a temporary hack to implement <code>printf()</code> is a tradeoff that I&rsquo;m willing to make.</p>
+<p>Finally, <code>Run()</code> looks like this.</p>
+<p>TODO: now draw the rest of the Owl.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#00f">while</span> (!done)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Fetch a 32-bit word from memory at the address pointed to by the program counter.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Decode the word.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Execute it.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">switch</span> (opcode)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">case</span> Opcode::Add: {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> rd = (ins &gt;&gt; 7) &amp; 0x1f;   <span style="color:#008000">// Extract rd.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> rs1 = (ins &gt;&gt; 12) &amp; 0x1f; <span style="color:#008000">// Extract rs1.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> rs2 = (ins &gt;&gt; 17) &amp; 0x1f; <span style="color:#008000">// Extract rs2.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        x[rd] = x[rs1] + x[rs2];                 <span style="color:#008000">// Add the two registers.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        x[0] = 0;                                <span style="color:#008000">// Ensure x0 is always zero.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">case</span> Opcode::Addi: {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> rd = (ins &gt;&gt; 7) &amp; 0x1f;   <span style="color:#008000">// Extract rd.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> rs1 = (ins &gt;&gt; 12) &amp; 0x1f; <span style="color:#008000">// Extract rs1.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>                                                 <span style="color:#008000">// Extract imm12.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> imm12 = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">uint32_t</span>&gt;(<span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;(ins &amp; 0xfff00000) &gt;&gt; 20);
+</span></span><span style="display:flex;"><span>        x[rd] = x[rs1] + imm12;                  <span style="color:#008000">// Perform the addition.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        x[0] = 0;                                <span style="color:#008000">// Ensure x0 is always zero.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">case</span> Opcode::Beq: {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> rs1 = (ins &gt;&gt; 12) &amp; 0x1f; <span style="color:#008000">// Extract rs1.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> rs2 = (ins &gt;&gt; 17) &amp; 0x1f; <span style="color:#008000">// Extract rs2.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>                                                 
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Perform the comparison.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">if</span> (x[rs1] == x[rs2])
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#008000">// Take the branch.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>            <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> offs12 = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">uint32_t</span>&gt;(<span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;(ins &amp; 0xfff00000) &gt;&gt; 19);
+</span></span><span style="display:flex;"><span>            nextPc = pc + offs12;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">case</span> Opcode::Bltu: {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> rs1 = (ins &gt;&gt; 12) &amp; 0x1f; <span style="color:#008000">// Extract rs1.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> rs2 = (ins &gt;&gt; 17) &amp; 0x1f; <span style="color:#008000">// Extract rs2.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>                                                 
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Perform the comparison.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">if</span> (x[rs1] &lt; x[rs2])
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#008000">// Take the branch.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>            <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> offs12 = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">uint32_t</span>&gt;(<span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;(ins &amp; 0xfff00000) &gt;&gt; 19);
+</span></span><span style="display:flex;"><span>            nextPc = pc + offs12;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">case</span> Opcode::Call: {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Extract offs20.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> offs20 = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">uint32_t</span>&gt;(<span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;(ins &amp; 0xfffff000) &gt;&gt; 11);
+</span></span><span style="display:flex;"><span>        x[ra] = pc + 4;       <span style="color:#008000">// Store the return address in `ra`.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        nextPc = pc + offs20;
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">case</span> Opcode::J: {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Extract offs20.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> offs20 = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">uint32_t</span>&gt;(<span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;(ins &amp; 0xfffff000) &gt;&gt; 11);
+</span></span><span style="display:flex;"><span>        nextPc = pc + offs20;
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">case</span> Opcode::Li: {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> rd = (ins &gt;&gt; 7) &amp; 0x1f;   <span style="color:#008000">// Extract rd.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>                                                 <span style="color:#008000">// Extract imm12.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> imm12 = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">uint32_t</span>&gt;(<span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;(ins &amp; 0xfff00000) &gt;&gt; 20);
+</span></span><span style="display:flex;"><span>        x[rd] = imm12;
+</span></span><span style="display:flex;"><span>        x[0] = 0;
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">case</span> Opcode::Lui: {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> rd = (ins &gt;&gt; 7) &amp; 0x1f;   <span style="color:#008000">// Extract rd.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        uimm20 = ins &amp; 0xfffff000;               <span style="color:#008000">// Extract uimm20;                                  
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        x[rd] = uimm20;
+</span></span><span style="display:flex;"><span>        x[0] = 0;
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">case</span> Opcode::Mv: {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> rd = (ins &gt;&gt; 7) &amp; 0x1f;   <span style="color:#008000">// Extract rd.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> rs1 = (ins &gt;&gt; 12) &amp; 0x1f; <span style="color:#008000">// Extract rs1.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        x[rd] = x[rs1];
+</span></span><span style="display:flex;"><span>        x[0] = 0;
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">default</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// We&#39;ve hit an illegal instruction.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        done = (opcode == Opcode::Illegal)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div>
+        </div>
+        
+        <div>
+            <ul id="tags">
+                
+                <li><a href="/tags/vm">vm</a></li>
+                
+                <li><a href="/tags/owl">owl</a></li>
+                
+            </ul>
+        </div>
+        
+    </article>
+</main>
+<aside class="wrapper">
+    <div>
+        <div>
+            <h3>Latest Posts</h3>
+        </div>
+        <div>
+            <ul>
+                
+                <li><a href="/posts/2024/04/14/lbavm-002/">Let&#39;s build a virtual machine: Part 2 - The Main Loop</a></li>
+                
+                <li><a href="/posts/2024/04/07/lbavm-001/">Let&#39;s build a virtual machine: Part 1 - Encoding and decoding instructions</a></li>
+                
+                <li><a href="/posts/2024/03/24/lbavm-001-fib/">Let&#39;s build a virtual machine: Old Part 1 - Owl does Fibonacci</a></li>
+                
+                <li><a href="/posts/2024/03/17/lbavm-000-intro/">Let&#39;s build a virtual machine: Part 0 - Introduction</a></li>
+                
+                <li><a href="/posts/2023/04/07/time-to-learn-rust/">It&#39;s time to learn Rust</a></li>
+                
+            </ul>
+        </div>
+    </div>
+</aside> 
+	<footer class="wrapper">
+	<p>&copy; 2024 <a href="http://localhost:1313/">My Badly Drawn Self</a></p>
+</footer>
+
+</body>
+</html>

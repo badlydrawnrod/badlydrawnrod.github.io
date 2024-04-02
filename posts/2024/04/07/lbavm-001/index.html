@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Let&#39;s build a virtual machine: Part 1 - Encoding and decoding instructions</title>
+	
+	
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu|Lora">
+	<link rel="stylesheet" href="/css/style.css">
+	
+</head>
+<body>
+	<header class="wrapper">
+    <nav>
+        <a href="http://localhost:1313/">Home</a>
+        <ul>
+			
+            
+            <li><a href="/page/about/">About</a></li>
+            
+            <li><a href="/posts/">All posts</a></li>
+            
+        </ul>
+    </nav>
+    
+</header>
+	
+<main class="wrapper">
+    <article>
+        <p></p>
+        
+        <div class="date">1 April, 2024</div>
+        
+        <div>
+            <p>Implementing registers and instructions.</p>
+<h1 id="part-1---registers-and-instructions">Part 1 - Registers and instructions</h1>
+<p>In the <a href="http://localhost:1313/posts/2024/03/17/lbavm-000-intro/">previous post</a> in this series, we looked at a C implementation of the Fibonacci sequence, then examined what it looked like when compiled to RISC-V assembly language on an RV32I CPU. We discovered that a CPU capable of running that code would need implementations for a mere handful of opcodes.</p>
+<p>In this post we&rsquo;ll get into some details and look at how we can implement that CPU. First, we&rsquo;ll see how we could implement registers, then we&rsquo;ll take a look at how the Owl CPU represents instructions in memory, and what they do when they&rsquo;re executed.</p>
+<h2 id="the-owl-2820-cpu">The Owl-2820 CPU</h2>
+<p>We&rsquo;ll base the Owl-2820 CPU on RV32I, as it&rsquo;s a good example of a simple RISC CPU. In other words, the Owl CPU will have the same 32 integer registers as RV32I, and it will eventually support the same instructions as RV32I.</p>
+<p>To start, we&rsquo;ll implement the instructions necessary for implementing the Fibonacci sequence that we saw in the previous post.</p>
+<h1 id="implementing-registers">Implementing registers</h1>
+<h2 id="the-integer-registers">The integer registers</h2>
+<p>In the last post we learned that an RV32I CPU has 32 integer registers, <em>x0</em> - <em>x31</em>, and that they also have symbolic names such as <em>sp</em> for the stack pointer, and <em>ra</em> for the return address.</p>
+<p>The Owl-2820 CPU will have 32 integer registers, <em>x0</em> - <em>x31</em>, just like RV32I. It will use the same register names and usages as RV32I, as that will make it much easier for us to write our code. We&rsquo;ll ensure that register <em>x0</em> always contains zero, as this is also the case for RISC-V.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Register</th>
+<th style="text-align:left">Name</th>
+<th style="text-align:left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">x0</td>
+<td style="text-align:left">zero</td>
+<td style="text-align:left">always contains zero (writing to <em>x0</em> has no effect)</td>
+</tr>
+<tr>
+<td style="text-align:left">x1</td>
+<td style="text-align:left">ra</td>
+<td style="text-align:left">return address</td>
+</tr>
+<tr>
+<td style="text-align:left">x2</td>
+<td style="text-align:left">sp</td>
+<td style="text-align:left">stack pointer</td>
+</tr>
+<tr>
+<td style="text-align:left">x3</td>
+<td style="text-align:left">gp</td>
+<td style="text-align:left">global pointer</td>
+</tr>
+<tr>
+<td style="text-align:left">x4</td>
+<td style="text-align:left">tp</td>
+<td style="text-align:left">thread pointer</td>
+</tr>
+<tr>
+<td style="text-align:left">x5 - x7</td>
+<td style="text-align:left">t0 - t2</td>
+<td style="text-align:left">temporary registers</td>
+</tr>
+<tr>
+<td style="text-align:left">x8 - x9</td>
+<td style="text-align:left">s0 - s1</td>
+<td style="text-align:left">callee-saved registers</td>
+</tr>
+<tr>
+<td style="text-align:left">x10 - x17</td>
+<td style="text-align:left">a0 - a7</td>
+<td style="text-align:left">argument registers</td>
+</tr>
+<tr>
+<td style="text-align:left">x18 - x27</td>
+<td style="text-align:left">s2 - s11</td>
+<td style="text-align:left">callee-saved registers</td>
+</tr>
+<tr>
+<td style="text-align:left">x28 - x31</td>
+<td style="text-align:left">t3 - t6</td>
+<td style="text-align:left">temporary registers</td>
+</tr>
+</tbody>
+</table>
+<p>As there are 32 integer registers in the Owl CPU that are all 32-bit, we can represent them in code as a C-style array of <code>uint32_t</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">uint32_t</span> x[32]; <span style="color:#008000">// The integer registers.
+</span></span></span></code></pre></div><p>We can refer to any of the <em>x</em>-registers with a simple array lookup. For example, <code>x[0]</code> refers to the <em>zero</em> register, <code>x[1]</code> refers to the return address register, <em>ra</em>, and <code>x[2]</code> refers to the stack pointer register, <em>sp</em>.</p>
+<p>It will be easier for us if we can use symbolic register names such as <em>sp</em>. To get a step closer to this, we&rsquo;ll define the following <code>enum</code> so that, for example, we can write <code>x[sp]</code> rather than <code>x[2]</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#008000">// Symbolic register names.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span><span style="color:#00f">enum</span> { zero, ra, sp, gp, tp, t0, t1, t2, s0, s1, a0, a1, a2, a3, a4, a5, a6, a7,
+</span></span><span style="display:flex;"><span>        s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, t3, t4, t5, t6 };
+</span></span></code></pre></div><h2 id="the-program-counter">The program counter</h2>
+<p>There&rsquo;s one important register that I haven&rsquo;t mentioned yet, and that&rsquo;s the program counter register, <em>pc</em>. This 32-bit integer register tells the CPU where to read the next instruction from in memory. Some <a href="https://en.wikipedia.org/wiki/Instruction_set_architecture">instruction set architectures</a> use the name instruction pointer, <em>ip</em>, instead of <em>pc</em>. This is arguably a better name, but I&rsquo;ll stick with <em>pc</em> for consistency with RV32I.</p>
+<p>We can represent the program counter in code as a <code>uint32_t</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">uint32_t</span> pc; <span style="color:#008000">// The program counter.
+</span></span></span></code></pre></div><h1 id="encoding-and-decoding-instructions">Encoding and decoding instructions</h1>
+<p>One thing that we&rsquo;ll need to decide is how to represent instructions in Owl&rsquo;s memory. In other words, how does an Owl CPU determine which instruction is which, and how does it know which operands are present?</p>
+<h2 id="opcodes-and-operands">Opcodes and operands</h2>
+<p>Each instruction is divided into an opcode, and zero or more operands. The opcode dictates what the instruction does. It also dictates which operands are present in an instruction, and this will be important when it comes to decoding, as we&rsquo;ll need to know the opcode before we know which operands are present.</p>
+<p>When written in text form, instructions consist of an opcode such as <code>add</code>, or <code>bltu</code>, followed by zero or more operands, as shown in the following table.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Instruction</th>
+<th style="text-align:left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><code>add r0, r1, r2</code></td>
+<td style="text-align:left">add the values in registers r1 and r2 and stores the result into r0</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>addi r0, r1, imm12</code></td>
+<td style="text-align:left">adds the value in register r1 to an immediate value and stores the result into r0</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>beq r0, r1, offs12</code></td>
+<td style="text-align:left">compares the values in registers r0 and r1 and branches to offs12 if they&rsquo;re equal</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>bltu r0, r1, offs12</code></td>
+<td style="text-align:left">compares the values in registers r0 and r1 and branches to offs12 if r0 is less than r1</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>call offs20</code></td>
+<td style="text-align:left">calls a function at offs20</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>j offs20</code></td>
+<td style="text-align:left">jumps to offs20</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>li r0, imm12</code></td>
+<td style="text-align:left">loads an immediate value into register r0</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>lui r0, uimm20</code></td>
+<td style="text-align:left">loads an immediate value into the upper bits of register r0</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>mv r0, r1</code></td>
+<td style="text-align:left">copies the value in r1 into r0</td>
+</tr>
+</tbody>
+</table>
+<p>The next table describes the meaning of each operand.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Operand</th>
+<th style="text-align:left">Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">r0</td>
+<td style="text-align:left">an integer register when at least one register is used by an instruction</td>
+</tr>
+<tr>
+<td style="text-align:left">r1</td>
+<td style="text-align:left">the second integer register when at least two registers are used by an instruction</td>
+</tr>
+<tr>
+<td style="text-align:left">r2</td>
+<td style="text-align:left">the third integer register when at least three registers are used by an instruction</td>
+</tr>
+<tr>
+<td style="text-align:left">imm12</td>
+<td style="text-align:left">a sign-extended 12-bit immediate value</td>
+</tr>
+<tr>
+<td style="text-align:left">offs12</td>
+<td style="text-align:left">a sign-extended 12-bit offset from <em>pc</em> in multiples of two bytes</td>
+</tr>
+<tr>
+<td style="text-align:left">offs20</td>
+<td style="text-align:left">a sign-extended 20-bit offset from <em>pc</em> in multiples of two bytes</td>
+</tr>
+<tr>
+<td style="text-align:left">uimm20</td>
+<td style="text-align:left">a 20-bit unsigned immediate value</td>
+</tr>
+</tbody>
+</table>
+<h2 id="using-a-fixed-word-size">Using a fixed word size</h2>
+<p>On some <a href="https://en.wikipedia.org/wiki/Instruction_set_architecture">ISAs</a>, instructions can be variable length. For example, on x86 an instruction can be as short as a single byte, or it can span multiple bytes. On RV32I, and therefore on Owl-2820, instructions are always encoded into a 32-bit word.</p>
+<p>We can use this fact, plus our knowledge of which operands will be present for any given opcode, to figure out how to encode and decode each part of an instruction.</p>
+<p>Registers are easy. There are 32 integer registers, so we need 5 bits to determine which register is being used for each of r0, r1, and r2.</p>
+<p>The immediate values and offsets have the number of bits that they require built into their names. For example, uimm20 occupies 20 bits.</p>
+<p>So that leaves the opcode. Given that the instruction with the largest number of bits taken up by operands is <code>lui</code>, which uses uimm20 (20 bits) and r0 (5 bits), that leaves us with 7 bits to play with for the opcode. That gives us the possibility of 128 unique opcodes. Right now we only need nine, so I think we have sufficient headroom for expansion.</p>
+<h2 id="opcodes">Opcodes</h2>
+<p>The 7-bit <em>opcode</em> field occupies bits 0 thru 6 of an instruction. The <em>opcode</em> field is always present.</p>
+<p>In the table below, the header row contains each field&rsquo;s name where relevant, followed by the bit positions that it occupies from high to low in square brackets. I&rsquo;ll use that convention throughout this series of posts.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:right">other [31:7]</th>
+<th style="text-align:right">opcode <code>[6:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right">25 bits</td>
+<td style="text-align:right">7 bits</td>
+</tr>
+</tbody>
+</table>
+<p>Decoding this is a single AND operation.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    opcode = ins &amp; 0x7f;
+</span></span></code></pre></div><p>We can represent each opcode as an enum class. The opcode <code>Illegal</code>, whose value is zero represents an illegal instruction. I&rsquo;ve chosen this value so that a newly created block of memory will contain nothing but illegal instructions.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#008000">// Opcodes.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span><span style="color:#00f">enum</span> <span style="color:#00f">class</span> <span style="color:#2b91af">Opcode</span> : <span style="color:#2b91af">uint32_t</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    Illegal = 0,
+</span></span><span style="display:flex;"><span>    Add,
+</span></span><span style="display:flex;"><span>    Addi,
+</span></span><span style="display:flex;"><span>    Beq,
+</span></span><span style="display:flex;"><span>    Bltu,
+</span></span><span style="display:flex;"><span>    Call,
+</span></span><span style="display:flex;"><span>    J,
+</span></span><span style="display:flex;"><span>    Li,
+</span></span><span style="display:flex;"><span>    Lui,
+</span></span><span style="display:flex;"><span>    Mv
+</span></span><span style="display:flex;"><span>};
+</span></span></code></pre></div><h2 id="register-operands">Register operands</h2>
+<p>There are 32 registers, so determining which register to use requires five bits per register operand.</p>
+<p>For ease of decoding, each register operand occupies the same bit positions in an instruction. For example, operand r0 is used whenever there is at least one register present, and it always occupies bits 7-11 of an instruction.</p>
+<h3 id="r0">r0</h3>
+<p>The 5-bit register operand <em>r0</em>, when present, occupies bits 7-11 of an instruction. It is always present for an instruction that uses one or more registers.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:right">other [31:12]</th>
+<th style="text-align:right">r0 [11:7]</th>
+<th style="text-align:right">opcode <code>[6:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right">20 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right">7 bits</td>
+</tr>
+</tbody>
+</table>
+<p>Decoding this is a single AND operation and a single shift operation.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    r0 = (ins &gt;&gt; 7) &amp; 0x1f;
+</span></span></code></pre></div><h3 id="r1">r1</h3>
+<p>The 5-bit register operand <em>r1</em>, when present, occupies bits 12-16 of an instruction. It is always present for an instruction that uses two or more registers.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:right">other [31:17]</th>
+<th style="text-align:right">r1 [16:12]</th>
+<th style="text-align:right">r0 [11:7]</th>
+<th style="text-align:right">opcode <code>[6:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right">15 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right">7 bits</td>
+</tr>
+</tbody>
+</table>
+<p>Decoding this is a single AND operation and a single shift operation.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    r1 = (ins &gt;&gt; 12) &amp; 0x1f;
+</span></span></code></pre></div><h3 id="r2">r2</h3>
+<p>The 5-bit register operands <em>r2</em>, when present, occupies bits 17-21 of an instruction. It is always present for an instruction that uses three registers.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:right">other [31:17]</th>
+<th style="text-align:right">r2 [21:17]</th>
+<th style="text-align:right">r1 [16:12]</th>
+<th style="text-align:right">r0 [11:7]</th>
+<th style="text-align:right">opcode <code>[6:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right">10 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right">7 bits</td>
+</tr>
+</tbody>
+</table>
+<p>Decoding this is a single AND operation and a single shift operation.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    r2 = (ins &gt;&gt; 17) &amp; 0x1f;
+</span></span></code></pre></div><h2 id="comparing-risc-v-encoding-with-owl-encoding">Comparing RISC-V encoding with Owl encoding</h2>
+<p>RISC-V has a particular way of encoding instructions which, as far as I can tell, minimises the number of logic gates required to decode them. I&rsquo;m not a hardware person, unless you count playing around with <a href="https://en.wikipedia.org/wiki/7400-series_integrated_circuits">7400 series TTL</a> in my teens or doing the amazing <a href="https://www.coursera.org/learn/build-a-computer">Nand2Tetris</a> course a few years ago, so take that with a pinch of salt. But whatever the reason, from a programmer&rsquo;s perspective sometimes RISC-V&rsquo;s encodings for immediate operands and offsets can seem a little weird, with bits being spread all over the place within the instruction.</p>
+<h3 id="risc-v-encoding">RISC-V encoding</h3>
+<p>To illustrate this, let&rsquo;s look at how RISC-V encodes branch instructions such as <code>beq</code>. These instruction use what RISC-V calls a B-type instruction format. Part of that instruction format includes twelve bits equivalent to Owl&rsquo;s <em>offs12</em>.</p>
+<p>Here&rsquo;s the B-type instruction format, from the <a href="https://five-embeddev.com/riscv-user-isa-manual/Priv-v1.12/rv32.html#rv32">RISC-V User ISA Manual</a>.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">imm[12] <code>[31]</code></th>
+<th style="text-align:left">imm[10:5] <code>[30:25]</code></th>
+<th style="text-align:right">rs2 <code>[24:20]</code></th>
+<th style="text-align:right">rs1 <code>[19:15]</code></th>
+<th style="text-align:right">funct3 <code>[14:12]</code></th>
+<th style="text-align:left">imm[4:1] <code>[11:8]</code></th>
+<th style="text-align:left">imm[11] <code>[7]</code></th>
+<th style="text-align:right">opcode <code>[6:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">1 bits</td>
+<td style="text-align:left">6 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right">3 bits</td>
+<td style="text-align:left">5 bits</td>
+<td style="text-align:left">1 bit</td>
+<td style="text-align:right">7 bits</td>
+</tr>
+</tbody>
+</table>
+<p>The fields for the 12-bit offset <em>imm</em> are scattered throughout the instruction. I suspect that decoding this in hardware is not a problem. However, in software, extracting those fields from the instruction and reassembling them into a sign-extended value that we can use takes several operations.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    imm12   = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;(ins &amp; 0x80000000) &gt;&gt; 19;   <span style="color:#008000">// ins[31] -&gt; sext(imm[12])
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    imm11   = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;((ins &amp; 0x00000080) &lt;&lt; 4);  <span style="color:#008000">// ins[7] -&gt; imm[11]
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    imm10_5 = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;((ins &amp; 0x7e000000) &gt;&gt; 20); <span style="color:#008000">// ins[30:25] -&gt; imm[10:5]
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    imm4_1  = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;((ins &amp; 0x00000f00) &gt;&gt; 7);  <span style="color:#008000">// ins[11:8]  -&gt; imm[4:1]
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    offs12  = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">uint32_t</span>&gt;(imm12 | imm11 | imm10_5 | imm4_1);
+</span></span></code></pre></div><p>That&rsquo;s four ANDs, four shifts, and three ORs. Eleven operations. I won&rsquo;t even try to describe them because it&rsquo;s just too complicated.</p>
+<h3 id="owl-encoding-and-sign-extension">Owl encoding and sign extension</h3>
+<p>For Owl encoding, I&rsquo;ve chosen to place all immediate values and offset values in the upper bits of the instruction, as this makes it very easy to sign-extend them simply by doing an arithmetic shift right.</p>
+<p>Here&rsquo;s how Owl encodes <em>offs12</em>.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">offs12 <code>[31:20]</code></th>
+<th style="text-align:right">other <code>[19:7]</code></th>
+<th style="text-align:right">opcode <code>[6:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">12 bits</td>
+<td style="text-align:right">13 bits</td>
+<td style="text-align:right">7 bits</td>
+</tr>
+</tbody>
+</table>
+<p>The fields for the 12-bit offset <em>offs12</em> are in the upper twelve bits of the instruction.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    offs12 = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">uint32_t</span>&gt;(<span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;(ins &amp; 0xfff00000) &gt;&gt; 19);
+</span></span></code></pre></div><p>This is far simpler. It&rsquo;s one AND and one arithmetic shift. Two operations.</p>
+<p>We use AND to mask out the lower twenty bits, then we shift the signed value right by nineteen positions rather than twenty so that we end up with a sign-extended offset given in bytes rather than in multiples of two bytes.</p>
+<h2 id="immediate-and-offset-operands">Immediate and offset operands</h2>
+<h3 id="imm12">imm12</h3>
+<p>This sign-extended 12-bit immediate value, when present, occupies bits 20-31 of an instruction.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">imm12 <code>[31:20]</code></th>
+<th style="text-align:right">other <code>[19:7]</code></th>
+<th style="text-align:right">opcode <code>[6:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">12 bits</td>
+<td style="text-align:right">13 bits</td>
+<td style="text-align:right">7 bits</td>
+</tr>
+</tbody>
+</table>
+<p>Decoding this is a single AND operation and a single arithmetic shift operation.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    imm12 = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">uint32_t</span>&gt;(<span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;(ins &amp; 0xfff00000) &gt;&gt; 20);
+</span></span></code></pre></div><h3 id="offs12">offs12</h3>
+<p>This sign-extended 12-bit value represents an offset from the program counter, <em>pc</em>, in multiples of two bytes. When present, it occupies bits 20-31 of an instruction.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">offs12 <code>[31:20]</code></th>
+<th style="text-align:right">other <code>[19:7]</code></th>
+<th style="text-align:right">opcode <code>[6:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">12 bits</td>
+<td style="text-align:right">13 bits</td>
+<td style="text-align:right">7 bits</td>
+</tr>
+</tbody>
+</table>
+<p>At first glance, it would appear to be identical to <em>imm12</em>. However, it differs in the way that it is used, as <em>imm12</em> represents a signed number, whereas <em>offs12</em> represents multiples of two bytes.</p>
+<p>It is extracted by shifting by 19 bits rather than 20 to convert it into a 13-bit <em>byte</em> offset that always happens to be even.</p>
+<p>Decoding this is a single AND operation and a single arithmetic shift operation.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    offs12 = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">uint32_t</span>&gt;(<span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;(ins &amp; 0xfff00000) &gt;&gt; 19);
+</span></span></code></pre></div><h3 id="offs20">offs20</h3>
+<p>This sign-extended 20-bit value represents an offset from the program counter, <em>pc</em>, in multiples of two bytes. When present, it occupies bits 12-31 of an instruction.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">offs20 <code>[31:12]</code></th>
+<th style="text-align:right">other <code>[11:7]</code></th>
+<th style="text-align:right">opcode <code>[6:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">20 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right">7 bits</td>
+</tr>
+</tbody>
+</table>
+<p>It is extracted by shifting by 11 bits rather than 12 to convert it into a 21-bit <em>byte</em> offset that always happens to be even.</p>
+<p>Decoding this is a single AND operation and a single arithmetic shift operation.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    offs20 = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">uint32_t</span>&gt;(<span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;(ins &amp; 0xfffff000) &gt;&gt; 11);
+</span></span></code></pre></div><h3 id="uimm20">uimm20</h3>
+<p>This an unsigned 20-bit value represents the upper 20-bits of a 32-bit value. When present, it occupies bits 12-31 of an instruction.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">uimm20 <code>[31:12]</code></th>
+<th style="text-align:right">other <code>[11:7]</code></th>
+<th style="text-align:right">opcode <code>[6:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">20 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right">7 bits</td>
+</tr>
+</tbody>
+</table>
+<p>As it represents the upper 20-bits of a 32-bit value, it is extracted by masking out the lower 12 bits of the instruction.</p>
+<p>Decoding this is a single AND operation.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    uimm20 = ins &amp; 0xfffff000;
+</span></span></code></pre></div><h1 id="implementing-instructions">Implementing instructions</h1>
+<p>In the <a href="http://localhost:1313/posts/2024/03/17/lbavm-000-intro/">previous post</a> I said that we&rsquo;d only need to implement nine opcodes to be able to run the program that outputs the Fibonacci sequence. As a reminder, here they are.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Opcode</th>
+<th style="text-align:left">Meaning</th>
+<th style="text-align:left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">add</td>
+<td style="text-align:left">Add registers</td>
+<td style="text-align:left">adds the values in two registers and stores the result into another register</td>
+</tr>
+<tr>
+<td style="text-align:left">addi</td>
+<td style="text-align:left">Add Immediate</td>
+<td style="text-align:left">adds an immediate value and a register and stores the result into another register</td>
+</tr>
+<tr>
+<td style="text-align:left">beq</td>
+<td style="text-align:left">Branch if EQual</td>
+<td style="text-align:left">compares the content of two registers and jumps to a different location if they&rsquo;re equal</td>
+</tr>
+<tr>
+<td style="text-align:left">bltu</td>
+<td style="text-align:left">Branch if Less Than (Unsigned)</td>
+<td style="text-align:left">compares the unsigned values in two registers and jumps to a different location if the first is less than the second</td>
+</tr>
+<tr>
+<td style="text-align:left">call</td>
+<td style="text-align:left">Call</td>
+<td style="text-align:left">calls a function</td>
+</tr>
+<tr>
+<td style="text-align:left">j</td>
+<td style="text-align:left">Jump</td>
+<td style="text-align:left">jumps to a location</td>
+</tr>
+<tr>
+<td style="text-align:left">li</td>
+<td style="text-align:left">Load Immediate</td>
+<td style="text-align:left">loads an immediate value into a register</td>
+</tr>
+<tr>
+<td style="text-align:left">lui</td>
+<td style="text-align:left">Load Upper Immediate</td>
+<td style="text-align:left">loads an immediate value into the upper bits of a register</td>
+</tr>
+<tr>
+<td style="text-align:left">mv</td>
+<td style="text-align:left">Move</td>
+<td style="text-align:left">copies the value in one register into another register</td>
+</tr>
+</tbody>
+</table>
+<p>Instructions, as we&rsquo;ve learned, consist of an opcode and zero or more operands. Each instruction performs a very simple operation on its operands.</p>
+<p>The nature of that operation is dictated by the opcode, and what it operates on is dictated by the operands. The one key point that I&rsquo;d like to emphasise is that the operation itself is very simple - I can&rsquo;t stress this enough.</p>
+<p>In most cases operands are given explicitly, for example, as register names or immediate values. However, some opcodes have implicit operands. For example, the <code>J</code> opcode implicitly changes the value in the program counter, <em>pc</em>.</p>
+<h2 id="instruction-descriptions">Instruction descriptions</h2>
+<p>Before we can implement each instruction, we will need to know what they do. Let&rsquo;s look at them in turn. For each instruction, we&rsquo;ll describe the following:</p>
+<h3 id="format">Format</h3>
+<p>How the instruction is written in source form. For example: <code>add r0, r1, r2</code>.</p>
+<h3 id="encoding">Encoding</h3>
+<p>A table showing how the opcode and its operands are encoded in a 32-bit instruction. We&rsquo;ve already looked at how opcodes and individual operands are encoded, so this should be reasonably easy to follow.</p>
+<p>The header row contains each field&rsquo;s name, followed by the bit positions that it occupies from high to low in square brackets.</p>
+<p>The second row contains each field&rsquo;s value (where appropriate) followed by the number of bits that it occupies.</p>
+<p>For example, here&rsquo;s how <code>add</code> is encoded.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">unused <code>[31:22]</code></th>
+<th style="text-align:right">r2 <code>[21:17]</code></th>
+<th style="text-align:right">r1 <code>[16:12]</code></th>
+<th style="text-align:right">r0 <code>[11:7]</code></th>
+<th style="text-align:right">opcode <code>[6:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">10 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right"><code>Add</code> : 7 bits</td>
+</tr>
+</tbody>
+</table>
+<h3 id="description">Description</h3>
+<p>A short description of what the instruction does, with reference to the format.</p>
+<h3 id="possible-implementation">Possible implementation</h3>
+<p>A short code fragment describing how the instruction might be implemented, written in terms of the <code>uint32_t</code> representations of the <em>x</em>-registers and the program counter, <em>pc</em>, that we saw earlier; and in terms of operand encodings such as <em>uimm20</em> that we&rsquo;ve just been looking at.</p>
+<p>Given that I&rsquo;ve emphasised that each instruction performs a simple operation on its operands, I hope that you won&rsquo;t be too surprised by the fact that the implementation of each instruction is typically only a few lines of C++.</p>
+<h2 id="add---add-registers">add - add registers</h2>
+<h3 id="format-1">Format</h3>
+<p><code>add r0, r1, r2</code></p>
+<h3 id="encoding-1">Encoding</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">unused <code>[31:22]</code></th>
+<th style="text-align:right">r2 <code>[21:17]</code></th>
+<th style="text-align:right">r1 <code>[16:12]</code></th>
+<th style="text-align:right">r0 <code>[11:7]</code></th>
+<th style="text-align:right">opcode <code>[6:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">10 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right"><code>Add</code> : 7 bits</td>
+</tr>
+</tbody>
+</table>
+<h3 id="description-1">Description</h3>
+<p>Adds the value in register <em>r1</em> to the value in register <em>r2</em>, storing the result into register <em>r0</em>.</p>
+<h3 id="possible-implementation-1">Possible implementation</h3>
+<p>As register <em>x0</em> must always contain zero, we make sure that we clear it after any instruction that could potentially change its value.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    x[r0] = x[r1] + x[r2];
+</span></span><span style="display:flex;"><span>    x[0] = 0;
+</span></span></code></pre></div><h2 id="addi---add-immediate">addi - add immediate</h2>
+<h3 id="format-2">Format</h3>
+<p><code>addi r0, r1, imm12</code></p>
+<h3 id="encoding-2">Encoding</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">imm12 <code>[31:20]</code></th>
+<th style="text-align:right">unused <code>[19:17]</code></th>
+<th style="text-align:right">r1 <code>[16:12]</code></th>
+<th style="text-align:right">r0 <code>[11:7]</code></th>
+<th style="text-align:right">opcode <code>[6:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">12 bits</td>
+<td style="text-align:right">3 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right"><code>Addi</code> : 7 bits</td>
+</tr>
+</tbody>
+</table>
+<h3 id="description-2">Description</h3>
+<p>Adds the value in register <em>r1</em> to the sign-extended 12-bit immediate value <em>imm12</em>, storing the result into register <em>r0</em>.</p>
+<h3 id="possible-implementation-2">Possible implementation</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    x[r0] = x[r1] + imm12;
+</span></span><span style="display:flex;"><span>    x[0] = 0;
+</span></span></code></pre></div><h2 id="beq---branch-if-equal">beq - branch if equal</h2>
+<h3 id="format-3">Format</h3>
+<p><code>beq r0, r1, offs12</code></p>
+<h3 id="encoding-3">Encoding</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">offs12 <code>[31:20]</code></th>
+<th style="text-align:right">unused <code>[19:17]</code></th>
+<th style="text-align:right">r1 <code>[16:12]</code></th>
+<th style="text-align:right">r0 <code>[11:7]</code></th>
+<th style="text-align:right">opcode <code>[6:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">12 bits</td>
+<td style="text-align:right">3 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right"><code>Beq</code> : 7 bits</td>
+</tr>
+</tbody>
+</table>
+<h3 id="description-3">Description</h3>
+<p>This is a conditional branch instruction which takes the branch if the value in register <em>r0</em> is equal to the value in register <em>r1</em>. The branch is given as <em>offs12</em>, which is a sign-extended 12-bit offset in multiples of two bytes relative to the address of the branch instruction.</p>
+<h3 id="possible-implementation-3">Possible implementation</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#00f">if</span> (x[r0] == x[r1])
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        nextPc = pc + offs12;
+</span></span><span style="display:flex;"><span>    }
+</span></span></code></pre></div><h2 id="bltu---branch-if-less-than-unsigned">bltu - branch if less than (unsigned)</h2>
+<h3 id="format-4">Format</h3>
+<p><code>bltu r0, r1, offs12</code></p>
+<h3 id="encoding-4">Encoding</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">offs12 <code>[31:20]</code></th>
+<th style="text-align:right">unused <code>[19:17]</code></th>
+<th style="text-align:right">r1 <code>[16:12]</code></th>
+<th style="text-align:right">r0 <code>[11:7]</code></th>
+<th style="text-align:right">opcode <code>[6:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">12 bits</td>
+<td style="text-align:right">3 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right"><code>Bltu</code> : 7 bits</td>
+</tr>
+</tbody>
+</table>
+<h3 id="description-4">Description</h3>
+<p>This is a conditional branch instruction which takes the branch if the value in register <em>r0</em> is less than the value in register <em>r1</em> when using an unsigned comparison. The branch is given as <em>offs12</em>, which is a sign-extended 12-bit offset in multiples of two bytes relative to the address of the branch instruction.</p>
+<h3 id="possible-implementation-4">Possible implementation</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#00f">if</span> (x[r0] &lt; x[r1])
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        nextPc = pc + offs12;
+</span></span><span style="display:flex;"><span>    }
+</span></span></code></pre></div><h2 id="call---call-a-subroutine">call - call a subroutine</h2>
+<h3 id="format-5">Format</h3>
+<p><code>call offs20</code></p>
+<h3 id="encoding-5">Encoding</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">offs20 <code>[31:12]</code></th>
+<th style="text-align:right">unused <code>[11:7]</code></th>
+<th style="text-align:right">opcode <code>[6:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">20 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right"><code>Call</code> : 7 bits</td>
+</tr>
+</tbody>
+</table>
+<h3 id="description-5">Description</h3>
+<p>Sets the value in the return address register <em>ra</em> to the address of the instruction immediately following this one, then branches by the sign-extended offset <em>offs20</em>, which is a sign-extended 20-bit offset in multiples of two bytes relative to the address of the call instruction.</p>
+<h3 id="possible-implementation-5">Possible implementation</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    x[ra] = pc + 4;
+</span></span><span style="display:flex;"><span>    nextPc = pc + offs20;
+</span></span></code></pre></div><h2 id="j---jump">j - jump</h2>
+<h3 id="format-6">Format</h3>
+<p><code>j offs20</code></p>
+<h3 id="encoding-6">Encoding</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">offs20 <code>[31:12]</code></th>
+<th style="text-align:right">unused <code>[11:7]</code></th>
+<th style="text-align:right">opcode <code>[6:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">20 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right"><code>J</code> : 7 bits</td>
+</tr>
+</tbody>
+</table>
+<h3 id="description-6">Description</h3>
+<p>Branches by the sign-extended offset <em>offs20</em>, which is a sign-extended 20-bit offset in multiples of two bytes relative to the address of the jump instruction.</p>
+<h3 id="possible-implementation-6">Possible implementation</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    nextPc = pc + offs20;
+</span></span></code></pre></div><h2 id="li---load-immediate">li - load immediate</h2>
+<h3 id="format-7">Format</h3>
+<p><code>li r0, imm12</code></p>
+<h3 id="encoding-7">Encoding</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">imm12 <code>[31:20]</code></th>
+<th style="text-align:right">unused <code>[19:12]</code></th>
+<th style="text-align:right">r0 <code>[11:7]</code></th>
+<th style="text-align:right">opcode <code>[6:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">12 bits</td>
+<td style="text-align:right">8 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right"><code>Li</code> : 7 bits</td>
+</tr>
+</tbody>
+</table>
+<h3 id="description-7">Description</h3>
+<p>Stores the sign-extended 12-bit value <em>imm12</em> into register <em>r0</em>.</p>
+<h3 id="possible-implementation-7">Possible implementation</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    x[rd] = imm12;
+</span></span><span style="display:flex;"><span>    x[0] = 0;
+</span></span></code></pre></div><h2 id="lui---load-upper-immediate">lui - load upper immediate</h2>
+<h3 id="format-8">Format</h3>
+<p><code>lui r0, uimm20</code></p>
+<h3 id="encoding-8">Encoding</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">uimm20 <code>[31:12]</code></th>
+<th style="text-align:right">r0 <code>[11:7]</code></th>
+<th style="text-align:right">opcode <code>[6:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">20 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right"><code>Lui</code> : 7 bits</td>
+</tr>
+</tbody>
+</table>
+<h3 id="description-8">Description</h3>
+<p>Stores the 20-bit immediate value <em>uimm20</em> into the upper 20 bits of register <em>r0</em>, filling its lowest 12 bits with zeros.</p>
+<h3 id="possible-implementation-8">Possible implementation</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    x[r0] = uimm20;
+</span></span><span style="display:flex;"><span>    x[0] = 0;
+</span></span></code></pre></div><h2 id="mv---move">mv - move</h2>
+<h4 id="format-9">Format</h4>
+<p><code>mv r0, r1</code></p>
+<h3 id="encoding-9">Encoding</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">unused <code>[31:17]</code></th>
+<th style="text-align:right">r1 <code>[16:12]</code></th>
+<th style="text-align:right">r0 <code>[11:7]</code></th>
+<th style="text-align:right">opcode <code>[6:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">15 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right"><code>Mv</code> : 7 bits</td>
+</tr>
+</tbody>
+</table>
+<h3 id="description-9">Description</h3>
+<p>Copies the value in register <em>r1</em> into register <em>r0</em>.</p>
+<h3 id="possible-implementation-9">Possible implementation</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    x[rd] = x[rs1];
+</span></span><span style="display:flex;"><span>    x[0] = 0;
+</span></span></code></pre></div><h1 id="and-finally">And finally&hellip;</h1>
+<p>This was a long post in which we had to cover a lot of ground.</p>
+<p>We learned that the Owl-2820 CPU is based on RV32I and that it has the same integer registers, with the same uses. We also learned that Owl instructions have a different encoding than RV32I instructions, because Owl&rsquo;s encoding is easier to deal with in software. And finally, we learned possible implementations for each instruction.</p>
+<p>In the next post in this series, we will use what we&rsquo;ve learned so far to implement a main loop for the Owl-2820 CPU.</p>
+        </div>
+        
+        <div>
+            <ul id="tags">
+                
+                <li><a href="/tags/vm">vm</a></li>
+                
+                <li><a href="/tags/owl">owl</a></li>
+                
+            </ul>
+        </div>
+        
+    </article>
+</main>
+<aside class="wrapper">
+    <div>
+        <div>
+            <h3>Latest Posts</h3>
+        </div>
+        <div>
+            <ul>
+                
+                <li><a href="/posts/2024/04/14/lbavm-002/">Let&#39;s build a virtual machine: Part 2 - The Main Loop</a></li>
+                
+                <li><a href="/posts/2024/04/07/lbavm-001/">Let&#39;s build a virtual machine: Part 1 - Encoding and decoding instructions</a></li>
+                
+                <li><a href="/posts/2024/03/17/lbavm-000-intro/">Let&#39;s build a virtual machine: Part 0 - Introduction</a></li>
+                
+                <li><a href="/posts/2023/04/07/time-to-learn-rust/">It&#39;s time to learn Rust</a></li>
+                
+                <li><a href="/posts/2022/02/27/mandatory-copy-elision/">Mandatory Copy Elision in C&#43;&#43;</a></li>
+                
+            </ul>
+        </div>
+    </div>
+</aside> 
+	<footer class="wrapper">
+	<p>&copy; 2024 <a href="http://localhost:1313/">My Badly Drawn Self</a></p>
+</footer>
+
+</body>
+</html>
