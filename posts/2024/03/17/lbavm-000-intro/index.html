@@ -95,7 +95,7 @@
 </span></span><span style="display:flex;"><span>fib(47) = 2971215073
 </span></span></code></pre></div><h2 id="fibonacci-in-assembly-language">Fibonacci in assembly language</h2>
 <p>Here&rsquo;s a link to <a href="https://godbolt.org/z/zj36Edbh8">our program in Compiler Explorer</a>.</p>
-<p>If you click the link then you&rsquo;ll see the C program in the panel on the left, and the equivalent assembly language in the panel on the right. What you&rsquo;re looking at is <a href="https://en.wikipedia.org/wiki/RISC-V">RISC-V</a> assembly language, specifically the 32-bit base integer instruction set known as <strong>RV32I</strong>.</p>
+<p>If you click the link then you&rsquo;ll see the C program in the panel on the left, and the equivalent assembly language in the panel on the right. What you&rsquo;re looking at is <a href="https://en.wikipedia.org/wiki/RISC-V">RISC-V</a> assembly language, specifically the 32-bit base integer instruction set known as <a href="https://five-embeddev.com/riscv-user-isa-manual/Priv-v1.12/rv32.html">RV32I</a>.</p>
 <p>There are many different <a href="https://en.wikipedia.org/wiki/Instruction_set_architecture">instruction set architectures</a>, including <a href="https://en.wikipedia.org/wiki/X86-64">x64</a> and <a href="https://en.wikipedia.org/wiki/ARM_architecture_family">ARM</a>, but I&rsquo;ve picked RV32I as it&rsquo;s far smaller and easier to explain than either of those.</p>
 <p>Here&rsquo;s a walkthrough of the assembly language that the compiler generated. I&rsquo;ve commented it and changed the names of some of the labels to make things clearer. If you don&rsquo;t know assembly language then it may still look very complicated, but I can promise you that it isn&rsquo;t, and it won&rsquo;t be long before we can write a program that can run this.</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span>main:
@@ -362,6 +362,8 @@
         <div>
             <ul>
                 
+                <li><a href="/posts/2024/04/07/lbavm-002/">Let&#39;s build a virtual machine: Part 2 - The main loop and assembler</a></li>
+                
                 <li><a href="/posts/2024/04/02/lbavm-001/">Let&#39;s build a virtual machine: Part 1 - Registers and instructions</a></li>
                 
                 <li><a href="/posts/2024/03/17/lbavm-000-intro/">Let&#39;s build a virtual machine: Part 0 - Introduction</a></li>
@@ -369,8 +371,6 @@
                 <li><a href="/posts/2023/04/07/time-to-learn-rust/">It&#39;s time to learn Rust</a></li>
                 
                 <li><a href="/posts/2022/02/27/mandatory-copy-elision/">Mandatory Copy Elision in C&#43;&#43;</a></li>
-                
-                <li><a href="/posts/2022/01/23/ctad/">CTAD and Deduction Guides in C&#43;&#43;</a></li>
                 
             </ul>
         </div>

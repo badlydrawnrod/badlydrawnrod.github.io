@@ -36,7 +36,7 @@
         <div>
             <p>Implementing registers and instructions for the Owl-2820 CPU.</p>
 <h1 id="part-1---registers-and-instructions">Part 1 - Registers and instructions</h1>
-<p>In the <a href="https://badlydrawnrod.github.io/posts/2024/03/17/lbavm-000-intro/">previous post</a> in this series, we looked at a C implementation of the Fibonacci sequence, then examined what it looked like when compiled to RISC-V assembly language on an RV32I CPU. We discovered that a CPU capable of running that code would need implementations for a mere handful of opcodes.</p>
+<p>In the <a href="https://badlydrawnrod.github.io/posts/2024/03/17/lbavm-000-intro/">previous post</a> in this series, we looked at a C implementation of the Fibonacci sequence, then examined what it looked like when compiled to RISC-V assembly language on an <a href="https://five-embeddev.com/riscv-user-isa-manual/Priv-v1.12/rv32.html">RV32I</a> CPU. We discovered that a CPU capable of running that code would need implementations for a mere handful of opcodes.</p>
 <p>In this post we&rsquo;ll get into some details and look at how we can implement that CPU. First, we&rsquo;ll see how we can implement registers. Next, we&rsquo;ll take a look at how the Owl CPU represents instructions in memory. And finally, we&rsquo;ll see what each instruction does when it is executed.</p>
 <h2 id="the-owl-2820-cpu">The Owl-2820 CPU</h2>
 <p>We&rsquo;ll base the Owl-2820 CPU on RV32I, as it&rsquo;s a good example of a simple RISC CPU. In other words, the Owl CPU will have the same thirty two integer registers as RV32I, and it will eventually support the same instructions as RV32I.</p>
@@ -811,7 +811,7 @@
 <p>We learned that the Owl-2820 CPU is based on RV32I and that it has the same integer registers, with the same uses.</p>
 <p>We learned how Owl represents instructions in memory, and that Owl instructions have a different encoding than RV32I instructions, because Owl&rsquo;s encoding is easier to deal with in software.</p>
 <p>And finally, we learned some possible implementations for each instruction.</p>
-<p>This puts us in a good position for the next post in which we&rsquo;ll apply what we&rsquo;ve learned to implementing a main loop for the Owl-2820 CPU.</p>
+<p>This puts us in a good position for the <a href="https://badlydrawnrod.github.io/posts/2024/04/07/lbavm-002/">next post</a> in which we&rsquo;ll apply what we&rsquo;ve learned to implementing a main loop for the Owl-2820 CPU.</p>
         </div>
         
         <div>
@@ -834,6 +834,8 @@
         <div>
             <ul>
                 
+                <li><a href="/posts/2024/04/07/lbavm-002/">Let&#39;s build a virtual machine: Part 2 - The main loop and assembler</a></li>
+                
                 <li><a href="/posts/2024/04/02/lbavm-001/">Let&#39;s build a virtual machine: Part 1 - Registers and instructions</a></li>
                 
                 <li><a href="/posts/2024/03/17/lbavm-000-intro/">Let&#39;s build a virtual machine: Part 0 - Introduction</a></li>
@@ -841,8 +843,6 @@
                 <li><a href="/posts/2023/04/07/time-to-learn-rust/">It&#39;s time to learn Rust</a></li>
                 
                 <li><a href="/posts/2022/02/27/mandatory-copy-elision/">Mandatory Copy Elision in C&#43;&#43;</a></li>
-                
-                <li><a href="/posts/2022/01/23/ctad/">CTAD and Deduction Guides in C&#43;&#43;</a></li>
                 
             </ul>
         </div>

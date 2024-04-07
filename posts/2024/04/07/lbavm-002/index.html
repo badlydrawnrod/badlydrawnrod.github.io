@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+<head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -14,7 +14,7 @@
 <body>
 	<header class="wrapper">
     <nav>
-        <a href="http://localhost:1313/">Home</a>
+        <a href="https://badlydrawnrod.github.io/">Home</a>
         <ul>
 			
             
@@ -34,10 +34,10 @@
         <div class="date">7 April, 2024</div>
         
         <div>
-            <p>Implementing the main loop.</p>
+            <p>Implementing just enough of the Owl-2820 CPU to run Fibonacci.</p>
 <h1 id="part-2-implementing-the-main-loop-and-an-assembler">Part 2 Implementing the main loop and an assembler</h1>
-<p>In <a href="http://localhost:1313/posts/2024/03/17/lbavm-000-intro/">Part 0</a> of this series, we looked at a C implementation of the Fibonacci sequence compiled to RISC-V assembly language and saw that it only used nine opcodes.</p>
-<p>In <a href="http://localhost:1313/posts/2024/04/02/lbavm-001/">Part 1</a> we were introduced to the Owl-2820 CPU. We saw how it implements registers, how it represents instructions in memory, and how each individual opcode is implemented.</p>
+<p>In <a href="https://badlydrawnrod.github.io/posts/2024/03/17/lbavm-000-intro/">Part 0</a> of this series, we looked at a C implementation of the Fibonacci sequence compiled to RISC-V assembly language and saw that it only used nine opcodes.</p>
+<p>In <a href="https://badlydrawnrod.github.io/posts/2024/04/02/lbavm-001/">Part 1</a> we were introduced to the Owl-2820 CPU. We saw how it implements registers, how it represents instructions in memory, and how each individual opcode is implemented.</p>
 <p>By now we&rsquo;ve learned:</p>
 <ul>
 <li>what the Fibonacci sequence looks like when compiled to assembly language</li>
@@ -100,7 +100,7 @@
 </span></span></code></pre></div><p>We&rsquo;ve declared <code>pc</code> and <code>nextPc</code>, and added the code to fetch a 32-bit word from memory. As <code>nextPc</code> represents a register which points to byte-addressable memory, and <code>code</code> is addressed by 32-bit words, we have to increment <code>nextPc</code> by the word size. Likewise, we need to divide <code>pc</code> by the word size when reading from <code>code</code>.</p>
 <h2 id="decoding-and-dispatching">Decoding and dispatching</h2>
 <p>Once the word containing the instruction has been fetched from memory, we need to decode it, then dispatch it to an instruction handler for the opcode.</p>
-<p>The very first part of this is to extract the opcode which, as we saw in <a href="http://localhost:1313/posts/2024/04/02/lbavm-001/">Part 1</a>, is a simple operation.</p>
+<p>The very first part of this is to extract the opcode which, as we saw in <a href="https://badlydrawnrod.github.io/posts/2024/04/02/lbavm-001/">Part 1</a>, is a simple operation.</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    Opcode opcode = Opcode(ins &amp; 0x7f);
 </span></span></code></pre></div><p>We can use a <code>switch</code> statement to dispatch on the opcode to an instruction handler. Each instruction handler will decode the operands required by the opcode, then perform a simple opcode-specific operation on them, for example, adding them together.</p>
 <p>After adding the code to decode and dispatch, <code>Run()</code> looks like this.</p>
@@ -143,7 +143,7 @@
 </span></span><span style="display:flex;"><span>    }
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><h2 id="registers">Registers</h2>
-<p>We saw in <a href="http://localhost:1313/posts/2024/04/02/lbavm-001/">Part 1</a> that many of the instructions operate on Owl&rsquo;s integer registers and that we can represent registers with a C-style array.</p>
+<p>We saw in <a href="https://badlydrawnrod.github.io/posts/2024/04/02/lbavm-001/">Part 1</a> that many of the instructions operate on Owl&rsquo;s integer registers and that we can represent registers with a C-style array.</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#2b91af">uint32_t</span> x[32] = {}; <span style="color:#008000">// The integer registers.
 </span></span></span></code></pre></div><p>Let&rsquo;s introduce them before the start of the loop.</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">void</span> Run(<span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span>* code)
@@ -155,7 +155,7 @@
 </span></span><span style="display:flex;"><span>    <span style="color:#008000">// Set all the integer registers to zero.
 </span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#2b91af">uint32_t</span> x[32] = {}; <span style="color:#008000">// The integer registers.
 </span></span></span></code></pre></div><h2 id="instructions">Instructions</h2>
-<p>Implementing each instruction is straightforward. We already know how to decode the operands, and we saw in <a href="http://localhost:1313/posts/2024/04/02/lbavm-001/">Part 1</a> how each instruction is implemented.</p>
+<p>Implementing each instruction is straightforward. We already know how to decode the operands, and we saw in <a href="https://badlydrawnrod.github.io/posts/2024/04/02/lbavm-001/">Part 1</a> how each instruction is implemented.</p>
 <p>To illustrate just how straightforward, here is the handler for <code>add</code> in its entirety. It decodes the operands <em>r0</em>, <em>r1</em>, and <em>r2</em>, then it uses them as indexes into the <em>x</em>-registers array, adding <em>x[r1]</em> to <em>x[r2]</em>, then storing the result in <em>x[r0]</em>.</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#00f">case</span> Opcode::Add: {
 </span></span><span style="display:flex;"><span>        <span style="color:#008000">// Implement `Add`.
@@ -248,7 +248,7 @@
 </span></span><span style="display:flex;"><span>    }
 </span></span></code></pre></div><p>Most of the other instructions are very similar, so in theory we can now easily implement the rest of the main loop.</p>
 <h2 id="implementing-printf">Implementing printf()</h2>
-<p>However, there is a big gotcha. Our implementation of Fibonacci from <a href="http://localhost:1313/posts/2024/03/17/lbavm-000-intro/">Part 0</a> involved a call to <code>printf()</code>. That calls into a subroutine that we haven&rsquo;t seen yet. Clearly implementing <code>printf()</code> in Owl machine code that runs on the Owl VM will need implementations for more than the nine opcodes that we&rsquo;ve seen so far.</p>
+<p>However, there is a big gotcha. Our implementation of Fibonacci from <a href="https://badlydrawnrod.github.io/posts/2024/03/17/lbavm-000-intro/">Part 0</a> involved a call to <code>printf()</code>. That calls into a subroutine that we haven&rsquo;t seen yet. Clearly implementing <code>printf()</code> in Owl machine code that runs on the Owl VM will need implementations for more than the nine opcodes that we&rsquo;ve seen so far.</p>
 <p>To keep things simple at this stage, I&rsquo;m going to propose that we cheat, and take advantage of the fact that as there&rsquo;s only one <code>call</code> instruction, we can temporarily hard-code it to do a <code>printf()</code>.</p>
 <p>Here&rsquo;s that implementation of <code>call</code>. It has nothing to do with calling a subroutine, but instead uses the values in the two argument registers <em>a1</em> and <em>a2</em> as arguments to <code>std::format</code> as shown below.</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#00f">case</span> Opcode::Call: {
@@ -356,7 +356,7 @@
 </span></span><span style="display:flex;"><span>    }
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><h1 id="an-assembler">An assembler</h1>
-<p>If you cast your mind back to <a href="http://localhost:1313/posts/2024/03/17/lbavm-000-intro/">Part 0</a>, you may remember that the RISC-V assembly language for the Fibonacci program looked like this.</p>
+<p>If you cast your mind back to <a href="https://badlydrawnrod.github.io/posts/2024/03/17/lbavm-000-intro/">Part 0</a>, you may remember that the RISC-V assembly language for the Fibonacci program looked like this.</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span>        li      s0, 0                       <span style="color:#008000">; i = 0
 </span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        li      s2, 2                       <span style="color:#008000">; s2 = 2
 </span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        lui     a0, %hi(format_str)
@@ -542,7 +542,7 @@
 </span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> code_;
 </span></span><span style="display:flex;"><span>    }
 </span></span></code></pre></div><h1 id="running-the-fibonacci-sequence-on-the-owl-2820-cpu">Running the Fibonacci sequence on the Owl-2820 CPU</h1>
-<p>Here&rsquo;s the end result. It assembles the assembly language program that runs the Fibonacci sequence on the Owl-2820 CPU, then it runs the assembled machine code on an emulated Owl-2820 CPU.</p>
+<p>Here&rsquo;s the end result. In a little more than 300 lines of C++ we&rsquo;ve implemented a simple assembler that assembles the Fibonacci program into Owl-2820 machine code, and an emulator that runs that machine code on an emulated Owl-2820 CPU.</p>
 <p>You can see the results of running this on <a href="https://godbolt.org/z/Y5cKaK85e">Compiler Explorer</a>.</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#00f">#include</span> <span style="color:#00f">&lt;cstdint&gt;</span><span style="color:#00f">
 </span></span></span><span style="display:flex;"><span><span style="color:#00f">#include</span> <span style="color:#00f">&lt;format&gt;</span><span style="color:#00f">
@@ -869,7 +869,7 @@
 </span></span><span style="display:flex;"><span>    <span style="color:#00f">auto</span> code = Assemble();
 </span></span><span style="display:flex;"><span>    Run(code.data());
 </span></span><span style="display:flex;"><span>}
-</span></span></code></pre></div><p>And here&rsquo;s the (shortened) output.</p>
+</span></span></code></pre></div><p>Here&rsquo;s the (shortened) output.</p>
 <pre tabindex="0"><code>fib(0) = 0
 fib(1) = 1
 fib(2) = 1
@@ -881,9 +881,10 @@ fib(7) = 13
 ...
 fib(46) = 1836311903
 fib(47) = 2971215073
-</code></pre><h1 id="finally">Finally</h1>
-<p>Again, this was a long post. The payoff is that we now have the bare bones of an emulator for the Owl-2820 CPU. We have also developed a simple assembler so that we can assemble the program that outputs the Fibonacci sequence, and get the expected results when we run it on the emulator.</p>
-<p>Over the course of the next few posts we&rsquo;ll bring our Owl-2820 CPU up to parity with a RISC-V <a href="https://five-embeddev.com/riscv-user-isa-manual/Priv-v1.12/rv32.html">RV32I</a> CPU so that it can do far more than just generating the Fibonacci sequence.</p>
+</code></pre><h1 id="and-finally">And finally&hellip;</h1>
+<p>Again, this was a long post. The payoff is that we now have beginnings of an emulator for the Owl-2820 CPU. We have also developed a simple assembler so that we can assemble the program that outputs the Fibonacci sequence, and get the expected results when we run it on our emulator.</p>
+<p>We can even run it in <a href="https://godbolt.org/z/Y5cKaK85e">Compiler Explorer</a>.</p>
+<p>Over the course of the next few posts we&rsquo;ll bring our implementation of the Owl-2820 CPU up to parity with a RISC-V <a href="https://five-embeddev.com/riscv-user-isa-manual/Priv-v1.12/rv32.html">RV32I</a> CPU so that we can use it to do far more than just generating the Fibonacci sequence.</p>
 <h1 id="further-reading">Further Reading</h1>
 <ul>
 <li>Here&rsquo;s the entire program so far on <a href="https://godbolt.org/z/Y5cKaK85e">Compiler Explorer</a></li>
@@ -911,7 +912,7 @@ fib(47) = 2971215073
         <div>
             <ul>
                 
-                <li><a href="/posts/2024/04/14/lbavm-002/">Let&#39;s build a virtual machine: Part 2 - The main loop and assembler</a></li>
+                <li><a href="/posts/2024/04/07/lbavm-002/">Let&#39;s build a virtual machine: Part 2 - The main loop and assembler</a></li>
                 
                 <li><a href="/posts/2024/04/02/lbavm-001/">Let&#39;s build a virtual machine: Part 1 - Registers and instructions</a></li>
                 
@@ -926,7 +927,7 @@ fib(47) = 2971215073
     </div>
 </aside> 
 	<footer class="wrapper">
-	<p>&copy; 2024 <a href="http://localhost:1313/">My Badly Drawn Self</a></p>
+	<p>&copy; 2024 <a href="https://badlydrawnrod.github.io/">My Badly Drawn Self</a></p>
 </footer>
 
 </body>
