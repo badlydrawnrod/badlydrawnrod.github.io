@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Let&#39;s build a virtual machine: Part 3 - Adding labels to the assembler</title>
+	
+	
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu|Lora">
+	<link rel="stylesheet" href="/css/style.css">
+	
+</head>
+<body>
+	<header class="wrapper">
+    <nav>
+        <a href="https://badlydrawnrod.github.io/">Home</a>
+        <ul>
+			
+            
+            <li><a href="/page/about/">About</a></li>
+            
+            <li><a href="/posts/">All posts</a></li>
+            
+        </ul>
+    </nav>
+    
+</header>
+	
+<main class="wrapper">
+    <article>
+        <p></p>
+        
+        <div class="date">5 May, 2024</div>
+        
+        <div>
+            <p>Adding labels to the assembler.</p>
+<h1 id="part-3-adding-labels-to-the-assembler">Part 3 Adding labels to the assembler</h1>
+<p>In <a href="https://badlydrawnrod.github.io/posts/2024/04/07/lbavm-002/">Part 2</a> of this series, we implemented a main loop and an <a href="https://en.wikipedia.org/wiki/Assembly_language">assembler</a>, and ended up with just enough of an Owl-2820 CPU to run the code to generate the Fibonacci sequence that we first saw in <a href="https://badlydrawnrod.github.io/posts/2024/03/17/lbavm-000-intro/">Part 0</a>.</p>
+<p>In this part, we&rsquo;re going to improve the assembler so that it supports labels.</p>
+<h1 id="labels">Labels</h1>
+<p>In assembly language, a label is a mechanism for giving a meaningful name to an address in memory. For example, in this fragment of code, <code>fib_loop</code> is a label, and the <code>bltu</code> instruction uses it as a branch target.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span>fib_loop:
+</span></span><span style="display:flex;"><span>        mv      a3, a2                      <span style="color:#008000">; tmp = current
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        addi    a1, a1, -1                  <span style="color:#008000">; n = n - 1
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        add     a2, a0, a2                  <span style="color:#008000">; current = current + prev
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        mv      a0, a3                      <span style="color:#008000">; previous = tmp
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        bltu    s4, a1, fib_loop            <span style="color:#008000">; if n &gt; 1 go to fib_loop
+</span></span></span></code></pre></div><p>If we didn&rsquo;t have labels, then we would have to use a numeric value to represent the address. This numeric value could be an absolute value, or it could be an offset relative to the current address. Put in terms of labels, an offset is the difference between the address of the instruction that refers to the label and the address of the label itself.</p>
+<p>Without labels, the same code would look like this, as the Owl-2820 CPU&rsquo;s <code>bltu</code> instruction uses an offset rather than an absolute address.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span>        mv      a3, a2                      <span style="color:#008000">; tmp = current
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        addi    a1, a1, -1                  <span style="color:#008000">; n = n - 1
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        add     a2, a0, a2                  <span style="color:#008000">; current = current + prev
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        mv      a0, a3                      <span style="color:#008000">; previous = tmp
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        bltu    s4, a1, -16                 <span style="color:#008000">; if n &gt; 1 go to the address 16 bytes before this one
+</span></span></span></code></pre></div><h2 id="calculating-offsets">Calculating offsets</h2>
+<p>For each assembly language instruction that refers to a label, we need to calculate an offset from the address of the instruction to the address of the label.</p>
+<p>The assembler from <a href="https://badlydrawnrod.github.io/posts/2024/04/07/lbavm-002/">Part 2</a> did not support this, so I hand-calculated the offsets then hard-coded them at the top of the <code>Assemble()</code> function.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>std::vector&lt;<span style="color:#2b91af">uint32_t</span>&gt; Assemble()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    Assembler a;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Offsets to labels.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">const</span> <span style="color:#2b91af">int32_t</span> fib = 24;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">const</span> <span style="color:#2b91af">int32_t</span> print_loop1 = -24;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">const</span> <span style="color:#2b91af">int32_t</span> print_loop2 = -60;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">const</span> <span style="color:#2b91af">int32_t</span> printf = 0; <span style="color:#008000">// No value, because we&#39;re going to cheat.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">const</span> <span style="color:#2b91af">int32_t</span> done = 48;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">const</span> <span style="color:#2b91af">int32_t</span> fib_loop = -16;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// ...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>}
+</span></span></code></pre></div><p>Calculating the offsets by hand was not a problem for this tiny, one-off program. However, it would rapidly become very tiresome if we had to recalculate offsets manually whenever we made a code change.</p>
+<p>The problem becomes worse when there are multiple references to the same label. This can happen very easily. In the example above, <code>print_loop1</code> and <code>print_loop2</code> are both offsets that refer to the <code>print_loop</code> label. If we needed to refer to the <code>print_loop</code> label from elsewhere in the code then we would need to add yet another offset, <code>print_loop3</code>, as offsets are always relative to the program counter, <em>pc</em>.</p>
+<p>Similarly, given a label and an offset that refers to it, if we were to insert or remove lines of code between the two then the offset would need to be recalculated.</p>
+<p>Fortunately, offset calculation is something that can be done automatically.</p>
+<h2 id="adapting-the-assembler-to-use-labels">Adapting the assembler to use labels</h2>
+<p>Let&rsquo;s adapt the <code>Assembler</code> to do the work. To recap, our <a href="https://en.wikipedia.org/wiki/Assembly_language">assembler</a> emits Owl-2820 machine code. It is not an interpreter that runs it.</p>
+<p>We will modify the assembler by introducing a <code>Label</code> type to represent labels. Rather than going into the implementation details now, I&rsquo;ll show you what the <code>Assemble()</code> function looks like after it has been updated to use labels.</p>
+<p>The only difference between the code below and the <a href="https://badlydrawnrod.github.io/posts/2024/04/07/lbavm-002/#an-assembler"><code>Assemble()</code> function from the previous post</a> is that this new version uses labels rather than offsets. In all other respects they are the same. The Owl-2820 machine code generated by this version of <code>Assemble()</code> is identical to that generated by the previous one. Both versions of <code>Assemble()</code> use the assembler to emit Owl-2820 machine code which generates the Fibonacci sequence when run.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>std::vector&lt;<span style="color:#2b91af">uint32_t</span>&gt; Assemble()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    Assembler a;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// clang-format off
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// main:
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Li(s0, 0);                <span style="color:#008000">// li   s0, 0                   ; i = 0
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Li(s2, 2);                <span style="color:#008000">// li   s2, 2                   ; s2 = 2
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Lui(a0, 1);               <span style="color:#008000">// lui  a0, %hi(format_str)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Addi(s1, a0, -548);       <span style="color:#008000">// addi s1, a0, %lo(format_str) ; s1 = the address of the printf format string
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Li(s3, 48);               <span style="color:#008000">// li   s3, 48                  ; s3 = 48
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Li(s4, 1);                <span style="color:#008000">// li   s4, 1                   ; s4 = 1
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    Label fib = a.MakeLabel();
+</span></span><span style="display:flex;"><span>    a.J(fib);                   <span style="color:#008000">// j    fib                     ; go to fib
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// print_loop:
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    Label print_loop = a.MakeLabel();
+</span></span><span style="display:flex;"><span>    a.BindLabel(print_loop);
+</span></span><span style="display:flex;"><span>    a.Mv(a0, s1);               <span style="color:#008000">// mv   a0, s1                  ; arg0 = the address of the printf format string
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Mv(a1, s0);               <span style="color:#008000">// mv   a1, s0                  ; arg1 = i (arg2 contains current)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    Label printf = a.MakeLabel();
+</span></span><span style="display:flex;"><span>    a.Call(printf);             <span style="color:#008000">// call printf                  ; call printf
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Addi(s0, s0, 1);          <span style="color:#008000">// addi s0, s0, 1               ; i = i + 1
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    Label done = a.MakeLabel();
+</span></span><span style="display:flex;"><span>    a.Beq(s0, s3, done);        <span style="color:#008000">// beq  s0, s3, done            ; if i == 48 go to done
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// fib:
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.BindLabel(fib);
+</span></span><span style="display:flex;"><span>    a.Mv(a2, s0);               <span style="color:#008000">// mv   a2, s0                  ; current = i
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Bltu(s0, s2, print_loop); <span style="color:#008000">// bltu s0, s2, print_loop      ; if i &lt; 2 go to print_loop
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Li(a0, 0);                <span style="color:#008000">// li   a0, 0                   ; previous = 0
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Li(a2, 1);                <span style="color:#008000">// li   a2, 1                   ; current = 1
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Mv(a1, s0);               <span style="color:#008000">// mv   a1, s0                  ; n = i
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// fib_loop:
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    Label fib_loop = a.MakeLabel();
+</span></span><span style="display:flex;"><span>    a.BindLabel(fib_loop);
+</span></span><span style="display:flex;"><span>    a.Mv(a3, a2);               <span style="color:#008000">// mv   a3, a2                  ; tmp = current
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Addi(a1, a1, -1);         <span style="color:#008000">// addi a1, a1, -1              ; n = n - 1
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Add(a2, a0, a2);          <span style="color:#008000">// add  a2, a0, a2              ; current = current + prev
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Mv(a0, a3);               <span style="color:#008000">// mv   a0, a3                  ; previous = tmp
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Bltu(s4, a1, fib_loop);   <span style="color:#008000">// bltu s4, a1, fib_loop        ; if n &gt; 1 go to fib_loop
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.J(print_loop);            <span style="color:#008000">// j    print_loop              ; go to print_loop
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// done:
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.BindLabel(done);
+</span></span><span style="display:flex;"><span>    a.Li(a0, 0);                <span style="color:#008000">// li   a0, 0                   ; set the return value of main() to 0
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Emit an illegal instruction so that we have something to stop us.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Emit(0);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Bind `printf` so that returning the code doesn&#39;t error.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.BindLabel(printf);
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// clang-format on
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> a.Code();
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h2 id="how-labels-are-used">How labels are used</h2>
+<p>Before we go onto implementation, we need to understand the problems that we need to solve. In the code listing above, there are two scenarios in which labels are used:</p>
+<ol>
+<li>a label whose address is known</li>
+<li>a label whose address is not known</li>
+</ol>
+<p>Let&rsquo;s take a look at each of these scenarios in turn, using excerpts from the code above. We&rsquo;ll see that each scenario requires slightly different treatment.</p>
+<h3 id="a-label-whose-address-is-known">A label whose address is known</h3>
+<p>Here&rsquo;s an excerpt from the listing in the previous section. It illustrates the first scenario, in which a label is used <em>after</em> its address is already known. It shows the <code>fib_loop</code> label being created, bound to an address, then used in the <code>bltu</code> instruction.</p>
+<p>Here, the label <code>fib_loop</code> is used by the <code>bltu</code> instruction after the label&rsquo;s address is known.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    Label fib_loop = a.MakeLabel(); <span style="color:#008000">// [1] Create a label, `fib_loop`.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.BindLabel(fib_loop);          <span style="color:#008000">// [2] Bind `fib_loop` to the address of the next instruction,
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Mv(a3, a2);                   <span style="color:#008000">//     i.e., the address of this `mv` instruction.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Addi(a1, a1, -1);
+</span></span><span style="display:flex;"><span>    a.Add(a2, a0, a2);
+</span></span><span style="display:flex;"><span>    a.Mv(a0, a3);
+</span></span><span style="display:flex;"><span>    a.Bltu(s4, a1, fib_loop);       <span style="color:#008000">// [3] Emit an instruction that uses the `fib_loop` label.
+</span></span></span></code></pre></div><ol>
+<li>
+<p>The <code>MakeLabel()</code> member function creates a label, <code>fib_loop</code>. Each label created by the assembler maps to an address in the code. However, when a label is first created then that address is unknown.</p>
+</li>
+<li>
+<p>The assembler keeps track of the address where the next instruction will be written. When the <code>BindLabel()</code> member function is called, it assigns that address to the label, <code>fib_loop</code>.</p>
+</li>
+<li>
+<p>The assembler has an overload for <code>Bltu()</code> that takes a <code>Label</code> instead of a signed-extended 12-bit offset. When this overloaded version of <code>Bltu()</code> is invoked then it calculates the offset from the address of the <code>bltu</code> instruction to the known address that is bound to the <code>fib_loop</code> label, and emits the <code>bltu</code> instruction using that offset.</p>
+</li>
+</ol>
+<p>In this example, the offset is <code>-16</code>, because the <code>fib_loop</code> label has been bound to the address of the <code>mv a3, a3</code> instruction which appears four 32-bit instructions earlier in the code.</p>
+<p>At the point where the label <code>fib_loop</code> is used by the <code>bltu</code> instruction its address is already known, so the offset can be calculated immediately.</p>
+<h3 id="a-label-whose-address-is-unknown">A label whose address is unknown</h3>
+<p>Here&rsquo;s another excerpt from the listing in the previous section. It illustrates the second scenario, in which a label is used <em>before</em> its address is known. It shows the <code>fib</code> label being created, then used by the <code>j</code> instruction, and only later being bound to an address.</p>
+<p>Here, the label <code>fib</code> is used by the <code>j</code> instruction before the label&rsquo;s address is known.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    Label fib = a.MakeLabel(); <span style="color:#008000">// [1] Create a label, `fib`.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.J(fib);                  <span style="color:#008000">// [2] Emit an instruction that uses the `fib` label.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// print_loop:
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    Label print_loop = a.MakeLabel();
+</span></span><span style="display:flex;"><span>    a.BindLabel(print_loop);
+</span></span><span style="display:flex;"><span>    a.Mv(a0, s1);
+</span></span><span style="display:flex;"><span>    a.Mv(a1, s0);
+</span></span><span style="display:flex;"><span>    Label printf = a.MakeLabel();
+</span></span><span style="display:flex;"><span>    a.Call(printf);
+</span></span><span style="display:flex;"><span>    a.Addi(s0, s0, 1);
+</span></span><span style="display:flex;"><span>    Label done = a.MakeLabel();
+</span></span><span style="display:flex;"><span>    a.Beq(s0, s3, done);
+</span></span><span style="display:flex;"><span><span style="color:#008000">// fib:
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.BindLabel(fib);          <span style="color:#008000">// [3] Bind `fib` to the address of the next instruction,
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Mv(a2, s0);              <span style="color:#008000">//     i.e., the address of this `mv` instruction.
+</span></span></span></code></pre></div><ol>
+<li>
+<p>The <code>MakeLabel()</code> member function creates a label. Its address is unknown.</p>
+</li>
+<li>
+<p>The assembler has an overload for <code>J()</code> that takes a label instead of a sign-extended 20-bit offset. However, at this point the address of the label is not known, so the assembler emits the instruction with a zero offset. It then makes a note that it needs to come back and fix up the instruction at this address with a sign-extended 20-bit offset once the address of the label is known.</p>
+</li>
+<li>
+<p>When <code>BindLabel()</code> is called, then the address of the next instruction is assigned to the label. Now the address of the label is now known, so the assembler then looks for any previously recorded fix-ups associated with the label and resolves them with the correctly calculated offsets.</p>
+</li>
+</ol>
+<p>In this example, the offset is <code>24</code> because the <code>fib</code> label appears six 32-bit instructions later than the point where it was used by the <code>j</code> instruction.</p>
+<p>When the assembler emits an instruction, that instruction is written to an address in memory. When the assembler emits an instruction that uses a label, then that label is substituted with an offset if the label&rsquo;s address is known.</p>
+<p>However, if the label&rsquo;s address is not yet known then the assembler can&rsquo;t resolve it. Instead, it emits the instruction with a zero offset and associates a fix-up entry with the label. The fix-up contains the address of the instruction whose offset needs to be fixed up, along with the type of offset appropriate to the instruction, such as a sign-extended 12-bit offset for a branch instruction. When the label is finally bound to an address, then the assembler resolves all the fix-ups associated with that label.</p>
+<h1 id="implementing-labels-in-the-assembler">Implementing labels in the assembler</h1>
+<p>The assembler has been extended to cater for a new <code>Label</code> type. Instances of this type are created by the assembler using <code>MakeLabel()</code>, and are bound to an address using <code>BindLabel()</code>.</p>
+<p>In addition, the code-emitting member functions that take an offset as one of their parameters gain overloads that take a <code>Label</code> instead of an offset, as shown below.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#00f">class</span> <span style="color:#2b91af">Assembler</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span><span style="color:#00f">public</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">//...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#2b91af">void</span> Beq(<span style="color:#2b91af">uint32_t</span> r0, <span style="color:#2b91af">uint32_t</span> r1, <span style="color:#2b91af">int32_t</span> offs12);
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> Beq(<span style="color:#2b91af">uint32_t</span> r0, <span style="color:#2b91af">uint32_t</span> r1, Label label);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> Bltu(<span style="color:#2b91af">uint32_t</span> r0, <span style="color:#2b91af">uint32_t</span> r1, <span style="color:#2b91af">int32_t</span> offs12);
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> Bltu(<span style="color:#2b91af">uint32_t</span> r0, <span style="color:#2b91af">uint32_t</span> r1, Label label);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> Call(<span style="color:#2b91af">int32_t</span> offs20);
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> Call(Label label);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> J(<span style="color:#2b91af">int32_t</span> offs20);
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> J(Label label);
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// ...
+</span></span></span></code></pre></div><h2 id="the-label-type">The Label type</h2>
+<p>From the caller&rsquo;s point of view, <code>Label</code> is opaque. It is simply a handle to be used with the assembler in place of an address or offset.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#00f">class</span> <span style="color:#2b91af">Label</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span><span style="color:#00f">public</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">using</span> Id = size_t;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">explicit</span> Label(Id id) : id_{id}
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Id GetId() <span style="color:#00f">const</span>
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> id_;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">private</span>:
+</span></span><span style="display:flex;"><span>    Id id_; <span style="color:#008000">// [1] The label&#39;s id.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>};
+</span></span></code></pre></div><ol>
+<li>The label id, <code>id_</code>, is an index, initialized and used by the assembler.</li>
+</ol>
+<h2 id="assembler-member-variables">Assembler member variables</h2>
+<p>The assembler has some new member variables for dealing with labels and fix-ups.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#00f">class</span> <span style="color:#2b91af">Assembler</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span><span style="color:#00f">private</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">static</span> <span style="color:#00f">constexpr</span> <span style="color:#2b91af">uint32_t</span> badAddress = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">uint32_t</span>&gt;(-1); <span style="color:#008000">// [1]
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">uint32_t</span> current_{};                     <span style="color:#008000">// [2] The current write position.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    std::vector&lt;<span style="color:#2b91af">uint32_t</span>&gt; labels_;           <span style="color:#008000">// [3] Addresses by label id.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    std::multimap&lt;Label::Id, Fixup&gt; fixups_; <span style="color:#008000">// [4] Fixups by label id.
+</span></span></span></code></pre></div><ol>
+<li><code>badAddress</code> is a constant that indicates that an address is not yet known.</li>
+<li><code>current_</code> is the address of the next instruction to be emitted by the assembler.</li>
+<li><code>labels_</code> is a mapping from label ids to addresses.</li>
+<li><code>fixups_</code> contains the fix-ups (if any) associated with a given label id.</li>
+</ol>
+<h2 id="assembler-member-functions">Assembler member functions</h2>
+<p>The assembler gains some new member functions. Here are the most notable.</p>
+<h3 id="makelabel">MakeLabel()</h3>
+<p><code>MakeLabel()</code> creates a new <code>Label</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    Label MakeLabel()
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">auto</span> labelId = labels_.size(); <span style="color:#008000">// [1]
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        labels_.push_back(badAddress); <span style="color:#008000">// [2]
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">return</span> Label(labelId);         <span style="color:#008000">// [3]
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    }
+</span></span></code></pre></div><ol>
+<li>It assigns a new label id. This is nothing more than an index into <code>labels_</code>.</li>
+<li>It adds a new entry to <code>labels_</code> and sets its value to <code>badAddress</code> to indicate that the address for the new label id is currently unknown.</li>
+<li>It then packages the new label id into a new <code>Label</code> and returns that to the caller.</li>
+</ol>
+<h3 id="bindlabel">BindLabel()</h3>
+<p><code>BindLabel()</code> binds the current address to a <code>Label</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> BindLabel(Label label)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// [1] Give the label an address.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">const</span> <span style="color:#00f">auto</span> id = label.GetId();
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> <span style="color:#00f">auto</span> address = Current();
+</span></span><span style="display:flex;"><span>        labels_[id] = address;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// [2] Find all the fixups for this label id.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">if</span> (<span style="color:#00f">const</span> <span style="color:#00f">auto</span> fixupsForId = fixups_.equal_range(id); fixupsForId.first != fixups_.end())
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#008000">// [3] Resolve the fixups.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>            <span style="color:#00f">for</span> (<span style="color:#00f">auto</span> [_, fixup] : std::ranges::subrange(fixupsForId.first, fixupsForId.second))
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                <span style="color:#00f">const</span> <span style="color:#00f">auto</span> offset = address - fixup.target;
+</span></span><span style="display:flex;"><span>                <span style="color:#00f">if</span> (fixup.type == FixupType::offs12)
+</span></span><span style="display:flex;"><span>                {
+</span></span><span style="display:flex;"><span>                    ResolveFixup&lt;FixupType::offs12&gt;(fixup.target, offset); <span style="color:#008000">// [4] Resolve fix-up.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>                }
+</span></span><span style="display:flex;"><span>                <span style="color:#00f">else</span> <span style="color:#00f">if</span> (fixup.type == FixupType::offs20)
+</span></span><span style="display:flex;"><span>                {
+</span></span><span style="display:flex;"><span>                    ResolveFixup&lt;FixupType::offs20&gt;(fixup.target, offset); <span style="color:#008000">// [4] Resolve fix-up.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>                }
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#008000">// [5] We don&#39;t need these fixups any more.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>            fixups_.erase(id);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span></code></pre></div><ol>
+<li>It retrieves the label id from the label and sets the label at that index to the current address.</li>
+<li>It then checks if there are any fix-ups associated with the label id.</li>
+<li>If there are any fix-ups, then it resolves them.</li>
+<li>Fixups are resolved by calling the member function template <code>ResolveFixup()</code>.</li>
+<li>Finally, the fix-ups for the label id are erased as they&rsquo;re no longer needed.</li>
+</ol>
+<h3 id="addfixup">AddFixup()</h3>
+<p>Member function template <code>AddFixup()</code> is called when a code-emitting function attempts to use a <code>Label</code> whose address is not known. For example, here&rsquo;s how it might be used by <code>Bltu()</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">void</span> Bltu(<span style="color:#2b91af">uint32_t</span> r0, <span style="color:#2b91af">uint32_t</span> r1, Label label)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (<span style="color:#00f">const</span> <span style="color:#00f">auto</span> addr = AddressOf(label); addr.has_value()) <span style="color:#008000">// [1]
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// [2]
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">const</span> <span style="color:#2b91af">int32_t</span> offs12 = *addr - Current();
+</span></span><span style="display:flex;"><span>        Emit(encode::opc(Opcode::Bltu) | encode::r0(r0) | encode::r1(r1) | encode::offs12(offs12));
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">else</span>
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// [3]
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        AddFixup&lt;FixupType::offs12&gt;(label);
+</span></span><span style="display:flex;"><span>        Emit(encode::opc(Opcode::Bltu) | encode::r0(r0) | encode::r1(r1) | encode::offs12(0));
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><ol>
+<li>Check if there is an address associated with this label.</li>
+<li>The label has an address, so subtract the address of the current instruction to get an offset, then use the offset when emitting a <code>bltu</code> instruction.</li>
+<li>The label does not have an address, so call <code>AddFixup()</code> so that <code>BindLabel()</code> can supply one later, then emit a <code>bltu</code> instruction whose offset is zero.</li>
+</ol>
+<p>The implementation of <code>AddFixup()</code> is straightforward.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#00f">template</span>&lt;FixupType type&gt;
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> AddFixup(Label label)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        fixups_.emplace(label.GetId(), Fixup{.target = Current(), .type = type}); <span style="color:#008000">// [1]
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    }
+</span></span></code></pre></div><ol>
+<li>Add a mapping from the label id to a <code>Fixup</code> whose target is the current address and whose type is the offset type used by the current instruction.</li>
+</ol>
+<h3 id="resolvefixup">ResolveFixup()</h3>
+<p>Member function template <code>ResolveFixup()</code> takes an address and an offset and fixes up the code at the given address to use the offset of that type.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#00f">template</span>&lt;FixupType type&gt;
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> ResolveFixup(<span style="color:#2b91af">uint32_t</span> addr, <span style="color:#2b91af">int32_t</span> offset)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">auto</span> existing = code_[addr / 4];              <span style="color:#008000">// [1] Get the existing instruction.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">if</span> constexpr (type == FixupType::offs12)      <span style="color:#008000">// [2] Used when `FixupType` is `offs12`.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        {
+</span></span><span style="display:flex;"><span>            existing = (existing &amp; 0x000fffff) | encode::offs12(offset);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">else</span> <span style="color:#00f">if</span> constexpr (type == FixupType::offs20) <span style="color:#008000">// [3] Used when `FixupType` is `offs20`.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        {
+</span></span><span style="display:flex;"><span>            existing = (existing &amp; 0x00000fff) | encode::offs20(offset);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        code_[addr / 4] = existing;                   <span style="color:#008000">// [4] Update the code.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    }
+</span></span></code></pre></div><ol>
+<li>It reads the existing instruction from the emitted code.</li>
+<li>If the fix-up is for an instruction that uses a sign-extended 12-bit offset, then it masks out the 12 bits occupied by the offset and re-encodes a new offset.</li>
+<li>If the fix-up is for an instruction that uses a sign-extended 20-bit offset, then it masks out the 20 bits occupied by the offset and re-encodes a new offset.</li>
+<li>It updates the emitted code by overwriting it with the modified instruction.</li>
+</ol>
+<h1 id="the-new-assembler">The new Assembler</h1>
+<p>Here are the new versions of the <code>Assembler</code> class and the <code>Assemble()</code> function that uses it.</p>
+<p>It has a few small differences with some of the explanations above, mostly because I&rsquo;ve taken the opportunity to use templates where there are obvious patterns, e.g., for the branch instructions. Also, I&rsquo;ve modified <code>Assembler::Code()</code> so that it will throw an exception if there are any unbound labels.</p>
+<p>You can see the results of running this on <a href="https://godbolt.org/z/o1v6Yz4a1">Compiler Explorer</a>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#00f">class</span> <span style="color:#2b91af">Assembler</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">static</span> <span style="color:#00f">constexpr</span> <span style="color:#2b91af">uint32_t</span> badAddress = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">uint32_t</span>&gt;(-1);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">enum</span> <span style="color:#00f">class</span> <span style="color:#2b91af">FixupType</span>
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        offs12,
+</span></span><span style="display:flex;"><span>        offs20
+</span></span><span style="display:flex;"><span>    };
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">struct</span> <span style="color:#2b91af">Fixup</span>
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#2b91af">uint32_t</span> target; <span style="color:#008000">// The address that contains the data to be fixed up.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        FixupType type;  <span style="color:#008000">// The type of the data that needs to be fixed up.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    };
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    std::vector&lt;<span style="color:#2b91af">uint32_t</span>&gt; code_;
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">uint32_t</span> current_{};
+</span></span><span style="display:flex;"><span>    std::vector&lt;<span style="color:#2b91af">uint32_t</span>&gt; labels_;
+</span></span><span style="display:flex;"><span>    std::multimap&lt;Label::Id, Fixup&gt; fixups_;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">uint32_t</span> Current() <span style="color:#00f">const</span>
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> current_;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    std::optional&lt;<span style="color:#2b91af">uint32_t</span>&gt; AddressOf(Label label)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">if</span> (<span style="color:#00f">auto</span> result = labels_[label.GetId()]; result != badAddress)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">return</span> result;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> {};
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">template</span>&lt;FixupType type&gt;
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> ResolveFixup(<span style="color:#2b91af">uint32_t</span> addr, <span style="color:#2b91af">int32_t</span> offset)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">auto</span> existing = code_[addr / 4];
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">if</span> constexpr (type == FixupType::offs12)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            existing = (existing &amp; 0x000fffff) | encode::offs12(offset);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">else</span> <span style="color:#00f">if</span> constexpr (type == FixupType::offs20)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            existing = (existing &amp; 0x00000fff) | encode::offs20(offset);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        code_[addr / 4] = existing;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">template</span>&lt;FixupType type&gt;
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> AddFixup(Label label)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        fixups_.emplace(label.GetId(), Fixup{.target = Current(), .type = type});
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">public</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> BindLabel(Label label)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> <span style="color:#00f">auto</span> id = label.GetId();
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> <span style="color:#00f">auto</span> address = Current();
+</span></span><span style="display:flex;"><span>        labels_[id] = address;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Find all the fixups for this label id.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">if</span> (<span style="color:#00f">const</span> <span style="color:#00f">auto</span> fixupsForId = fixups_.equal_range(id); fixupsForId.first != fixups_.end())
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#008000">// Resolve the fixups.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>            <span style="color:#00f">for</span> (<span style="color:#00f">auto</span> [_, fixup] : std::ranges::subrange(fixupsForId.first, fixupsForId.second))
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                <span style="color:#00f">const</span> <span style="color:#00f">auto</span> offset = address - fixup.target;
+</span></span><span style="display:flex;"><span>                <span style="color:#00f">if</span> (fixup.type == FixupType::offs12)
+</span></span><span style="display:flex;"><span>                {
+</span></span><span style="display:flex;"><span>                    ResolveFixup&lt;FixupType::offs12&gt;(fixup.target, offset);
+</span></span><span style="display:flex;"><span>                }
+</span></span><span style="display:flex;"><span>                <span style="color:#00f">else</span> if (fixup.type == FixupType::offs20)
+</span></span><span style="display:flex;"><span>                {
+</span></span><span style="display:flex;"><span>                    ResolveFixup&lt;FixupType::offs20&gt;(fixup.target, offset);
+</span></span><span style="display:flex;"><span>                }
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#008000">// We don&#39;t need these fixups any more.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>            fixups_.erase(id);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Label MakeLabel()
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">auto</span> labelId = labels_.size();
+</span></span><span style="display:flex;"><span>        labels_.push_back(badAddress);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> Label(labelId);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">const</span> std::vector&lt;<span style="color:#2b91af">uint32_t</span>&gt;&amp; Code() <span style="color:#00f">const</span>
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">if</span> (fixups_.empty())
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">return</span> code_;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">throw</span> std::runtime_error(<span style="color:#a31515">&#34;There are unbound labels.&#34;</span>);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> Emit(<span style="color:#2b91af">uint32_t</span> u)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        code_.push_back(u);
+</span></span><span style="display:flex;"><span>        current_ += 4; <span style="color:#008000">// 4 bytes per instruction.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> Add(<span style="color:#2b91af">uint32_t</span> r0, <span style="color:#2b91af">uint32_t</span> r1, <span style="color:#2b91af">uint32_t</span> r2)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// add r0, r1, r2
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        Emit(encode::opc(Opcode::Add) | encode::r0(r0) | encode::r1(r1) | encode::r2(r2));
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> Addi(<span style="color:#2b91af">uint32_t</span> r0, <span style="color:#2b91af">uint32_t</span> r1, <span style="color:#2b91af">int32_t</span> imm12)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// addi r0, r1, imm12
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        Emit(encode::opc(Opcode::Addi) | encode::r0(r0) | encode::r1(r1) | encode::imm12(imm12));
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">template</span>&lt;Opcode opcode&gt;
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> Branch(<span style="color:#2b91af">uint32_t</span> r0, <span style="color:#2b91af">uint32_t</span> r1, <span style="color:#2b91af">int32_t</span> offs12)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        Emit(encode::opc(opcode) | encode::r0(r0) | encode::r1(r1) | encode::offs12(offs12));
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">template</span>&lt;Opcode opcode&gt;
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> Branch(<span style="color:#2b91af">uint32_t</span> r0, <span style="color:#2b91af">uint32_t</span> r1, Label label)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">if</span> (<span style="color:#00f">const</span> <span style="color:#00f">auto</span> addr = AddressOf(label); addr.has_value())
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            Branch&lt;opcode&gt;(r0, r1, *addr - Current());
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">else</span>
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            AddFixup&lt;FixupType::offs12&gt;(label);
+</span></span><span style="display:flex;"><span>            Branch&lt;opcode&gt;(r0, r1, 0);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> Beq(<span style="color:#2b91af">uint32_t</span> r0, <span style="color:#2b91af">uint32_t</span> r1, <span style="color:#2b91af">int32_t</span> offs12)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        Branch&lt;Opcode::Beq&gt;(r0, r1, offs12);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> Beq(<span style="color:#2b91af">uint32_t</span> r0, <span style="color:#2b91af">uint32_t</span> r1, Label label)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        Branch&lt;Opcode::Beq&gt;(r0, r1, label);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> Bltu(<span style="color:#2b91af">uint32_t</span> r0, <span style="color:#2b91af">uint32_t</span> r1, <span style="color:#2b91af">int32_t</span> offs12)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        Branch&lt;Opcode::Bltu&gt;(r0, r1, offs12);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> Bltu(<span style="color:#2b91af">uint32_t</span> r0, <span style="color:#2b91af">uint32_t</span> r1, Label label)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        Branch&lt;Opcode::Bltu&gt;(r0, r1, label);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">template</span>&lt;Opcode opcode&gt;
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> Jump(<span style="color:#2b91af">int32_t</span> offs20)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        Emit(encode::opc(opcode) | encode::offs20(offs20));
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">template</span>&lt;Opcode opcode&gt;
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> Jump(Label label)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">if</span> (<span style="color:#00f">const</span> <span style="color:#00f">auto</span> addr = AddressOf(label); addr.has_value())
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            Jump&lt;opcode&gt;(*addr - Current());
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">else</span>
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            AddFixup&lt;FixupType::offs20&gt;(label);
+</span></span><span style="display:flex;"><span>            Jump&lt;opcode&gt;(0);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> Call(<span style="color:#2b91af">int32_t</span> offs20)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        Jump&lt;Opcode::Call&gt;(offs20);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> Call(Label label)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        Jump&lt;Opcode::Call&gt;(label);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> J(<span style="color:#2b91af">int32_t</span> offs20)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        Jump&lt;Opcode::J&gt;(offs20);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> J(Label label)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        Jump&lt;Opcode::J&gt;(label);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> Li(<span style="color:#2b91af">uint32_t</span> r0, <span style="color:#2b91af">int32_t</span> imm12)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// li r0, imm12
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        Emit(encode::opc(Opcode::Li) | encode::r0(r0) | encode::imm12(imm12));
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> Lui(<span style="color:#2b91af">uint32_t</span> r0, <span style="color:#2b91af">uint32_t</span> uimm20)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// lui r0, uimm20
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        Emit(encode::opc(Opcode::Lui) | encode::r0(r0) | encode::uimm20(uimm20));
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> Mv(<span style="color:#2b91af">uint32_t</span> r0, <span style="color:#2b91af">uint32_t</span> r1)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// mv r0, r1
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        Emit(encode::opc(Opcode::Mv) | encode::r0(r0) | encode::r1(r1));
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>std::vector&lt;<span style="color:#2b91af">uint32_t</span>&gt; Assemble()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    Assembler a;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// clang-format off
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// main:
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Li(s0, 0);                <span style="color:#008000">// li   s0, 0                   ; i = 0
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Li(s2, 2);                <span style="color:#008000">// li   s2, 2                   ; s2 = 2
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Lui(a0, 1);               <span style="color:#008000">// lui  a0, %hi(format_str)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Addi(s1, a0, -548);       <span style="color:#008000">// addi s1, a0, %lo(format_str) ; s1 = the address of the printf format string
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Li(s3, 48);               <span style="color:#008000">// li   s3, 48                  ; s3 = 48
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Li(s4, 1);                <span style="color:#008000">// li   s4, 1                   ; s4 = 1
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    Label fib = a.MakeLabel();
+</span></span><span style="display:flex;"><span>    a.J(fib);                   <span style="color:#008000">// j    fib                     ; go to fib
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// print_loop:
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    Label print_loop = a.MakeLabel();
+</span></span><span style="display:flex;"><span>    a.BindLabel(print_loop);
+</span></span><span style="display:flex;"><span>    a.Mv(a0, s1);               <span style="color:#008000">// mv   a0, s1                  ; arg0 = the address of the printf format string
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Mv(a1, s0);               <span style="color:#008000">// mv   a1, s0                  ; arg1 = i (arg2 contains current)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    Label printf = a.MakeLabel();
+</span></span><span style="display:flex;"><span>    a.Call(printf);             <span style="color:#008000">// call printf                  ; call printf
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Addi(s0, s0, 1);          <span style="color:#008000">// addi s0, s0, 1               ; i = i + 1
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    Label done = a.MakeLabel();
+</span></span><span style="display:flex;"><span>    a.Beq(s0, s3, done);        <span style="color:#008000">// beq  s0, s3, done            ; if i == 48 go to done
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// fib:
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.BindLabel(fib);
+</span></span><span style="display:flex;"><span>    a.Mv(a2, s0);               <span style="color:#008000">// mv   a2, s0                  ; current = i
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Bltu(s0, s2, print_loop); <span style="color:#008000">// bltu s0, s2, print_loop      ; if i &lt; 2 go to print_loop
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Li(a0, 0);                <span style="color:#008000">// li   a0, 0                   ; previous = 0
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Li(a2, 1);                <span style="color:#008000">// li   a2, 1                   ; current = 1
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Mv(a1, s0);               <span style="color:#008000">// mv   a1, s0                  ; n = i
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// fib_loop:
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    Label fib_loop = a.MakeLabel();
+</span></span><span style="display:flex;"><span>    a.BindLabel(fib_loop);
+</span></span><span style="display:flex;"><span>    a.Mv(a3, a2);               <span style="color:#008000">// mv   a3, a2                  ; tmp = current
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Addi(a1, a1, -1);         <span style="color:#008000">// addi a1, a1, -1              ; n = n - 1
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Add(a2, a0, a2);          <span style="color:#008000">// add  a2, a0, a2              ; current = current + prev
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Mv(a0, a3);               <span style="color:#008000">// mv   a0, a3                  ; previous = tmp
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Bltu(s4, a1, fib_loop);   <span style="color:#008000">// bltu s4, a1, fib_loop        ; if n &gt; 1 go to fib_loop
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.J(print_loop);            <span style="color:#008000">// j    print_loop              ; go to print_loop
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// done:
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.BindLabel(done);
+</span></span><span style="display:flex;"><span>    a.Li(a0, 0);                <span style="color:#008000">// li   a0, 0                   ; set the return value of main() to 0
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Emit an illegal instruction so that we have something to stop us.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Emit(0);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Bind `printf` so that returning the code doesn&#39;t error.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.BindLabel(printf);
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// clang-format on
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> a.Code();
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h1 id="conclusion">Conclusion</h1>
+<p>I hadn&rsquo;t originally planned to write a post describing how to add labels to the assembler. However, I felt that it was worthwhile doing so because the effort involved in writing code with manually calculated offsets does not scale, and it became obvious that the additional code needed to be explained.</p>
+<p>As before, you can view and run the entire code on <a href="https://godbolt.org/z/o1v6Yz4a1">Compiler Explorer</a>.</p>
+        </div>
+        
+        <div>
+            <ul id="tags">
+                
+                <li><a href="/tags/vm">vm</a></li>
+                
+                <li><a href="/tags/owl">owl</a></li>
+                
+            </ul>
+        </div>
+        
+    </article>
+</main>
+<aside class="wrapper">
+    <div>
+        <div>
+            <h3>Latest Posts</h3>
+        </div>
+        <div>
+            <ul>
+                
+                <li><a href="/posts/2024/05/05/lbavm-003/">Let&#39;s build a virtual machine: Part 3 - Adding labels to the assembler</a></li>
+                
+                <li><a href="/posts/2024/04/07/lbavm-002/">Let&#39;s build a virtual machine: Part 2 - The main loop and assembler</a></li>
+                
+                <li><a href="/posts/2024/04/02/lbavm-001/">Let&#39;s build a virtual machine: Part 1 - Registers and instructions</a></li>
+                
+                <li><a href="/posts/2024/03/17/lbavm-000-intro/">Let&#39;s build a virtual machine: Part 0 - Introduction</a></li>
+                
+                <li><a href="/posts/2023/04/07/time-to-learn-rust/">It&#39;s time to learn Rust</a></li>
+                
+            </ul>
+        </div>
+    </div>
+</aside> 
+	<footer class="wrapper">
+	<p>&copy; 2024 <a href="https://badlydrawnrod.github.io/">My Badly Drawn Self</a></p>
+</footer>
+
+</body>
+</html>

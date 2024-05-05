@@ -386,7 +386,7 @@
 </span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        j       print_loop                  <span style="color:#008000">; go to print_loop
 </span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>done:
 </span></span><span style="display:flex;"><span>        li      a0, 0                       <span style="color:#008000">; set the return value of main() to 0
-</span></span></span></code></pre></div><p>We need to convert this from text into instructions that will be understood by the Owl-2820 CPU. That sounds like the job for an <a href="https://en.wikipedia.org/wiki/Assembly_language#Assembler">assembler</a>.</p>
+</span></span></span></code></pre></div><p>We need to convert this from text into instructions that will be understood by the Owl-2820 CPU. That sounds like the job for an <a href="https://en.wikipedia.org/wiki/Assembly_languag">assembler</a>.</p>
 <p>Rather than going the whole hog and writing a full-blown assembler, we can create a simple <code>Assembler</code> class whose member functions are named after opcodes. Each of these member functions will encode the corresponding opcode and its operands into a instruction, then emit the instruction as Owl-2820 machine code.</p>
 <p>That would allow us to write the assembly language program in C++ like this.</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    Assembler a;
@@ -912,6 +912,8 @@ fib(47) = 2971215073
         <div>
             <ul>
                 
+                <li><a href="/posts/2024/05/05/lbavm-003/">Let&#39;s build a virtual machine: Part 3 - Adding labels to the assembler</a></li>
+                
                 <li><a href="/posts/2024/04/07/lbavm-002/">Let&#39;s build a virtual machine: Part 2 - The main loop and assembler</a></li>
                 
                 <li><a href="/posts/2024/04/02/lbavm-001/">Let&#39;s build a virtual machine: Part 1 - Registers and instructions</a></li>
@@ -919,8 +921,6 @@ fib(47) = 2971215073
                 <li><a href="/posts/2024/03/17/lbavm-000-intro/">Let&#39;s build a virtual machine: Part 0 - Introduction</a></li>
                 
                 <li><a href="/posts/2023/04/07/time-to-learn-rust/">It&#39;s time to learn Rust</a></li>
-                
-                <li><a href="/posts/2022/02/27/mandatory-copy-elision/">Mandatory Copy Elision in C&#43;&#43;</a></li>
                 
             </ul>
         </div>
