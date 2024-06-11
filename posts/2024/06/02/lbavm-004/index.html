@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Let&#39;s build a virtual machine: Part 4 - Call, return, and calling conventions</title>
+	
+	
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu|Lora">
+	<link rel="stylesheet" href="/css/style.css">
+	
+</head>
+<body>
+	<header class="wrapper">
+    <nav>
+        <a href="http://localhost:1313/">Home</a>
+        <ul>
+			
+            
+            <li><a href="/page/about/">About</a></li>
+            
+            <li><a href="/posts/">All posts</a></li>
+            
+        </ul>
+    </nav>
+    
+</header>
+	
+<main class="wrapper">
+    <article>
+        <p></p>
+        
+        <div class="date">11 June, 2024</div>
+        
+        <div>
+            <p>In which we implement call and return, then discuss the need for calling conventions.</p>
+<h1 id="part-4-call-return-and-calling-conventions">Part 4 Call, return, and calling conventions</h1>
+<p>In this post, we&rsquo;re going to implement call and return for the Owl-2820 CPU, then we&rsquo;ll discuss the related topic of calling conventions.</p>
+<h1 id="call-and-return">Call and return</h1>
+<p>Most <a href="https://en.wikipedia.org/wiki/Instruction_set_architecture">instruction set architectures</a> have the ability to implement subroutines through some form of call and return, in which <em>call</em> transfers control to a subroutine, and <em>return</em> transfers control to the return address, which is the address of the next instruction after the call.</p>
+<p>There are two common ways of implementing this: by using the stack, and by using a register.</p>
+<p>When using the stack to hold the return address, <em>call</em> is implemented by pushing the return address onto the stack, then transferring control to the subroutine. Conversely, <em>return</em> is implemented by popping the return address from the stack then transferring control back to that address.</p>
+<p>When using a register to hold the return address, <em>call</em> is implemented by saving the return address into a so-called link register, then transferring control to the subroutine. <em>Return</em> is implemented by transferring control back to the adddress that was saved in the link register.</p>
+<p>The Owl-2820 CPU is based on <a href="https://en.wikipedia.org/wiki/RISC-V">RISC-V</a>, so we will implement its call instruction <code>call</code> and its return instruction <code>ret</code> using a link register.</p>
+<h2 id="implementing-call-and-ret">Implementing call and ret</h2>
+<p>Here&rsquo;s the code that implements <code>call</code>. It saves the address of the next instruction, <em>nextPc</em>, into the designated return address register, <em>x[ra]</em>, then it sets <em>nextPc</em> to the address in the program counter, <em>pc</em>, plus a sign-extended 20-bit offset, <em>offs20</em>.</p>
+<p>In this context, <em>ra</em> is a symbolic register name that evaluates to 1. In other words, <em>x[ra]</em> is simply another name for <em>x[1]</em> in our register array.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#00f">case</span> Opcode::Call: {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// ra &lt;- pc + 4, pc &lt;- pc + offs20
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        x[ra] = nextPc;            <span style="color:#008000">// Save the return address in `ra`.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        nextPc = pc + offs20(ins); <span style="color:#008000">// Make the call.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span></code></pre></div><p>Similarly, here&rsquo;s the code for <code>ret</code>. It copies the previously saved value from the designated return address register, <em>x[ra]</em>, into <em>nextPc</em>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#00f">case</span> Opcode::Ret: {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// pc &lt;- ra
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        nextPc = x[ra]; <span style="color:#008000">// Return to `ra`.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span></code></pre></div><h2 id="rewriting-printf-as-a-subroutine">Rewriting printf() as a subroutine</h2>
+<p>In <a href="http://localhost:1313/posts/2024/04/07/lbavm-002/">Part 2</a> of this series, I took a liberty with the fact that there was only one <code>call</code> instruction in the entire assembly language program and hard-coded the <code>Call</code> opcode to the rather specific <code>printf()</code> implementation shown below.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#00f">case</span> Opcode::Call: {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Do a hard-coded printf().
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        std::cout &lt;&lt; std::format(<span style="color:#a31515">&#34;fib({}) = {}</span><span style="color:#a31515">\n</span><span style="color:#a31515">&#34;</span>, x[a1], x[a2]);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span></code></pre></div><p>Now that we have proper implementations for <code>call</code> and <code>ret</code>, we are much closer to being able to implement <code>printf()</code> as a subroutine.</p>
+<p>In order to do so, we still need to solve the problem of actually writing some output, so in the short term we&rsquo;ll move the original implementation of <code>printf()</code> from the <code>Call</code> opcode to a different opcode, <code>Ecall</code>, which represents a system call.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#00f">case</span> Opcode::Ecall: {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Do a hard-coded printf().
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        std::cout &lt;&lt; std::format(<span style="color:#a31515">&#34;fib({}) = {}</span><span style="color:#a31515">\n</span><span style="color:#a31515">&#34;</span>, x[a1], x[a2]);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span></code></pre></div><p>Having done this, we can finally implement <code>printf()</code> as a subroutine. The new implementation of <code>printf()</code> will invoke <code>ecall</code> to perform the hard-coded output previously invoked by <code>call</code>, before returning to the caller via <code>ret</code>.</p>
+<p>We&rsquo;ll also take the opportunity to rename the subroutine from <code>printf()</code> to <code>print_fib()</code> as that&rsquo;s a more accurate description of what it does. Here&rsquo;s the implementation.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#008000">// print_fib:
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    Label print_fib = a.MakeLabel();
+</span></span><span style="display:flex;"><span>    a.BindLabel(print_fib);
+</span></span><span style="display:flex;"><span>    a.Ecall();                  <span style="color:#008000">// ecall                        ; invoke hard-coded print_fib
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Ret();                    <span style="color:#008000">// ret                          ; return to the caller
+</span></span></span></code></pre></div><p>And here&rsquo;s the updated implementation of the <code>Assemble()</code> function. It now genuinely calls <code>printf()</code>, admittedly using its new name, <code>print_fib()</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>std::vector&lt;<span style="color:#2b91af">uint32_t</span>&gt; Assemble()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    Assembler a;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// clang-format off
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// main:
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Li(s0, 0);                <span style="color:#008000">// li   s0, 0                   ; i = 0
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Li(s2, 2);                <span style="color:#008000">// li   s2, 2                   ; s2 = 2
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Li(s3, 48);               <span style="color:#008000">// li   s3, 48                  ; s3 = 48
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Li(s4, 1);                <span style="color:#008000">// li   s4, 1                   ; s4 = 1
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    Label fib = a.MakeLabel();
+</span></span><span style="display:flex;"><span>    a.J(fib);                   <span style="color:#008000">// j    fib                     ; go to fib
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// print_fib:
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    Label print_fib = a.MakeLabel();
+</span></span><span style="display:flex;"><span>    a.BindLabel(print_fib);
+</span></span><span style="display:flex;"><span>    a.Ecall();                  <span style="color:#008000">// ecall                        ; invoke hard-coded print_fib
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Ret();                    <span style="color:#008000">// ret                          ; return to the caller
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// print_loop:
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    Label print_loop = a.MakeLabel();
+</span></span><span style="display:flex;"><span>    a.BindLabel(print_loop);
+</span></span><span style="display:flex;"><span>    a.Mv(a0, s1);               <span style="color:#008000">// mv   a0, s1                  ; arg0 = the address of the printf format string
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Mv(a1, s0);               <span style="color:#008000">// mv   a1, s0                  ; arg1 = i (arg2 contains current)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Call(print_fib);          <span style="color:#008000">// call print_fib               ; call print_fib
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Addi(s0, s0, 1);          <span style="color:#008000">// addi s0, s0, 1               ; i = i + 1
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    Label done = a.MakeLabel();
+</span></span><span style="display:flex;"><span>    a.Beq(s0, s3, done);        <span style="color:#008000">// beq  s0, s3, done            ; if i == 48 go to done
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// fib:
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.BindLabel(fib);
+</span></span><span style="display:flex;"><span>    a.Mv(a2, s0);               <span style="color:#008000">// mv   a2, s0                  ; current = i
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Bltu(s0, s2, print_loop); <span style="color:#008000">// bltu s0, s2, print_loop      ; if i &lt; 2 go to print_loop
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Li(a0, 0);                <span style="color:#008000">// li   a0, 0                   ; previous = 0
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Li(a2, 1);                <span style="color:#008000">// li   a2, 1                   ; current = 1
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Mv(a1, s0);               <span style="color:#008000">// mv   a1, s0                  ; n = i
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// fib_loop:
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    Label fib_loop = a.MakeLabel();
+</span></span><span style="display:flex;"><span>    a.BindLabel(fib_loop);
+</span></span><span style="display:flex;"><span>    a.Mv(a3, a2);               <span style="color:#008000">// mv   a3, a2                  ; tmp = current
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Addi(a1, a1, -1);         <span style="color:#008000">// addi a1, a1, -1              ; n = n - 1
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Add(a2, a0, a2);          <span style="color:#008000">// add  a2, a0, a2              ; current = current + prev
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Mv(a0, a3);               <span style="color:#008000">// mv   a0, a3                  ; previous = tmp
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Bltu(s4, a1, fib_loop);   <span style="color:#008000">// bltu s4, a1, fib_loop        ; if n &gt; 1 go to fib_loop
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.J(print_loop);            <span style="color:#008000">// j    print_loop              ; go to print_loop
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// done:
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.BindLabel(done);
+</span></span><span style="display:flex;"><span>    a.Li(a0, 0);                <span style="color:#008000">// li   a0, 0                   ; set the return value of main() to 0
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Emit an illegal instruction so that we have something to stop us.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Emit(0);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// clang-format on
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> a.Code();
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>You can view and run this intermediate version of the code on <a href="https://godbolt.org/z/86E14a1xh">Compiler Explorer</a>.</p>
+<p>At this point, I&rsquo;m somewhat grateful that we added labels to the assembler in <a href="http://localhost:1313/posts/2024/05/05/lbavm-003/">Part 3</a>, as changing the offsets manually would have been painful. As it happens, the labels took care of everything and we didn&rsquo;t even have to think about it.</p>
+<p>However, there&rsquo;s still something that needs to be explained, namely, how did we decide on how to pass arguments to <code>print_fib()</code>? The answer is that we used a calling convention, and that&rsquo;s the topic of the next section.</p>
+<h1 id="calling-conventions">Calling conventions</h1>
+<p>If the call to <code>print_fib()</code> was written in C++, then it might look something like this. It&rsquo;s a function that takes three arguments.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    print_fib(<span style="color:#a31515">&#34;fib(%d) = %d</span><span style="color:#a31515">\n</span><span style="color:#a31515">&#34;</span>, i, current);
+</span></span></code></pre></div><p>Here&rsquo;s how that might translate into assembly language.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span>    mv   a0, s1                  <span style="color:#008000">; a0 = the address of the printf format string
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    mv   a1, s0                  <span style="color:#008000">; a1 = i
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>                                 <span style="color:#008000">; a2 already contains &#39;current&#39;
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    call print_fib               <span style="color:#008000">; call print_fib
+</span></span></span></code></pre></div><p>In the assembly language code above, you may have noticed that the arguments to <code>print_fib()</code> are passed to it in registers <em>a0</em>, <em>a1</em>, and <em>a2</em>.</p>
+<p>These registers are used as follows:</p>
+<ul>
+<li><em>a0</em> holds the address of the <code>printf()</code> format string. It&rsquo;s actually unused, because <code>print_fib()</code> doesn&rsquo;t take a format string, but I&rsquo;ve left it like this as it leaves the option open to reintroduce <code>printf()</code> at a later date.</li>
+<li><em>a1</em> holds <code>i</code>, the number whose Fibonacci value is being printed</li>
+<li><em>a2</em> holds <code>current</code>, the Fibonacci value itself</li>
+</ul>
+<p>This arrangement of registers to was no accident. How arguments are passed to a subroutine is part of what is known as a <strong>calling convention</strong>.</p>
+<p>A calling convention describes the relationship between a called subroutine, often referred to as the <em>callee</em>, and the code that calls it, known as the <em>caller</em>.</p>
+<p>Amongst other things, a calling convention describes the following:</p>
+<ul>
+<li>how the caller passes arguments to the callee, in registers and on the stack</li>
+<li>how the callee returns the result to the caller</li>
+<li>which registers have their values preserved by the callee</li>
+<li>which registers do not have their values preserved by the callee and therefore need to be preserved by the caller</li>
+<li>which registers are temporary and therefore are preserved by neither caller nor callee</li>
+<li>how the caller passes the return address to the callee</li>
+</ul>
+<h2 id="the-owl-2820-calling-convention">The Owl-2820 calling convention</h2>
+<p>In <a href="http://localhost:1313/posts/2024/04/02/lbavm-001/">Part 1</a> of this series I introduced the Owl-2820 registers, and stated that they&rsquo;d have the same names and usages as RV32I.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Register</th>
+<th style="text-align:left">Name</th>
+<th style="text-align:left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">x0</td>
+<td style="text-align:left">zero</td>
+<td style="text-align:left">always contains zero (writing to <em>x0</em> has no effect)</td>
+</tr>
+<tr>
+<td style="text-align:left">x1</td>
+<td style="text-align:left">ra</td>
+<td style="text-align:left">return address</td>
+</tr>
+<tr>
+<td style="text-align:left">x2</td>
+<td style="text-align:left">sp</td>
+<td style="text-align:left">stack pointer</td>
+</tr>
+<tr>
+<td style="text-align:left">x3</td>
+<td style="text-align:left">gp</td>
+<td style="text-align:left">global pointer</td>
+</tr>
+<tr>
+<td style="text-align:left">x4</td>
+<td style="text-align:left">tp</td>
+<td style="text-align:left">thread pointer</td>
+</tr>
+<tr>
+<td style="text-align:left">x5 - x7</td>
+<td style="text-align:left">t0 - t2</td>
+<td style="text-align:left">temporary registers</td>
+</tr>
+<tr>
+<td style="text-align:left">x8 - x9</td>
+<td style="text-align:left">s0 - s1</td>
+<td style="text-align:left">callee-saved registers</td>
+</tr>
+<tr>
+<td style="text-align:left">x10 - x17</td>
+<td style="text-align:left">a0 - a7</td>
+<td style="text-align:left">argument registers</td>
+</tr>
+<tr>
+<td style="text-align:left">x18 - x27</td>
+<td style="text-align:left">s2 - s11</td>
+<td style="text-align:left">callee-saved registers</td>
+</tr>
+<tr>
+<td style="text-align:left">x28 - x31</td>
+<td style="text-align:left">t3 - t6</td>
+<td style="text-align:left">temporary registers</td>
+</tr>
+</tbody>
+</table>
+<p>If we turn this table around, and use the symbolic register names, then we can see some aspects of how the Owl-2820 calling convention works.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Registers</th>
+<th style="text-align:left">Calling Convention Usage</th>
+<th style="text-align:left">Who saves?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">a0 - a1</td>
+<td style="text-align:left">argument registers, used to pass arguments from the caller to the callee, and to return values from the callee back to the caller</td>
+<td style="text-align:left">caller</td>
+</tr>
+<tr>
+<td style="text-align:left">a2 - a7</td>
+<td style="text-align:left">argument registers, used to pass arguments from the caller to the callee</td>
+<td style="text-align:left">caller</td>
+</tr>
+<tr>
+<td style="text-align:left">s0</td>
+<td style="text-align:left">frame pointer</td>
+<td style="text-align:left">callee</td>
+</tr>
+<tr>
+<td style="text-align:left">s1 - s11</td>
+<td style="text-align:left">callee-saved registers</td>
+<td style="text-align:left">callee</td>
+</tr>
+<tr>
+<td style="text-align:left">t0 - t6</td>
+<td style="text-align:left">temporary registers, not preserved by the callee, so must be preserved by the caller if used after the call</td>
+<td style="text-align:left">caller</td>
+</tr>
+<tr>
+<td style="text-align:left">ra</td>
+<td style="text-align:left">return address</td>
+<td style="text-align:left">callee</td>
+</tr>
+</tbody>
+</table>
+<p>In particular, we can see that registers <em>a0</em> through <em>a7</em> are used to pass arguments from the caller to the called subroutine, and we can see that registers <em>a0</em> and sometimes <em>a1</em> are used to return values from the called subroutine back to the caller.</p>
+<p>We can also see that register <em>ra</em> is used to hold the return address.</p>
+<h2 id="example">Example</h2>
+<p>Let&rsquo;s look at that in practice, first by seeing what the generated code looks like for a subroutine and its caller, then by stepping through it one instruction at a time.</p>
+<h3 id="a-subroutine">A subroutine</h3>
+<p>Let&rsquo;s assume that we have a C++ compiler that compiles to Owl-2820 assembly language, and we have the following function, <code>add3()</code>, which takes three <code>int</code>s in parameters <code>a</code>, <code>b</code>, and <code>c</code>, adds them together, then returns the result. What assembly language code will be generated by the compiler when it compiles this code?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">int</span> add3(<span style="color:#2b91af">int</span> a, <span style="color:#2b91af">int</span> b, <span style="color:#2b91af">int</span> c)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> a + b + c;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>For the compiler to generate the code for this function, it needs to know how the caller has passed <code>a</code>, <code>b</code>, and <code>c</code> to it so that it can use them. Likewise, it needs to know how to return the result to the caller.</p>
+<p>It might generate something like this, using the calling convention that the first three arguments, corresponding to parameters <code>a</code>, <code>b</code>, and <code>c</code> are passed to it in registers <em>a0</em>, <em>a1</em>, and <em>a2</em> respectively, and that the result is returned in register <em>a0</em>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span>add3:
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">; return a + b + c
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        add     a0, a0, a1              <span style="color:#008000">; a += b
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        add     a0, a0, a2              <span style="color:#008000">; a += c
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        ret
+</span></span></code></pre></div><h3 id="calling-the-subroutine">Calling the subroutine</h3>
+<p>Now, let&rsquo;s say that we want to call <code>add3()</code> then print the result by calling a function <code>print_int()</code>. Again, what assembly language code will be generated by the compiler when it compiles this code?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#2b91af">int</span> result = add3(1, 2, 3);
+</span></span><span style="display:flex;"><span>    print_int(result);
+</span></span></code></pre></div><p>For the compiler to generate this code, it needs to know how to pass each of the arguments to the <code>add3()</code> function. It also needs to know how to get the return value from <code>add3()</code> and pass that return value to <code>print_int()</code>.</p>
+<p>It might generate something like this, again using the calling convention that the first three arguments to <code>add3()</code> will be passed in registers <em>a0</em>, <em>a1</em>, and <em>a2</em>, and that the result will be returned in register <em>a0</em>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span>        <span style="color:#008000">; result = add3(1, 2, 3)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        li      a0, 1               <span style="color:#008000">; arg0 (a) = 1
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        li      a1, 2               <span style="color:#008000">; arg1 (b) = 2
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        li      a2, 3               <span style="color:#008000">; arg2 (c) = 3
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        call    add3                <span style="color:#008000">; result = add3(a, b, c)
+</span></span></span></code></pre></div><p>It would then go on to generate the following code, knowing that the return value from <code>add3()</code> is in register <em>a0</em> which be passed as the first and only argument to <code>print_int()</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span>        <span style="color:#008000">; print_int(result)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        call    print_int           <span style="color:#008000">; print_int(result)
+</span></span></span></code></pre></div><h3 id="stepping-through">Stepping through</h3>
+<p>Let&rsquo;s step through this in detail.</p>
+<p>The compiler knows that <code>add3()</code> has parameters <code>int a</code>, <code>int b</code>, and <code>int c</code>, so it generates code to pass it three integer arguments. It places these arguments <code>1</code>, <code>2</code>, and <code>3</code>, into registers <em>a0</em>, <em>a1</em>, and <em>a2</em> respectively.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span>        li      a0, 1               <span style="color:#008000">; arg0 (a) = 1
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        li      a1, 2               <span style="color:#008000">; arg1 (b) = 2
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        li      a2, 3               <span style="color:#008000">; arg2 (c) = 3
+</span></span></span></code></pre></div><p>It calls <code>add3()</code>. Let&rsquo;s step into that.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span>        call    add3
+</span></span></code></pre></div><p>The compiler knows that the first argument to <code>add3()</code> was passed in register <em>a0</em> and that the second argument to <code>add3()</code> was passed in register <em>a1</em>. These correspond to parameters <code>a</code> and <code>b</code> so it adds them to get an intermediate result.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span>        add     a0, a0, a1              <span style="color:#008000">; a += b
+</span></span></span></code></pre></div><p>Now register <em>a0</em> holds the result of <code>a + b</code>. The compiler knows that the third argument to <code>add3()</code> was passed in register <em>a2</em>. This corresponds to parameter <code>c</code>, so it adds that to the intermediate result in <em>a0</em> to get <code>a + b + c</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span>        add     a0, a0, a2              <span style="color:#008000">; a += c
+</span></span></span></code></pre></div><p>Then it returns to the caller. The return value is in register <em>a0</em>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span>        ret
+</span></span></code></pre></div><p>At this point <em>a0</em> contains the final result of <code>a + b + c</code>, and <em>a1</em> and <em>a2</em> are unchanged from before the call.</p>
+<p>Function <code>add3()</code> required three arguments, so these were passed to it the first three argument registers, <em>a0</em>, <em>a1</em> and <em>a2</em>. A function with two arguments would have had its arguments passed to it in registers <em>a0</em> and <em>a1</em>, and a function with one argument, such as <code>print_int()</code> will have its arguments passed to it in register <em>a0</em>.</p>
+<p>Rather conveniently, <em>a0</em> already contains the result of calling <code>add3()</code>, so there&rsquo;s nothing to do other than to simply call <code>print_int()</code>, which will take the value in <em>a0</em> and print it to stdout.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span>        call    print_int           <span style="color:#008000">; print_int(result)
+</span></span></span></code></pre></div><h2 id="why-have-a-calling-convention">Why have a calling convention?</h2>
+<p>In theory, calling conventions are not mandatory. However, if there were no calling conventions then there would be an almost unlimited number of ways of passing arguments to a subroutine and returning results, and an equally unlimited number of ways in which the caller and callee could decide how registers are preserved across a call and by whom.</p>
+<p>However, this would make it quite difficult for a compiler to generate code, because it would have to know the calling convention for each and every subroutine, and wouldn&rsquo;t be able to make any assumptions about which registers are preserved across a call.</p>
+<p>In practice most architectures have no more than a handful of calling conventions.</p>
+<h1 id="summary">Summary</h1>
+<p>In this post, we looked at how to implement <code>call</code> and <code>ret</code> for the Owl-2820 CPU, then we discovered that being able to call a subroutine and return from it led us to questions about how to pass parameters and return values.</p>
+<p>We answered those questions when we learned how a <a href="https://en.wikipedia.org/wiki/Calling_convention">calling convention</a> describes the agreed relationship between a called subroutine and its caller.</p>
+        </div>
+        
+        <div>
+            <ul id="tags">
+                
+                <li><a href="/tags/vm">vm</a></li>
+                
+                <li><a href="/tags/owl">owl</a></li>
+                
+            </ul>
+        </div>
+        
+    </article>
+</main>
+<aside class="wrapper">
+    <div>
+        <div>
+            <h3>Latest Posts</h3>
+        </div>
+        <div>
+            <ul>
+                
+                <li><a href="/posts/2024/06/02/lbavm-004/">Let&#39;s build a virtual machine: Part 4 - Call, return, and calling conventions</a></li>
+                
+                <li><a href="/posts/2024/05/05/lbavm-003/">Let&#39;s build a virtual machine: Part 3 - Adding labels to the assembler</a></li>
+                
+                <li><a href="/posts/2024/04/07/lbavm-002/">Let&#39;s build a virtual machine: Part 2 - The main loop and assembler</a></li>
+                
+                <li><a href="/posts/2024/04/02/lbavm-001/">Let&#39;s build a virtual machine: Part 1 - Registers and instructions</a></li>
+                
+                <li><a href="/posts/2024/03/17/lbavm-000-intro/">Let&#39;s build a virtual machine: Part 0 - Introduction</a></li>
+                
+            </ul>
+        </div>
+    </div>
+</aside> 
+	<footer class="wrapper">
+	<p>&copy; 2024 <a href="http://localhost:1313/">My Badly Drawn Self</a></p>
+</footer>
+
+</body>
+</html>

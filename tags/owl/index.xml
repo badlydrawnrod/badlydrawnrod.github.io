@@ -6,8 +6,15 @@
     <description>Recent content in Owl on My Badly Drawn Self</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Sun, 05 May 2024 22:00:00 +0100</lastBuildDate>
+    <lastBuildDate>Tue, 11 Jun 2024 21:00:00 +0100</lastBuildDate>
     <atom:link href="https://badlydrawnrod.github.io/tags/owl/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Let&#39;s build a virtual machine: Part 4 - Call, return, and calling conventions</title>
+      <link>https://badlydrawnrod.github.io/posts/2024/06/11/lbavm-004/</link>
+      <pubDate>Tue, 11 Jun 2024 21:00:00 +0100</pubDate>
+      <guid>https://badlydrawnrod.github.io/posts/2024/06/11/lbavm-004/</guid>
+      <description>&lt;p&gt;In which we implement call and return, then discuss the need for calling conventions.&lt;/p&gt;</description>
+    </item>
     <item>
       <title>Let&#39;s build a virtual machine: Part 3 - Adding labels to the assembler</title>
       <link>https://badlydrawnrod.github.io/posts/2024/05/05/lbavm-003/</link>
