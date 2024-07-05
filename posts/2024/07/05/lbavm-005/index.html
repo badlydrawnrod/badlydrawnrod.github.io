@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Let&#39;s build a virtual machine: Part 5 - Memory</title>
+	
+	
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu|Lora">
+	<link rel="stylesheet" href="/css/style.css">
+	
+</head>
+<body>
+	<header class="wrapper">
+    <nav>
+        <a href="https://badlydrawnrod.github.io/">Home</a>
+        <ul>
+			
+            
+            <li><a href="/page/about/">About</a></li>
+            
+            <li><a href="/posts/">All posts</a></li>
+            
+        </ul>
+    </nav>
+    
+</header>
+	
+<main class="wrapper">
+    <article>
+        <p></p>
+        
+        <div class="date">5 July, 2024</div>
+        
+        <div>
+            <p>Implementing memory.</p>
+<h1 id="part-5-implementing-memory">Part 5 Implementing memory</h1>
+<p>Until now, the implementation of the Owl-2820 CPU has had no need to access memory beyond fetching the next instruction. However, all but the most trivial programs need to read values from memory so that they can operate on them, and then having operated on them, write the results back to memory.</p>
+<p>In this post, we&rsquo;re going to extend the Owl-2820 CPU with instructions that allow it to read from and write to memory.</p>
+<h1 id="accessing-memory">Accessing memory</h1>
+<p>Let&rsquo;s write a program that requires memory access, then we&rsquo;ll update our implementation of the Owl-2820 CPU so that it can run the program.</p>
+<h2 id="fibonacci-with-a-lookup-table-in-c">Fibonacci with a lookup table in C</h2>
+<p>Let&rsquo;s do this by rewriting the code that prints the first forty-eight Fibonacci numbers so that it uses a memory-based lookup table rather than repeated addition. Here&rsquo;s what that looks like in C.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#00f">#include</span> <span style="color:#00f">&lt;stdint.h&gt;</span><span style="color:#00f">
+</span></span></span><span style="display:flex;"><span><span style="color:#00f">#include</span> <span style="color:#00f">&lt;stdio.h&gt;</span><span style="color:#00f">
+</span></span></span><span style="display:flex;"><span><span style="color:#00f"></span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">static</span> <span style="color:#2b91af">uint32_t</span> lut[48] = {
+</span></span><span style="display:flex;"><span>    0,          <span style="color:#008000">// fib(0)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    1,          <span style="color:#008000">// fib(1)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    1,          <span style="color:#008000">// fib(2)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    2,          <span style="color:#008000">// fib(3)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    3,          <span style="color:#008000">// fib(4)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    5,          <span style="color:#008000">// fib(5)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    8,          <span style="color:#008000">// fib(6)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    13,         <span style="color:#008000">// fib(7)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#008000">// --- snip ---
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    1836311903, <span style="color:#008000">// fib(46)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    2971215073, <span style="color:#008000">// fib(47)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">static</span> <span style="color:#2b91af">uint32_t</span> fib(<span style="color:#2b91af">uint32_t</span> n)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (n &lt; 48)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> lut[n];
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> -1;
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#2b91af">int</span> main(<span style="color:#2b91af">void</span>)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">for</span> (<span style="color:#2b91af">uint32_t</span> i = 0; i &lt; 48; i++)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#2b91af">uint32_t</span> result = fib(i);
+</span></span><span style="display:flex;"><span>        printf(<span style="color:#a31515">&#34;fib(%u) = %u</span><span style="color:#a31515">\n</span><span style="color:#a31515">&#34;</span>, i, result);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> 0;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h2 id="fibonacci-with-a-lookup-table-in-assembly-language">Fibonacci with a lookup table in assembly language</h2>
+<p>Given that the Owl-2820 CPU is based on RISC-V, the easiest way to turn the C into assembly language is to compile it for a RISC-V target, such as <a href="https://godbolt.org/z/csro9rzMj">this code generated by gcc</a> on Compiler Explorer, then tweak it manually so that it will run on the Owl.</p>
+<p>Here&rsquo;s what the resulting code looks like when translated to Owl-2820 assembly language. I&rsquo;ve replaced the call to <code>printf()</code> with a call to a <code>print_fib</code> subroutine similar to the one from <a href="https://badlydrawnrod.github.io/posts/2024/06/11/lbavm-004/">part 4</a>, and I&rsquo;ve added the <code>start</code> entry point which calls <code>main</code> so that <code>main</code> has something to return to, but overall it is essentially the same code that gcc generated.</p>
+<p>This code makes use of the <code>lw</code> (load word) and <code>sw</code> (store word) memory access instructions which we haven&rsquo;t seen previously.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span>start:
+</span></span><span style="display:flex;"><span>    call main
+</span></span><span style="display:flex;"><span>    .word 0                         <span style="color:#008000">; emit an illegal instruction to stop the VM
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>main:
+</span></span><span style="display:flex;"><span>    addi    sp, sp, -32             <span style="color:#008000">; reserve space on the stack
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">; save registers s0 - s3 and the return address register ra onto the stack
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    sw      s0, 24(sp)
+</span></span><span style="display:flex;"><span>    sw      s1, 20(sp)
+</span></span><span style="display:flex;"><span>    sw      s2, 16(sp)
+</span></span><span style="display:flex;"><span>    sw      s3, 12(sp)
+</span></span><span style="display:flex;"><span>    sw      ra, 28(sp)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">; s1 = the address of the start of the lookup table
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    lui     s1, %hi(lut)
+</span></span><span style="display:flex;"><span>    addi    s1, s1, %lo(lut)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    li      s0, 0                   <span style="color:#008000">; i = 0
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    li      s2, 48                  <span style="color:#008000">; s2 = 48
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>print_loop:
+</span></span><span style="display:flex;"><span>    lw      a1, 0(s1)               <span style="color:#008000">; arg1 = *s1
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    mv      a0, s0                  <span style="color:#008000">; arg0 = i
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    addi    s0, s0, 1               <span style="color:#008000">; i++
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    call    print_fib
+</span></span><span style="display:flex;"><span>    addi    s1, s1, 4               <span style="color:#008000">; bump s1 to the next address in the lookup table
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    bltu    s0, s2, print_loop      <span style="color:#008000">; if i &lt; 48 go to print_loop
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">; restore the return address register ra and registers s0 - s3 from the stack
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    lw      ra, 28(sp)
+</span></span><span style="display:flex;"><span>    lw      s0, 24(sp)
+</span></span><span style="display:flex;"><span>    lw      s1, 20(sp)
+</span></span><span style="display:flex;"><span>    lw      s2, 16(sp)
+</span></span><span style="display:flex;"><span>    lw      s3, 12(sp)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    li      a0, 0                   <span style="color:#008000">; set the return value to zero
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>    addi    sp, sp, 32              <span style="color:#008000">; free the reserved space back to the stack
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    ret                             <span style="color:#008000">; return from main
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>print_fib:
+</span></span><span style="display:flex;"><span>    ecall                           <span style="color:#008000">; invoke hard-coded print_fib
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    ret                             <span style="color:#008000">; return from print_fib
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>lut:
+</span></span><span style="display:flex;"><span>    .word 0                         <span style="color:#008000">; fib(0)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    .word 1                         <span style="color:#008000">; fib(1)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    .word 1                         <span style="color:#008000">; fib(2)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    .word 2                         <span style="color:#008000">; fib(3)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    .word 3                         <span style="color:#008000">; fib(4)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    .word 5                         <span style="color:#008000">; fib(5)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    .word 8                         <span style="color:#008000">; fib(6)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    .word 13                        <span style="color:#008000">; fib(7)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#008000">; --- snip ---
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    .word 1836311903                <span style="color:#008000">; fib(46)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    .word 2971215073                <span style="color:#008000">; fib(47)
+</span></span></span></code></pre></div><h2 id="memory-access-in-the-stack-frame">Memory access in the stack frame</h2>
+<p>The original listing of Fibonacci from <a href="https://badlydrawnrod.github.io/posts/2024/03/17/lbavm-000-intro/#the-stack-frame">part 0</a> had a <a href="https://en.wikipedia.org/wiki/Call_stack#STACK-FRAME">stack frame</a>.  I removed it at the time because it wasn&rsquo;t necessary for generating the Fibonacci sequence.</p>
+<p>This time we&rsquo;re retaining it because unlike some <a href="https://en.wikipedia.org/wiki/Instruction_set_architecture">instruction set architectures</a> which have dedicated <code>push</code> and <code>pop</code> instructions that operate directly on the stack to save and restore registers, the Owl-2820 CPU does not, and therefore needs to use its <code>sw</code> and <code>lw</code> instructions to do this.</p>
+<p>The code to set up the stack frame consists primarily of <code>sw</code> (store word) memory access instructions that store register values into the stack at memory addresses relative to the stack pointer, <em>sp</em>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span>main:
+</span></span><span style="display:flex;"><span>    addi    sp, sp, -32             <span style="color:#008000">; reserve space on the stack
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">; save registers s0 - s3 and the return address register ra onto the stack
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    sw      s0, 24(sp)
+</span></span><span style="display:flex;"><span>    sw      s1, 20(sp)
+</span></span><span style="display:flex;"><span>    sw      s2, 16(sp)
+</span></span><span style="display:flex;"><span>    sw      s3, 12(sp)
+</span></span><span style="display:flex;"><span>    sw      ra, 28(sp)
+</span></span></code></pre></div><p>Similarly, the code to tear down the stack frame consists primarily of <code>lw</code> (load word) instructions which it uses to restore register values from the stack at memory addresses relative to the stack pointer, <em>sp</em>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span>    <span style="color:#008000">; restore the return address register ra and registers s0 - s3 from the stack
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    lw      ra, 28(sp)
+</span></span><span style="display:flex;"><span>    lw      s0, 24(sp)
+</span></span><span style="display:flex;"><span>    lw      s1, 20(sp)
+</span></span><span style="display:flex;"><span>    lw      s2, 16(sp)
+</span></span><span style="display:flex;"><span>    lw      s3, 12(sp)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    li      a0, 0                   <span style="color:#008000">; set the return value to zero
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>    addi    sp, sp, 32              <span style="color:#008000">; free the reserved space back to the stack
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    ret                             <span style="color:#008000">; return from main
+</span></span></span></code></pre></div><p>The reason that these particular registers are saved on the stack is that according to the <a href="https://badlydrawnrod.github.io/posts/2024/06/11/lbavm-004/#calling-conventions">Owl-2820 calling convention described in part 4</a> they are all callee-saved registers, meaning that it is the callee not the caller is responsible for preserving their values.</p>
+<p>As a reminder, the <code>ret</code> instruction, which we also introduced in <a href="https://badlydrawnrod.github.io/posts/2024/06/11/lbavm-004/">part 4</a>, doesn&rsquo;t pop the return address from the stack. Instead, it jumps to the address in the return address register, <em>ra</em>, which was saved to the stack by an <code>sw</code> instruction on entry to <code>main</code> and restored from the stack by an <code>lw</code> instruction on exit from <code>main</code>.</p>
+<h2 id="memory-access-in-the-fibonacci-lookup-table">Memory access in the Fibonacci lookup table</h2>
+<p>The lookup table itself is implemented by using the <em>s1</em> register as a pointer to its current entry.</p>
+<p>Here&rsquo;s the code to initialize <em>s1</em> with the address of the lookup table. Don&rsquo;t worry what <code>%hi</code> and <code>%lo</code> mean for now as I&rsquo;ll explain those shortly.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span>    <span style="color:#008000">; s1 = the address of the start of the lookup table
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    lui     s1, %hi(lut)            <span style="color:#008000">; load the upper 20 bits of the lookup table&#39;s address into the
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>                                    <span style="color:#008000">; upper 20 bits of s1
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    addi    s1, s1, %lo(lut)        <span style="color:#008000">; combine that with the lower 12 bits to get the full 32-bit
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>                                    <span style="color:#008000">; address
+</span></span></span></code></pre></div><p>Here&rsquo;s the code that uses the lookup table.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span>print_loop:
+</span></span><span style="display:flex;"><span>    lw      a1, 0(s1)               <span style="color:#008000">; arg1 = *s1
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    mv      a0, s0                  <span style="color:#008000">; arg0 = i
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    addi    s0, s0, 1               <span style="color:#008000">; i++
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    call    print_fib
+</span></span><span style="display:flex;"><span>    addi    s1, s1, 4               <span style="color:#008000">; bump s1 to the next address in the lookup table
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    bltu    s0, s2, print_loop      <span style="color:#008000">; if i &lt; 48 go to print_loop
+</span></span></span></code></pre></div><p>The <code>lw a1, 0(s1)</code> instruction reads the word at the address pointed to by <em>s1</em> and puts it into the <em>a1</em> register so that it can be used as an argument to <code>print_fib</code>.</p>
+<p>After printing, it increments <em>s1</em> by 4 bytes (the size of a 32-bit word) so that it points to the address of the next value, and loops around to print the next value.</p>
+<h2 id="load-and-store-instructions">Load and store instructions</h2>
+<p>The Owl-2820 assembly language for this implementation of Fibonacci introduced two new instructions, <code>lw</code> and <code>sw</code>. These load (read) a 32-bit word value from memory into a register and store (write) a 32-bit word value from a register into memory, respectively.</p>
+<p>The Owl-2820 CPU also supports reading and writing of byte values and 16-bit halfword values. The following table shows  all the Owl-2820 instructions that read from and write to memory.</p>
+<p>The Owl-2820 CPU is <a href="https://en.wikipedia.org/wiki/Endianness">little-endian</a>, meaning that values in memory that are larger than a byte are stored with the least-significant byte first.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Instruction</th>
+<th style="text-align:left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><code>lb r0, imm12(r1)</code></td>
+<td style="text-align:left">Loads a byte from address <code>imm12(r1)</code> and sign-extends it into <code>r0</code></td>
+</tr>
+<tr>
+<td style="text-align:left"><code>lbu r0, imm12(r1)</code></td>
+<td style="text-align:left">Loads a byte from address <code>imm12(r1)</code> and zero-extends it into <code>r0</code></td>
+</tr>
+<tr>
+<td style="text-align:left"><code>lh r0, imm12(r1)</code></td>
+<td style="text-align:left">Loads a little-endian halfword from address <code>imm12(r1)</code> and sign-extends it into <code>r0</code></td>
+</tr>
+<tr>
+<td style="text-align:left"><code>lhu r0, imm12(r1)</code></td>
+<td style="text-align:left">Loads a little-endian halfword from address <code>imm12(r1)</code> and zero-extends it into <code>r0</code></td>
+</tr>
+<tr>
+<td style="text-align:left"><code>lw r0, imm12(r1)</code></td>
+<td style="text-align:left">Loads a little-endian word from address <code>imm12(r1)</code> into <code>r0</code>.</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>sb r0, imm12(r1)</code></td>
+<td style="text-align:left">Stores the lowest byte of <code>r0</code> into address <code>imm12(r1)</code></td>
+</tr>
+<tr>
+<td style="text-align:left"><code>sh r0, imm12(r1)</code></td>
+<td style="text-align:left">Stores the lower halfword of <code>r0</code> into address <code>imm12(r1)</code> in little-endian order</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>sw r0, imm12(r1)</code></td>
+<td style="text-align:left">Stores the word in <code>r0</code> into address <code>imm12(r1)</code> in little-endian order</td>
+</tr>
+</tbody>
+</table>
+<h2 id="directives">Directives</h2>
+<p>The assembly language also introduced a few assembly language directives and expressions. These are not Owl-2820 instructions, but are used to tell the assembler to do something.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Directive</th>
+<th style="text-align:left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><code>.word u32</code></td>
+<td style="text-align:left">Emits the 32-bit unsigned word <code>u32</code> into the code generated by the assembler</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>%lo(label)</code></td>
+<td style="text-align:left">Calculates the lower 12 bits of the absolute address of label <code>label</code></td>
+</tr>
+<tr>
+<td style="text-align:left"><code>%hi(label)</code></td>
+<td style="text-align:left">Calculates the upper 20 bits of the absolute address of label <code>label</code></td>
+</tr>
+</tbody>
+</table>
+<p>The <code>.word</code> directive tells the assembler to emit a word at the current address rather than emiting an instruction. This allows us to write values in the Fibonacci lookup table directly into the code generated by the assembler.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span>lut:
+</span></span><span style="display:flex;"><span>    .word 0                         <span style="color:#008000">; fib(0)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    .word 1                         <span style="color:#008000">; fib(1)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    .word 1                         <span style="color:#008000">; fib(2)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    .word 2                         <span style="color:#008000">; fib(3)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    .word 3                         <span style="color:#008000">; fib(4)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    .word 5                         <span style="color:#008000">; fib(5)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    .word 8                         <span style="color:#008000">; fib(6)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    .word 13                        <span style="color:#008000">; fib(7)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#008000">; --- snip ---
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    .word 1836311903                <span style="color:#008000">; fib(46)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    .word 2971215073                <span style="color:#008000">; fib(47)
+</span></span></span></code></pre></div><p>The <code>%hi</code> and <code>%lo</code> expressions work with the <code>lui</code> and <code>addi</code> instructions so that we can get the address of the lookup table. We need to do this as the Owl-2820 CPU provides no way of loading a 32-bit immediate value in a single instruction, because instructions themselves occupy 32-bits.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span>    <span style="color:#008000">; s1 = the address of the start of the lookup table
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    lui     s1, %hi(lut)            <span style="color:#008000">; load the upper 20 bits of the lookup table&#39;s address into the
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>                                    <span style="color:#008000">; upper 20 bits of s1
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    addi    s1, s1, %lo(lut)        <span style="color:#008000">; combine that with the lower 12 bits to get the full 32-bit
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>                                    <span style="color:#008000">; address
+</span></span></span></code></pre></div><h1 id="implementing-the-memory-access-instructions">Implementing the memory access instructions</h1>
+<p>The next few subsections describe the Owl-2820 memory access instructions using the format introduced in <a href="https://badlydrawnrod.github.io/posts/2024/04/02/lbavm-001/#instruction-descriptions">part 1</a>.</p>
+<p>The memory accesses for these instructions are implemented in terms of <code>ReadN()</code> and <code>WriteN()</code> functions, where <em>N</em> is the size of the operation in bits, e.g., <code>Read8()</code> reads 8 bits. These functions are explained in detail in the next section, <em>Implementing memory</em>.</p>
+<h2 id="lb---load-byte">lb - load byte</h2>
+<h3 id="format">Format</h3>
+<p><code>lb r0, imm12(r1)</code></p>
+<h3 id="encoding">Encoding</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">imm12 <code>[31:20]</code></th>
+<th style="text-align:right">unused <code>[19:17]</code></th>
+<th style="text-align:right">r1 <code>[16:12]</code></th>
+<th style="text-align:right">r0 <code>[11:7]</code></th>
+<th style="text-align:right">opcode <code>[6:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">12 bits</td>
+<td style="text-align:right">3 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right"><code>Lb</code> : 7 bits</td>
+</tr>
+</tbody>
+</table>
+<h3 id="description">Description</h3>
+<p>Loads a sign-extended byte value from the memory address pointed to by register <em>r1</em> plus the sign-extended 12-bit immediate value <em>imm12</em> into register <em>r0</em>.</p>
+<h3 id="possible-implementation">Possible implementation</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> addr = x[r1(ins)] + imm12(ins);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">const</span> <span style="color:#2b91af">int32_t</span> signExtendedByte = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int8_t</span>&gt;(Read8(memory, addr));
+</span></span><span style="display:flex;"><span>    x[r0(ins)] = signExtendedByte;
+</span></span><span style="display:flex;"><span>    x[0] = 0; <span style="color:#008000">// Ensure x0 is always zero.
+</span></span></span></code></pre></div><h2 id="lbu---load-byte-unsigned">lbu - load byte unsigned</h2>
+<h3 id="format-1">Format</h3>
+<p><code>lbu r0, imm12(r1)</code></p>
+<h3 id="encoding-1">Encoding</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">imm12 <code>[31:20]</code></th>
+<th style="text-align:right">unused <code>[19:17]</code></th>
+<th style="text-align:right">r1 <code>[16:12]</code></th>
+<th style="text-align:right">r0 <code>[11:7]</code></th>
+<th style="text-align:right">opcode <code>[6:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">12 bits</td>
+<td style="text-align:right">3 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right"><code>Lbu</code> : 7 bits</td>
+</tr>
+</tbody>
+</table>
+<h3 id="description-1">Description</h3>
+<p>Loads a zero-extended byte value from the memory address pointed to by register <em>r1</em> plus the sign-extended 12-bit immediate value <em>imm12</em> into register <em>r0</em>.</p>
+<h3 id="possible-implementation-1">Possible implementation</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> addr = x[r1(ins)] + imm12(ins);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> zeroExtendedByte = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">uint8_t</span>&gt;(Read8(memory, addr));
+</span></span><span style="display:flex;"><span>    x[r0(ins)] = zeroExtendedByte;
+</span></span><span style="display:flex;"><span>    x[0] = 0; <span style="color:#008000">// Ensure x0 is always zero.
+</span></span></span></code></pre></div><h2 id="lh---load-halfword">lh - load halfword</h2>
+<h3 id="format-2">Format</h3>
+<p><code>lh r0, imm12(r1)</code></p>
+<h3 id="encoding-2">Encoding</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">imm12 <code>[31:20]</code></th>
+<th style="text-align:right">unused <code>[19:17]</code></th>
+<th style="text-align:right">r1 <code>[16:12]</code></th>
+<th style="text-align:right">r0 <code>[11:7]</code></th>
+<th style="text-align:right">opcode <code>[6:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">12 bits</td>
+<td style="text-align:right">3 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right"><code>Lh</code> : 7 bits</td>
+</tr>
+</tbody>
+</table>
+<h3 id="description-2">Description</h3>
+<p>Loads a sign-extended 16-bit halfword value from the memory address pointed to by register <em>r1</em> plus the sign-extended 12-bit immediate value <em>imm12</em> into register <em>r0</em>. The value is read from memory in little-endian order, i.e., least significant byte first.</p>
+<h3 id="possible-implementation-2">Possible implementation</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> addr = x[r1(ins)] + imm12(ins);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">const</span> <span style="color:#2b91af">int32_t</span> signExtendedHalfWord = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int16_t</span>&gt;(Read16(memory, addr));
+</span></span><span style="display:flex;"><span>    x[r0(ins)] = signExtendedHalfWord;
+</span></span><span style="display:flex;"><span>    x[0] = 0; <span style="color:#008000">// Ensure x0 is always zero.
+</span></span></span></code></pre></div><h2 id="lhu---load-halfword-unsigned">lhu - load halfword unsigned</h2>
+<h3 id="format-3">Format</h3>
+<p><code>lhu r0, imm12(r1)</code></p>
+<h3 id="encoding-3">Encoding</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">imm12 <code>[31:20]</code></th>
+<th style="text-align:right">unused <code>[19:17]</code></th>
+<th style="text-align:right">r1 <code>[16:12]</code></th>
+<th style="text-align:right">r0 <code>[11:7]</code></th>
+<th style="text-align:right">opcode <code>[6:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">12 bits</td>
+<td style="text-align:right">3 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right"><code>Lhu</code> : 7 bits</td>
+</tr>
+</tbody>
+</table>
+<h3 id="description-3">Description</h3>
+<p>Loads a zero-extended 16-bit halfword value from the memory address pointed to by register <em>r1</em> plus the sign-extended 12-bit immediate value <em>imm12</em> into register <em>r0</em>. The value is read from memory in little-endian order, i.e., least significant byte first.</p>
+<h3 id="possible-implementation-3">Possible implementation</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> addr = x[r1(ins)] + imm12(ins);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> zeroExtendedHalfWord = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">uint16_t</span>&gt;(Read16(memory, addr));
+</span></span><span style="display:flex;"><span>    x[r0(ins)] = zeroExtendedHalfWord;
+</span></span><span style="display:flex;"><span>    x[0] = 0; <span style="color:#008000">// Ensure x0 is always zero.
+</span></span></span></code></pre></div><h2 id="lw---load-word">lw - load word</h2>
+<h3 id="format-4">Format</h3>
+<p><code>lw r0, imm12(r1)</code></p>
+<h3 id="encoding-4">Encoding</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">imm12 <code>[31:20]</code></th>
+<th style="text-align:right">unused <code>[19:17]</code></th>
+<th style="text-align:right">r1 <code>[16:12]</code></th>
+<th style="text-align:right">r0 <code>[11:7]</code></th>
+<th style="text-align:right">opcode <code>[6:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">12 bits</td>
+<td style="text-align:right">3 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right"><code>Lw</code> : 7 bits</td>
+</tr>
+</tbody>
+</table>
+<h3 id="description-4">Description</h3>
+<p>Loads a 32-bit word value from the memory address pointed to by register <em>r1</em> plus the sign-extended 12-bit immediate value <em>imm12</em> into register <em>r0</em>. The value is read from memory in little-endian order, i.e., least significant byte first.</p>
+<h3 id="possible-implementation-4">Possible implementation</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> addr = x[r1(ins)] + imm12(ins);
+</span></span><span style="display:flex;"><span>    x[r0(ins)] = Read32(memory, addr);
+</span></span><span style="display:flex;"><span>    x[0] = 0; <span style="color:#008000">// Ensure x0 is always zero.
+</span></span></span></code></pre></div><h2 id="sb---store-byte">sb - store byte</h2>
+<h3 id="format-5">Format</h3>
+<p><code>sb r0, imm12(r1)</code></p>
+<h3 id="encoding-5">Encoding</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">imm12 <code>[31:20]</code></th>
+<th style="text-align:right">unused <code>[19:17]</code></th>
+<th style="text-align:right">r1 <code>[16:12]</code></th>
+<th style="text-align:right">r0 <code>[11:7]</code></th>
+<th style="text-align:right">opcode <code>[6:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">12 bits</td>
+<td style="text-align:right">3 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right"><code>Sb</code> : 7 bits</td>
+</tr>
+</tbody>
+</table>
+<h3 id="description-5">Description</h3>
+<p>Stores the value in the lowest byte of register <em>r0</em> into the memory address pointed to by register <em>r1</em> plus the sign-extended 12-bit immediate value <em>imm12</em>.</p>
+<h3 id="possible-implementation-5">Possible implementation</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> addr = x[r1(ins)] + imm12(ins);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">const</span> std::byte byte = <span style="color:#00f">static_cast</span>&lt;std::byte&gt;(x[r0(ins)]);
+</span></span><span style="display:flex;"><span>    Write8(memory, addr, byte);
+</span></span></code></pre></div><h2 id="sh---store-halfword">sh - store halfword</h2>
+<h3 id="format-6">Format</h3>
+<p><code>sh r0, imm12(r1)</code></p>
+<h3 id="encoding-6">Encoding</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">imm12 <code>[31:20]</code></th>
+<th style="text-align:right">unused <code>[19:17]</code></th>
+<th style="text-align:right">r1 <code>[16:12]</code></th>
+<th style="text-align:right">r0 <code>[11:7]</code></th>
+<th style="text-align:right">opcode <code>[6:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">12 bits</td>
+<td style="text-align:right">3 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right"><code>Sh</code> : 7 bits</td>
+</tr>
+</tbody>
+</table>
+<h3 id="description-6">Description</h3>
+<p>Stores the value in the lowest 16 bits of register <em>r0</em> into the memory address pointed to by register <em>r1</em> plus the sign-extended 12-bit immediate value <em>imm12</em>. The value is written into memory in little-endian order, i.e., least significant byte first.</p>
+<h3 id="possible-implementation-6">Possible implementation</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> addr = x[r1(ins)] + imm12(ins);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">const</span> <span style="color:#2b91af">uint16_t</span> halfWord = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">uint16_t</span>&gt;(x[r0(ins)]);
+</span></span><span style="display:flex;"><span>    Write16(memory, addr, halfWord);
+</span></span></code></pre></div><h2 id="sw---store-word">sw - store word</h2>
+<h3 id="format-7">Format</h3>
+<p><code>sw r0, imm12(r1)</code></p>
+<h3 id="encoding-7">Encoding</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">imm12 <code>[31:20]</code></th>
+<th style="text-align:right">unused <code>[19:17]</code></th>
+<th style="text-align:right">r1 <code>[16:12]</code></th>
+<th style="text-align:right">r0 <code>[11:7]</code></th>
+<th style="text-align:right">opcode <code>[6:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">12 bits</td>
+<td style="text-align:right">3 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right">5 bits</td>
+<td style="text-align:right"><code>Sw</code> : 7 bits</td>
+</tr>
+</tbody>
+</table>
+<h3 id="description-7">Description</h3>
+<p>Stores the 32-bit value in register <em>r0</em> into the memory address pointed to by register <em>r1</em> plus the sign-extended 12-bit immediate value <em>imm12</em>. The value is written into memory in little-endian order, i.e., least significant byte first.</p>
+<h3 id="possible-implementation-7">Possible implementation</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> addr = x[r1(ins)] + imm12(ins);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> word = x[r0(ins)];
+</span></span><span style="display:flex;"><span>    Write32(memory, addr, word);
+</span></span></code></pre></div><h1 id="implementing-memory">Implementing memory</h1>
+<p>The memory access instructions in the previous section were implemented in terms of the following <code>ReadN()</code> and <code>WriteN()</code> memory access functions.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Function</th>
+<th style="text-align:left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><code>Read8()</code></td>
+<td style="text-align:left">Reads a byte from memory</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>Read16()</code></td>
+<td style="text-align:left">Reads a 16-bit halfword from memory in little-endian order</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>Read32()</code></td>
+<td style="text-align:left">Reads a 32-bit word from memory in little-endian order</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>Write8()</code></td>
+<td style="text-align:left">Writes a byte into memory</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>Write16()</code></td>
+<td style="text-align:left">Writes a 16-bit halfword into memory in little-endian order</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>Write32()</code></td>
+<td style="text-align:left">Writes a 32-bit word into memory in little-endian order</td>
+</tr>
+</tbody>
+</table>
+<p>All of these functions operate on byte boundaries, so memory can be thought of as a directly addressable sequence of contiguous bytes. In C++, we can represent this with a <code>std::span</code> of bytes.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#00f">using</span> Memory = std::span&lt;std::byte&gt;;
+</span></span></code></pre></div><h2 id="reading-and-writing-bytes">Reading and writing bytes</h2>
+<p>Reading and writing bytes is simple. Our memory implementation is a <code>std::span</code> of bytes, so we index it with the Owl-2820 VM&rsquo;s memory address and read or write the byte value as required.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>std::byte Read8(<span style="color:#00f">const</span> Memory memory, <span style="color:#2b91af">uint32_t</span> addr)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> memory[addr];
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#2b91af">void</span> Write8(Memory memory, <span style="color:#2b91af">uint32_t</span> addr, std::byte byte)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    memory[addr] = byte;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h2 id="reading-and-writing-larger-values">Reading and writing larger values</h2>
+<p>Reading and writing 16-bit halfword and 32-bit word values is a little more complicated for two reasons:</p>
+<ol>
+<li>The Owl-2820 CPU is little-endian whereas the host CPU may be big-endian.</li>
+<li>The Owl-2820 CPU allows unaligned memory access whereas the host CPU may not.</li>
+</ol>
+<h3 id="swapping-bytes">Swapping bytes</h3>
+<p>If the host CPU is little-endian, then any data read from Owl-2820 memory is already in little-endian order and does not to be reversed. However, if the host CPU is big-endian, then any data read from Owl-2820 memory in little-endian order needs to be reversed to the native order, otherwise the value will be incorrect.</p>
+<p>Given that the Owl-2820 CPU can read and write both 16-bit halfwords and 32-bit words, we can solve this problem by supplying two overloaded functions that will simply return the value on a little-endian host machine, and swap the byte order of the value on a big-endian host machine.</p>
+<p>Both overloads contain <code>if constexpr</code> statements that are evaluated at compile time which means that the compiler will generate the appropriate code to leave the byte order unchanged when the host machine is little-endian, and to reverse the byte order when the host machine is big-endian.</p>
+<p>Bytes are swapped by a combination of masking and rotating which most major compilers will detect and replace with a single instruction, at least where the underlying <a href="https://en.wikipedia.org/wiki/Instruction_set_architecture">instruction set architecture</a> supports it. If you&rsquo;re interested in other such bit-twiddling tricks then I recommend <a href="https://en.wikipedia.org/wiki/Hacker%27s_Delight"><em>Hacker&rsquo;s Delight</em></a> by <em>Henry S. Warren</em>, as the book is full of them.</p>
+<p>Here&rsquo;s the implementation of 32-bit version of the overloaded function. The comments in the code contain a worked example showing how the hex number <code>0x12345678</code> can have its byte order reversed to <code>0x78563412</code>. The 16-bit implementation of the function is similar, albeit simpler.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">uint32_t</span> AsLE(<span style="color:#2b91af">uint32_t</span> word)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> <span style="color:#00f">constexpr</span> (std::endian::native == std::endian::little)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Nothing to do. We&#39;re on a little-endian platform, and Owl-2820 is little-endian.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">return</span> word;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> <span style="color:#00f">constexpr</span> (std::endian::native == std::endian::big)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// We&#39;re on a big-endian platform so reverse the byte order as Owl-2820 is little-endian.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#008000">// The code may look like it takes several instructions, but MSVC, gcc,and clang are clever
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#008000">// enough to figure out what is going on and will generate the equivalent of `bswap` (x86)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#008000">// or `rev` (ARM).
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#008000">// Example (all values are hex).
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#008000">// std::rotr(word &amp; 00ff00ff, 8)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#008000">//      12345678 &amp; 00ff00ff             == 00340078
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#008000">//      00340078 rotr 8                 == 78004500
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#008000">// std::rotl(word, 8) &amp; 00ff00ff
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#008000">//      12345678 rotl 8                 == 34567812
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#008000">//      34567812 &amp; 00ff00ff             == 00560012
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#008000">// 78004500 | 00560012                  == 78563412
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">return</span> std::rotr(word &amp; 0x00ff00ff, 8) | (std::rotl(word, 8) &amp; 0x00ff00ff);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="handling-unaligned-memory-access">Handling unaligned memory access</h3>
+<p>Some <a href="https://en.wikipedia.org/wiki/Instruction_set_architecture">instruction set architectures</a> do not support unaligned memory access. On such architectures, a 16-bit halfword can only be read from or written to a memory address that is a multiple of two. Likewise, a 32-bit word can only be read from or written to a memory address that is a multiple of four. Any attempt to perform an unaligned memory access will result in a fault often known as a <a href="https://en.wikipedia.org/wiki/Bus_error">bus error</a>.</p>
+<p>The Owl-2820 CPU supports unaligned memory access so to support the scenario where the host machine does not, we need to provide a mechanism to translate an unaligned memory access into an aligned one. This turns out to be straightforward.</p>
+<p>When reading, we can do a bytewise <code>memcpy()</code> of the bytes from Owl-2820 memory into a variable that is suitably aligned. For example, here&rsquo;s how we can read a potentially unaligned 16-bit value from Owl-2820 memory into a <code>uint16_t</code> which will be aligned to a 16-bit boundary on an architecture that requires it.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#008000">// We do the equivalent of a memcpy from the VM&#39;s memory into a uint16_t variable which we can
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#008000">// expect the compiler to align appropriately for the host platform. On a platform which
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#008000">// supports unaligned reads, most compilers will detect what we&#39;re doing and optimize it away.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#2b91af">uint16_t</span> v;
+</span></span><span style="display:flex;"><span>    std::ranges::copy_n(memory.data() + addr, <span style="color:#00f">sizeof</span>(v), <span style="color:#00f">reinterpret_cast</span>&lt;std::byte*&gt;(&amp;v));
+</span></span></code></pre></div><p>Similarly, when writing, we can do a <code>memcpy()</code> from an aligned value into Owl-2820 memory.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#008000">// We do the equivalent of a mempy from an aligned uint16_t value into the VM&#39;s memory.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">const</span> <span style="color:#2b91af">uint16_t</span> v = valueToCopy;
+</span></span><span style="display:flex;"><span>    std::ranges::copy_n(<span style="color:#00f">reinterpret_cast</span>&lt;<span style="color:#00f">const</span> std::byte*&gt;(&amp;v), <span style="color:#00f">sizeof</span>(v), memory.data() + addr);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Note that as this is C++20 I&rsquo;ve spelled <code>memcpy()</code> as <code>std::ranges::copy_n()</code>.</p>
+<h3 id="putting-it-all-together">Putting it all together</h3>
+<p>Putting it all together, to read a 16-bit halfword or a 32-bit word from memory, we first deal with unaligned memory access by copying the bytes from Owl-2820 memory into a suitably aligned value, then, if necessary, we swap the bytes to convert them from little-endian order to native order.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">uint32_t</span> Read32(<span style="color:#00f">const</span> Memory memory, <span style="color:#2b91af">uint32_t</span> addr)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Owl-2820 is permissive about unaligned memory accesses. This may not be the case for
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#008000">// the host platform, so we do the equivalent of a memcpy from the VM&#39;s memory before
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#008000">// trying to interpret the value. Most compilers will detect what we&#39;re doing and
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#008000">// optimize it away.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#2b91af">uint32_t</span> v;
+</span></span><span style="display:flex;"><span>    std::ranges::copy_n(memory.data() + addr, <span style="color:#00f">sizeof</span>(<span style="color:#2b91af">uint32_t</span>), <span style="color:#00f">reinterpret_cast</span>&lt;std::byte*&gt;(&amp;v));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Owl-2820 is little-endian, so swap the byte order if necessary.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">return</span> AsLE(v);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>To write a 16-bit halfword or a 32-bit word to memory, we first swap the value from native order into little-endian order if necessary, then copy the underlying bytes from the aligned value into Owl-2820 memory.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">void</span> Write32(Memory memory, <span style="color:#2b91af">uint32_t</span> addr, <span style="color:#2b91af">uint32_t</span> word)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Owl-2820 is little-endian, so swap the byte order if necessary.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> v = AsLE(word);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Owl-2820 is permissive about unaligned memory accesses. This may not be the case for
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#008000">// the host platform, so we do the equivalent of a memcpy when writing the value to the
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#008000">// VM&#39;s memory. Most compilers will detect what we&#39;re doing and optimize it away.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    std::ranges::copy_n(<span style="color:#00f">reinterpret_cast</span>&lt;<span style="color:#00f">const</span> std::byte*&gt;(&amp;v), <span style="color:#00f">sizeof</span>(<span style="color:#2b91af">uint32_t</span>),
+</span></span><span style="display:flex;"><span>                        memory.data() + addr);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h1 id="rewriting-run">Rewriting Run()</h1>
+<p>The original implementation of <code>Run()</code> performed no memory access other than fetching the next instruction from memory. We implemented that by supplying <code>Run()</code> with a pointer to some 32-bit values representing the Owl-2820 instructions, then by using the program counter, <em>pc</em>, to derive an index into those instructions as shown in the code fragment below.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">void</span> Run(<span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span>* code)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// ...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">while</span> (!done)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Fetch a 32-bit word from memory at the address pointed to by the program counter.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        pc = nextPc;
+</span></span><span style="display:flex;"><span>        nextPc += wordSize;
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> ins = code[pc / wordSize];
+</span></span></code></pre></div><h2 id="changes-to-run">Changes to Run()</h2>
+<p>The revised implementation of <code>Run()</code> needs to support not only fetching the next instruction from memory as before, but it also needs to support reading from and writing to byte-addressable memory.</p>
+<p>It enables this by changing <code>Run()</code>&rsquo;s signature to take a <code>std::span&lt;uint32_t&gt;</code> which unifies both code and data into a word-aligned memory image.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">void</span> Run(std::span&lt;<span style="color:#2b91af">uint32_t</span>&gt; image)
+</span></span><span style="display:flex;"><span>{
+</span></span></code></pre></div><p>To illustrate how it is used, here&rsquo;s how <code>Run()</code> is invoked from <code>main()</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#008000">// Create a 4K memory image.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">constexpr</span> size_t memorySize = 4096;
+</span></span><span style="display:flex;"><span>    std::vector&lt;<span style="color:#2b91af">uint32_t</span>&gt; image(memorySize / <span style="color:#00f">sizeof</span>(<span style="color:#2b91af">uint32_t</span>));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Assemble our program and copy it to the start of the memory image.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">auto</span> code = Assemble();
+</span></span><span style="display:flex;"><span>    std::ranges::copy(code, image.begin());
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Run(image);
+</span></span></code></pre></div><h3 id="two-views-of-memory">Two views of memory</h3>
+<p>When <code>Run()</code> fetches an instruction, it does so via <code>code</code>, a read-only, word-addressable view of the image, whereas  memory access instructions such as <code>lb</code> and <code>sb</code> operate on <code>memory</code>, a read/write, byte-addressable view of the image exposed by <code>std::as_writable_bytes()</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">void</span> Run(std::span&lt;<span style="color:#2b91af">uint32_t</span>&gt; image)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// ...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#008000">// Get a read-only, word-addressable view of the image for fetching instructions.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">const</span> <span style="color:#00f">auto</span> code = image;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Get a read/write, byte-addressable view of the image for memory accesses.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">auto</span> memory = std::as_writable_bytes(image);
+</span></span></code></pre></div><h3 id="initializing-the-stack-pointer">Initializing the stack pointer</h3>
+<p>Our new implementation of Fibonacci uses the stack, so <code>Run()</code> needs to initialize the stack pointer, <em>sp</em>, to a sensible value. It sets it to the end of memory as the stack grows downwards in memory.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#008000">// ...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#008000">// Set the stack pointer to the end of memory.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    x[sp] = <span style="color:#2b91af">uint32_t</span>(memory.size());
+</span></span></code></pre></div><h3 id="fetching-an-instruction">Fetching an instruction</h3>
+<p>The code that fetches the next instruction from memory needs to take account of byte order where it didn&rsquo;t previously. It does this by using the 32-bit overload of <code>AsLE()</code> to read the value in little-endian order.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#008000">// ...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">while</span> (!done)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Fetch a 32-bit word from the address pointed to by the program counter.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        pc = nextPc;
+</span></span><span style="display:flex;"><span>        nextPc += wordSize;
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> ins = AsLE(code[pc / wordSize]);
+</span></span></code></pre></div><h3 id="implementing-memory-access-instructions">Implementing memory access instructions</h3>
+<p>Finally, <code>Run()</code> needs implementations for the memory access instructions. The implementations of these instructions are the same as those shown in previous sections, and use the <code>ReadN()</code> and <code>WriteN()</code> functions to operate on <code>memory</code>, the byte-addressable view of the image.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>        <span style="color:#008000">// Decode the word to extract the opcode.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">const</span> Opcode opcode = Opcode(ins &amp; 0x7f);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Dispatch it and execute it.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">switch</span> (opcode)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// ...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">case</span> Opcode::Lb: {
+</span></span><span style="display:flex;"><span>            <span style="color:#008000">// r0 &lt;- sext(memory8(r1 + imm12))
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>            <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> addr = x[r1(ins)] + imm12(ins);
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">const</span> <span style="color:#2b91af">int32_t</span> signExtendedByte = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int8_t</span>&gt;(Read8(memory, addr));
+</span></span><span style="display:flex;"><span>            x[r0(ins)] = signExtendedByte;
+</span></span><span style="display:flex;"><span>            x[0] = 0; <span style="color:#008000">// Ensure x0 is always zero.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>            <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// ...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Sw: {
+</span></span><span style="display:flex;"><span>            <span style="color:#008000">// memory32(r1 + imm12) &lt;- r0
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>            <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> addr = x[r1(ins)] + imm12(ins);
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> word = x[r0(ins)];
+</span></span><span style="display:flex;"><span>            Write32(memory, addr, word);
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// ...
+</span></span></span></code></pre></div><h1 id="summary">Summary</h1>
+<p>In this post, we added memory access to the Owl-2820 CPU and demonstrated it using an implementation of Fibonacci that uses a lookup table. We also built upon what we learned about <a href="https://badlydrawnrod.github.io/posts/2024/06/11/lbavm-004/#calling-conventions">calling conventions</a> in the previous post, by having our program set up and tear down a stack frame. Finally, we unified code and data into one memory image which we supplied to <code>Run()</code>.</p>
+<h3 id="full-code">Full code</h3>
+<p>Here&rsquo;s a link to <a href="https://godbolt.org/z/5TEaYedj6">the full code for this post</a> on Compiler Explorer.</p>
+        </div>
+        
+        <div>
+            <ul id="tags">
+                
+                <li><a href="/tags/vm">vm</a></li>
+                
+                <li><a href="/tags/owl">owl</a></li>
+                
+            </ul>
+        </div>
+        
+    </article>
+</main>
+<aside class="wrapper">
+    <div>
+        <div>
+            <h3>Latest Posts</h3>
+        </div>
+        <div>
+            <ul>
+                
+                <li><a href="/posts/2024/07/05/lbavm-005/">Let&#39;s build a virtual machine: Part 5 - Memory</a></li>
+                
+                <li><a href="/posts/2024/06/11/lbavm-004/">Let&#39;s build a virtual machine: Part 4 - Call, return, and calling conventions</a></li>
+                
+                <li><a href="/posts/2024/05/05/lbavm-003/">Let&#39;s build a virtual machine: Part 3 - Adding labels to the assembler</a></li>
+                
+                <li><a href="/posts/2024/04/07/lbavm-002/">Let&#39;s build a virtual machine: Part 2 - The main loop and assembler</a></li>
+                
+                <li><a href="/posts/2024/04/02/lbavm-001/">Let&#39;s build a virtual machine: Part 1 - Registers and instructions</a></li>
+                
+            </ul>
+        </div>
+    </div>
+</aside> 
+	<footer class="wrapper">
+	<p>&copy; 2024 <a href="https://badlydrawnrod.github.io/">My Badly Drawn Self</a></p>
+</footer>
+
+</body>
+</html>
