@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Let&#39;s build a virtual machine: Part 6 - System calls</title>
+	
+	
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu|Lora">
+	<link rel="stylesheet" href="/css/style.css">
+	
+</head>
+<body>
+	<header class="wrapper">
+    <nav>
+        <a href="http://localhost:1313/">Home</a>
+        <ul>
+			
+            
+            <li><a href="/page/about/">About</a></li>
+            
+            <li><a href="/posts/">All posts</a></li>
+            
+        </ul>
+    </nav>
+    
+</header>
+	
+<main class="wrapper">
+    <article>
+        <p></p>
+        
+        <div class="date">21 July, 2024</div>
+        
+        <div>
+            <p>Adding system calls.</p>
+<h1 id="part-6-adding-system-calls">Part 6 Adding system calls</h1>
+<p>The focus of the previous posts has been on the implementation of the Owl-2820 CPU. However, a CPU doesn&rsquo;t work in isolation. It works in combination with its <strong>execution environment</strong>, which is essentially the machine or mechanisms that it interacts with to get things done.</p>
+<p>In the case of the Owl-2820 CPU, the execution environment is not physical - it is not implemented by hardware. The Owl-2820 execution environment is our host program. In other words, our humble host program is an implementation of an Owl-2820 <a href="https://en.wikipedia.org/wiki/Virtual_machine">virtual machine</a>, or VM.</p>
+<p>In the <a href="http://localhost:1313/posts/2024/07/05/lbavm-005/">previous post</a> we gave our Owl-2820 VM the ability to handle memory. In this post, we&rsquo;re going to give it the ability to do I/O.</p>
+<p>Firstly, we need to address the question of <em>how</em> programs running on an Owl-2820 VM will do I/O. How will they get input from the user? How will they read data into memory from a device such as a disk? How will they write data back to such a device? How will they display information on the screen? How will they make LEDs blink on and off?</p>
+<p>There are a number of ways of doing all of these things, but in our implementation we&rsquo;re going to do it by means of <a href="https://en.wikipedia.org/wiki/System_call">system calls</a>. The code for that is going to turn out to be surprisingly easy. But first, let&rsquo;s go into some background as to why we might need system calls in the first place.</p>
+<h2 id="performing-io">Performing I/O</h2>
+<h3 id="io-on-a-single-process-system">I/O on a single process system</h3>
+<p>If the Owl-2820 CPU was a real, physical CPU or a microcontroller, then it would have physical interfaces to do I/O. For example, making a character appear on a screen might be a case of writing a value to an address in a screen buffer whose contents are written to the screen. Similarly, reading characters from a keyboard might be a case of polling some memory locations to see which bits are set and comparing them against previously saved values to detect key presses and key releases, then translating the results into keystrokes.</p>
+<p>To a large extent, this is how the 8-bit and 16-bit microcomputers of the 80s worked. For example, if you wanted to put a character onto the screen of a <a href="https://en.wikipedia.org/wiki/TRS-80">TRS-80</a>, which was a microcomputer popular in the late 70s and early 80s, then you&rsquo;d poke the relevant ASCII value into the 1K screen buffer starting at address 15360. If you wanted to know if the space bar was currently pressed, then you&rsquo;d read the 8-bit value at address 14400 and check if bit 7 was set. Note that these were all physical memory addresses - these machines did not have virtual memory.</p>
+<p>Early PCs running MS-DOS rather than Windows were similar. If you wanted characters to appear on the screen then you&rsquo;d set the screen into text mode, then poke those characters into memory at a particular address - once you&rsquo;d got your head around the byzantine horror that was the <a href="https://en.wikipedia.org/wiki/X86_memory_segmentation">segmented memory architecture of the 8086</a>. If you wanted pixel graphics, then you&rsquo;d make a <a href="https://en.wikipedia.org/wiki/BIOS_interrupt_call">BIOS call</a> to switch the display into graphics mode, then you&rsquo;d set and clear bits in the screen buffer to change the colours of pixels. Yes, you could make a <a href="https://en.wikipedia.org/wiki/DOS_API">DOS call</a> to display a string, or make a BIOS call to set a pixel, but this was far slower than doing it directly.</p>
+<p>These old systems were essentially single user, single process. If you wrote a program for a PC running MS-DOS, then you could safely assume that your program had full control over nearly everything on the system, and didn&rsquo;t have to compete with other processes for access to resources such as the screen and the keyboard.</p>
+<h3 id="owl-2820-as-a-single-process-system">Owl-2820 as a single process system</h3>
+<p>For the Owl-2820, we could simulate this quite easily. We could, for example, simulate a memory mapped screen by reserving part of the address space for a screen buffer, and then have our host program interpret the contents of that buffer as a bitmap and display it in a window. We could handle keyboard input by writing keycodes from the keyboard into a buffer for our Owl-2820 program to read, then setting a bit in an I/O register to tell it that there are keystrokes available to read.</p>
+<p>This is workable if we want the Owl-2820 VM to be a single user, single process system. Any program running on this system will be able to assume unfettered access to its resources, so if it wants to, say, read from an I/O register, then it can safely assume that it is the only program doing so and the data won&rsquo;t be lost because another program read it first.</p>
+<p>Such an approach is perfectly acceptable if we want the Owl-2820 VM to run something simple such as a (virtual) coffee maker, or if we wanted to create a virtual console like the <a href="https://www.lexaloffle.com/pico-8.php">PICO-8</a>, or the <a href="https://tic80.com/">TIC-80</a>. But this is not such a great approach if we want our Owl-2820 VM to be capable of running a multi process system.</p>
+<h3 id="io-on-a-multi-process-system">I/O on a multi process system</h3>
+<p>What if we want to run more than one program at once? We take this for granted on Windows, Linux, MacOS, and even on our mobile phones, but that was most definitely not the case on those old systems, as they had one very big limitation. They were single process, that is, they could only run one program at a time. If you were running a program such as a word processor on an MS-DOS based PC, then that word processor would be the only program that was running on that machine.</p>
+<p>Here&rsquo;s an example to make it clear how limiting this was.</p>
+<p>If you were editing a document in a word processor and you realised that you needed to open a spreadsheet to get the results of something you&rsquo;d saved previously, then you would have to exit the word processor, start the spreadsheet program, load the results that you&rsquo;d saved previously and maybe print them out or scribble them down on a piece of paper. Then you would exit the spreadsheet program, start the word processor, reload your document, and only then would you be able to record the results in your document.</p>
+<p>For those of you thinking, &ldquo;Why didn&rsquo;t you just copy it to the clipboard and paste it into the word processor?&rdquo;&hellip; there was no clipboard.</p>
+<p>Similarly, if you wanted to do a simple mathematical calculation while running your word processor, then you would probably reach for your hand-held calculator, because even switching to a calculator program was beyond the capabilities of MS-DOS. The only exception was if you were also running a program such as the original versions of <a href="https://en.wikipedia.org/wiki/Borland_Sidekick">Borland Sidekick</a> which used a clever trick known as a <a href="https://en.wikipedia.org/wiki/Terminate-and-stay-resident_program">TSR</a> (Terminate and Stay Resident) that allowed another program to stay in memory at the same time and activate with a hot-key.</p>
+<p>What ran on those old PCs and home micros was barely an operating system by today&rsquo;s standards. Modern operating systems such as Windows, Linux, and MacOS support multiple programs at once. This is clearly a benefit for us, the users, because now we can switch programs without first having to stop one and load the other. We don&rsquo;t bat an eyelid at running email, instant messaging, a spreadsheet, a web browser, and a multitude of other programs all at once. Even now, as I write this on my PC, I have a command prompt open, I have two instances of Visual Studio Code running, I&rsquo;m running a browser with several tabs open, and I&rsquo;m  playing some music in the background in one of those browser tabs. None of this would have been possible on a PC of the 80s.</p>
+<p>However, this increase in flexibility also comes with a decrease in what any given process is permitted to do. What would happen if my command prompt decided that it wanted to steal all of the input, so whenever I typed something it would only appear in the command window? What would happen if a rogue plugin in VS Code decided that it wanted to fill the screen with emojis? Worse still, what would happen if VS Code could read any memory on the system and a malicious plugin decided to read passwords from my password manager?</p>
+<p>Clearly, with multiple processes, not only is there competition for resources but proceses have to be protected from each other, and given access to only the resources that they have requested. And even then, access to those resources is limited by what the process is allowed to do with them. For example, VS Code running on my Windows machine isn&rsquo;t allowed to stop and start Windows services, or unload device drivers. And that&rsquo;s before you start talking about multiple users - this is just multiple processes.</p>
+<p>In short, one of the roles of a multi process operating system is sharing resources of the system between processes.</p>
+<h3 id="owl-2820-as-a-multi-process-system-with-a-kernel">Owl-2820 as a multi process system with a kernel</h3>
+<p>If we want to scale things up so that Owl-2820 supports multiple processes, then we need some way of sharing the resources of the system between those processes. As we&rsquo;ve just seen, that&rsquo;s one of the roles of the operating system.</p>
+<p>Typically, processes gain access to resources via <a href="https://en.wikipedia.org/wiki/System_call">system calls</a> (or syscalls), that switch the CPU from a low-privilege <strong>user mode</strong> which has no direct access to resources, into a high-privilege  <strong>machine mode</strong> or supervisor mode used by the kernel, which does.</p>
+<p>Most processes running on a system are user mode processes and have no direct access to resources. System calls are a mechanism by which the high-privilege kernel provides services to low-privilege user mode processes to give them access to those resources in a controlled manner.</p>
+<p>On the Owl-2820 CPU, a syscall is implemented by setting a register to the syscall number, then using the <code>ecall</code> instruction to invoke the syscall itself.</p>
+<p>In the following example, the syscall number is held in the <em>a7</em> register, and we have the following syscalls available to us.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Syscall (number in a7)</th>
+<th style="text-align:left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">0</td>
+<td style="text-align:left">Exit the process. <em>a0</em> contains the exit status.</td>
+</tr>
+<tr>
+<td style="text-align:left">1</td>
+<td style="text-align:left">Displays a string to stdout. <em>a0</em> contains the address of the string to display.</td>
+</tr>
+</tbody>
+</table>
+<p>The following user mode program makes two syscalls. It uses syscall 1 to display a string, then it exits the process by invoking syscall 0.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span>    <span style="color:#008000">; display a message using (syscall 1)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    lui     a0, %hi(message)
+</span></span><span style="display:flex;"><span>    addi    a0, a0, %lo(message)    <span style="color:#008000">; a0 contains the address of `message`
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    li      a7, 1                   <span style="color:#008000">; a7 is the system call number
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    ecall                           <span style="color:#008000">; ask the kernel to perform the syscall to display the message
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">; exit (syscall 0)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    li      a0, 0                   <span style="color:#008000">; a0 is the exit code
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    li      a7, 0                   <span style="color:#008000">; a7 is the system call number
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    ecall                           <span style="color:#008000">; ask the kernel to stop this process
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>message:
+</span></span><span style="display:flex;"><span>    .string <span style="color:#a31515">&#34;This program cannot be run in DOS mode.\n\n&#34;</span>
+</span></span></code></pre></div><p>How would we go abuot implementing syscalls? One option is to write a simple kernel in Owl-2820 machine code. To do this, we would have to give our Owl-2820 CPU a machine mode which has access to all of the machine&rsquo;s resources, and a user mode that can only get access to those resources by requesting them from machine mode via a syscall.</p>
+<p>To implement this approach, we would have to write the kernel in Owl-2820 assembly language (we don&rsquo;t have a compiler yet) and emulate virtual devices so that the kernel could access resources on the host machine. As this would be a VM then even the kernel wouldn&rsquo;t actually have access to the resources of the host system except where the host made them available so we would also have to define how that worked.</p>
+<p>However interesting this might be to implement, it is a lot of work to write a kernel, and we&rsquo;re not ready for that yet.</p>
+<h3 id="owl-2820-as-a-multi-process-system-with-system-calls">Owl-2820 as a multi process system with system calls</h3>
+<p>There is another option, which is to implement system calls directly in the host program. In other words, rather than implementing and emulating a kernel that provides syscalls, we can adapt the host program to carry out this role.</p>
+<p>What would that look like? Well, we already made a start on this <a href="http://localhost:1313/posts/2024/07/05/lbavm-005/">in part 5</a> when we implemented <code>print_fib</code> by hard-coding <code>ecall</code> to print a message. In effect, we implemented a system that supports a single syscall.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#00f">while</span> (!done)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// ...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">switch</span> (opcode)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Ecall: {
+</span></span><span style="display:flex;"><span>            std::cout &lt;&lt; std::format(<span style="color:#a31515">&#34;fib({}) = {}</span><span style="color:#a31515">\n</span><span style="color:#a31515">&#34;</span>, x[a0], x[a1]);
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// ...
+</span></span></span></code></pre></div><p>We can easily extend this to handle multiple system calls. We&rsquo;ll stick with the convention that we used above in which the syscall number is in register <em>a7</em>, as that means that we can stick to the <a href="http://localhost:1313/posts/2024/06/11/lbavm-004/#calling-conventions">calling convention from part 4</a> without having to shuffle the arguments for any function that invokes a syscall.</p>
+<p>Here&rsquo;s what that might look like, implemented for <code>Exit</code> and <code>Print</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#00f">while</span> (!done)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// ...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">switch</span> (opcode)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Ecall: {
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">const</span> <span style="color:#00f">auto</span> syscall = Syscall(x[a7]);
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">switch</span> (syscall)
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> Syscall::Exit: {
+</span></span><span style="display:flex;"><span>                std::cout &lt;&lt; std::format(<span style="color:#a31515">&#34;Exiting with status {}</span><span style="color:#a31515">\n</span><span style="color:#a31515">&#34;</span>, x[a0]);
+</span></span><span style="display:flex;"><span>                done = true;
+</span></span><span style="display:flex;"><span>                <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> Syscall::Print: {
+</span></span><span style="display:flex;"><span>                <span style="color:#008000">// For illustration. We&#39;d obviously be a lot more cautious, because we don&#39;t want to
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>                <span style="color:#008000">// accept just any data from user mode.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>                <span style="color:#2b91af">char</span>* message = <span style="color:#00f">reinterpret_cast</span>&lt;<span style="color:#2b91af">char</span>*&gt;(memory.data() + x[a0]);
+</span></span><span style="display:flex;"><span>                std::cout &lt;&lt; message;
+</span></span><span style="display:flex;"><span>                <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// ...
+</span></span></span></code></pre></div><p>This is far easier than implementing a kernel in Owl-2820 assembly language. It also gives us a way of bootstrapping capabilities that our Owl-2820 VM can&rsquo;t do yet because we can backfill with a syscall. Indeed, that&rsquo;s exactly what we&rsquo;ve been doing with our <code>print_fib</code> subroutine.</p>
+<h1 id="code-changes">Code changes</h1>
+<p>The code changes to implement syscalls are genuinely straightforward.</p>
+<p>I&rsquo;ve modified the main interpreter loop of the Owl-2820 CPU to implement <code>Exit</code> and <code>PrintFib</code> as system calls, as follows.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#00f">while</span> (!done)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// ...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">switch</span> (opcode)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Ecall: {
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">const</span> <span style="color:#00f">auto</span> syscall = Syscall(x[a7]);
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">switch</span> (syscall)
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> Syscall::Exit:
+</span></span><span style="display:flex;"><span>                std::cout &lt;&lt; std::format(<span style="color:#a31515">&#34;Exiting with status {}</span><span style="color:#a31515">\n</span><span style="color:#a31515">&#34;</span>, x[a0]);
+</span></span><span style="display:flex;"><span>                done = true;
+</span></span><span style="display:flex;"><span>                <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> Syscall::PrintFib:
+</span></span><span style="display:flex;"><span>                std::cout &lt;&lt; std::format(<span style="color:#a31515">&#34;fib({}) = {}</span><span style="color:#a31515">\n</span><span style="color:#a31515">&#34;</span>, x[a0], x[a1]);
+</span></span><span style="display:flex;"><span>                <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>        }
+</span></span></code></pre></div><p>I&rsquo;ve changed the assembly language so that it invokes the <code>Exit</code> syscall to stop the VM, rather than doing so by emitting an illegal instruction.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    Label main = a.MakeLabel();
+</span></span><span style="display:flex;"><span>    a.Call(main);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Invoke the `Exit` syscall. There&#39;s no coming back from this, so there&#39;s no `ret`
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Li(a7, Syscall::Exit);    <span style="color:#008000">// li      a7, 0
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Ecall();                  <span style="color:#008000">// ecall
+</span></span></span></code></pre></div><p>And the <code>print_fib</code> subroutine now invokes the <code>PrintFib</code> syscall.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#008000">// print_fib:
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.BindLabel(print_fib);
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Invoke the `PrintFib` syscall.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Li(a7, Syscall::PrintFib);<span style="color:#008000">// li       a7, 1
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Ecall();                  <span style="color:#008000">// ecall
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>    a.Ret();                    <span style="color:#008000">// ret                             ; return from print_fib
+</span></span></span></code></pre></div><p>And that&rsquo;s it.</p>
+<h1 id="summary">Summary</h1>
+<p>Much of this post has been spent explaining the need for syscalls in our VM, and why we&rsquo;re going to implement them directly in the host program rather than writing a kernel. We have covered a lot of ground, but the changes to the underlying VM have been surprisingly simple.</p>
+<h2 id="full-code">Full code</h2>
+<p>Here is a link to <a href="https://godbolt.org/z/9bP91f79a">the full code for this post</a> on the inimitable and excellent Compiler Explorer.</p>
+        </div>
+        
+        <div>
+            <ul id="tags">
+                
+                <li><a href="/tags/vm">vm</a></li>
+                
+                <li><a href="/tags/owl">owl</a></li>
+                
+            </ul>
+        </div>
+        
+    </article>
+</main>
+<aside class="wrapper">
+    <div>
+        <div>
+            <h3>Latest Posts</h3>
+        </div>
+        <div>
+            <ul>
+                
+                <li><a href="/posts/2024/07/14/lbavm-006/">Let&#39;s build a virtual machine: Part 6 - System calls</a></li>
+                
+                <li><a href="/posts/2024/07/05/lbavm-005/">Let&#39;s build a virtual machine: Part 5 - Memory</a></li>
+                
+                <li><a href="/posts/2024/06/11/lbavm-004/">Let&#39;s build a virtual machine: Part 4 - Call, return, and calling conventions</a></li>
+                
+                <li><a href="/posts/2024/05/05/lbavm-003/">Let&#39;s build a virtual machine: Part 3 - Adding labels to the assembler</a></li>
+                
+                <li><a href="/posts/2024/04/07/lbavm-002/">Let&#39;s build a virtual machine: Part 2 - The main loop and assembler</a></li>
+                
+            </ul>
+        </div>
+    </div>
+</aside> 
+	<footer class="wrapper">
+	<p>&copy; 2024 <a href="http://localhost:1313/">My Badly Drawn Self</a></p>
+</footer>
+
+</body>
+</html>
