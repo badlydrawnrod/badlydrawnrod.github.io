@@ -6,8 +6,15 @@
     <description>Recent content in Series on My Badly Drawn Self</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Sun, 21 Jul 2024 16:30:00 +0100</lastBuildDate>
+    <lastBuildDate>Tue, 30 Jul 2024 20:15:00 +0100</lastBuildDate>
     <atom:link href="https://badlydrawnrod.github.io/categories/series/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Let&#39;s build a virtual machine: Part 7 - Draw the rest of the Owl</title>
+      <link>https://badlydrawnrod.github.io/posts/2024/07/30/lbavm-007/</link>
+      <pubDate>Tue, 30 Jul 2024 20:15:00 +0100</pubDate>
+      <guid>https://badlydrawnrod.github.io/posts/2024/07/30/lbavm-007/</guid>
+      <description>&lt;p&gt;Implementing the remaining instructions in the Owl-2820 instruction set.&lt;/p&gt;</description>
+    </item>
     <item>
       <title>Let&#39;s build a virtual machine: Part 6 - System calls</title>
       <link>https://badlydrawnrod.github.io/posts/2024/07/21/lbavm-006/</link>
