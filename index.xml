@@ -4,10 +4,17 @@
     <title>My Badly Drawn Self</title>
     <link>https://badlydrawnrod.github.io/</link>
     <description>Recent content on My Badly Drawn Self</description>
-    <generator>Hugo -- gohugo.io</generator>
+    <generator>Hugo</generator>
     <language>en</language>
-    <lastBuildDate>Tue, 20 Aug 2024 22:30:00 +0100</lastBuildDate>
+    <lastBuildDate>Sat, 31 Aug 2024 14:40:00 +0100</lastBuildDate>
     <atom:link href="https://badlydrawnrod.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Let&#39;s build a virtual machine: Part 9 - Running compiled C on the Owl-2820 CPU</title>
+      <link>https://badlydrawnrod.github.io/posts/2024/09/01/lbavm-009/</link>
+      <pubDate>Sat, 31 Aug 2024 14:40:00 +0100</pubDate>
+      <guid>https://badlydrawnrod.github.io/posts/2024/09/01/lbavm-009/</guid>
+      <description>&lt;p&gt;Loading and running a compiled image on an Owl-2820 VM.&lt;/p&gt;</description>
+    </item>
     <item>
       <title>Let&#39;s build a virtual machine: Part 8 - Using a C compiler to target the Owl-2820 CPU</title>
       <link>https://badlydrawnrod.github.io/posts/2024/08/20/lbavm-008/</link>
@@ -76,7 +83,7 @@
       <link>https://badlydrawnrod.github.io/posts/2023/04/07/time-to-learn-rust/</link>
       <pubDate>Fri, 07 Apr 2023 18:28:49 +0100</pubDate>
       <guid>https://badlydrawnrod.github.io/posts/2023/04/07/time-to-learn-rust/</guid>
-      <description>It&amp;rsquo;s time to learn Rust The challenge - 100 days of Rust On the 4th of December, 2022, I set myself the following challenge.&#xA;Do at least 15 minutes of programming in Rust every day for 100 days. Today is the 4th of December so that will take me to the 14th of March.&#xA;Background I&amp;rsquo;d played with Rust about 3 or 4 years ago and had written a couple of command line tools with it.</description>
+      <description></description>
     </item>
     <item>
       <title>Mandatory Copy Elision in C&#43;&#43;</title>

@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Let&#39;s build a virtual machine: Part 9 - Running compiled C on the Owl-2820 CPU</title>
+	
+	
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu|Lora">
+	<link rel="stylesheet" href="/css/style.css">
+	
+</head>
+<body>
+	<header class="wrapper">
+    <nav>
+        <a href="https://badlydrawnrod.github.io/">Home</a>
+        <ul>
+			
+            
+            <li><a href="/page/about/">About</a></li>
+            
+            <li><a href="/posts/">All posts</a></li>
+            
+        </ul>
+    </nav>
+    
+</header>
+	
+<main class="wrapper">
+    <article>
+        <p></p>
+        
+        <div class="date">31 August, 2024</div>
+        
+        <div>
+            <p>Loading and running a compiled image on an Owl-2820 VM.</p>
+<h1 id="part-9-running-a-compiled-image-on-an-owl-2820-vm">Part 9 Running a compiled image on an Owl-2820 VM</h1>
+<p>At the end of <a href="https://badlydrawnrod.github.io/posts/2024/08/20/lbavm-008/">the previous post</a> we got as far as being able to compile a C program into an image that contains <a href="https://en.wikipedia.org/wiki/RISC-V">RISC-V</a> instructions. Now let&rsquo;s see what it takes to load that image and run it on the Owl-2820 VM.</p>
+<p>Here are a couple of options:</p>
+<ol>
+<li>
+<p>Decode the instructions in the image from RISC-V instruction encoding and re-encode them into Owl-2820 instruction encoding, then run the resulting image on the Owl-2820 VM.</p>
+</li>
+<li>
+<p>Modify the Owl-2820 VM to decode RISC-V instruction encoding and run the image directly.</p>
+</li>
+</ol>
+<p>Let&rsquo;s start with option 1 as we already have one piece of the puzzle. We know how to encode instructions for the Owl-2820 by using its <a href="https://badlydrawnrod.github.io/posts/2024/04/07/lbavm-002/#an-assembler">assembler</a>. For example, if we want to encode an <code>Add</code> instruction then we can do so like this:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    Assembler a;
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">//...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Add(r0, r1, r1);
+</span></span></code></pre></div><p>The other piece of the puzzle is that we need a way of decoding RISC-V <a href="https://five-embeddev.com/riscv-user-isa-manual/Priv-v1.12/rv32.html">RV32I</a> instructions into opcodes and their operands, then dispatching them to the Owl-2820 assembler. We need a RISC-V dispatcher.</p>
+<h1 id="a-risc-v-dispatcher">A RISC-V dispatcher</h1>
+<p>Decoding RISC-V&rsquo;s instruction encoding is a little trickier than decoding Owl-2820&rsquo;s instruction encoding, but not horribly so.</p>
+<h2 id="creating-a-dispatcher-from-a-table">Creating a dispatcher from a table</h2>
+<p>As I&rsquo;ve written one or two RISC-V instruction set emulators before, I&rsquo;m going to play the &ldquo;<a href="https://en.wikipedia.org/wiki/Blue_Peter">here&rsquo;s one I made earlier</a>&rdquo; card and use a slightly hacky Python program that I wrote that <a href="https://github.com/badlydrawnrod/arviss_cpp/blob/5d46f35be3de9a2cd1899691ec18b4a1aa37f7e8/tools/make_dispatcher.py">uses a table to generate C++ or Rust source code for a RISC-V instruction dispatcher</a>.</p>
+<p>The program, <a href="https://github.com/badlydrawnrod/arviss_cpp/blob/5d46f35be3de9a2cd1899691ec18b4a1aa37f7e8/tools/make_dispatcher.py"><code>make_dispatcher.py</code></a>, has a simple command line.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>usage: make_dispatcher.py [-h] [-c] [-f] [-m] {c++,rust}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Generate a RISC-V instruction dispatcher <span style="color:#00f">for</span> the RV32I base ISA plus extensions.
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>positional arguments:
+</span></span><span style="display:flex;"><span>  {c++,rust}  Target language <span style="color:#00f">for</span> code generation.
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>options:
+</span></span><span style="display:flex;"><span>  -h, --help  show this help message and exit
+</span></span><span style="display:flex;"><span>  -c          Enable the <span style="color:#a31515">&#39;C&#39;</span> extension
+</span></span><span style="display:flex;"><span>  -f          Enable the <span style="color:#a31515">&#39;F&#39;</span> extension
+</span></span><span style="display:flex;"><span>  -m          Enable the <span style="color:#a31515">&#39;M&#39;</span> extension
+</span></span></code></pre></div><p>Here&rsquo;s how to use it to generate the C++ source code for an RV32I dispatcher.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>python make_dispatcher.py c++
+</span></span></code></pre></div><p>The output is heavily templated C++, because <a href="https://github.com/badlydrawnrod/arviss_cpp#arviss-cpp">my last RISC-V emulator</a> was motivated by an attempt to learn more about C++ <a href="https://en.cppreference.com/w/cpp/language/constraints">concepts</a>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#008000">// This code was generated by `.\make_dispatcher.py c++`. Do not edit.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span><span style="color:#008000">// A dispatcher for RV32I instructions. BYO handler.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span><span style="color:#00f">template</span>&lt;<span style="color:#00f">typename</span> Handler&gt;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">requires</span> IsRv32iInstructionHandler&lt;Handler&gt;
+</span></span><span style="display:flex;"><span><span style="color:#00f">struct</span> <span style="color:#2b91af">Rv32iDispatcher</span> : <span style="color:#00f">public</span> Handler
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">using</span> Item = <span style="color:#00f">typename</span> Handler::Item;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Decodes the input word to an RV32I instruction and dispatches it to a handler.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#008000">// clang-format off
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">auto</span> Dispatch(u32 code) -&gt; Item
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        Handler&amp; self = <span style="color:#00f">static_cast</span>&lt;Handler&amp;&gt;(*<span style="color:#00f">this</span>);
+</span></span><span style="display:flex;"><span>        Instruction c(code);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">switch</span> (code) {
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> 0x00000073: <span style="color:#00f">return</span> self.Ecall();
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> 0x00100073: <span style="color:#00f">return</span> self.Ebreak();
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">switch</span> (code &amp; 0xfe00707f) {
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> 0x00000033: <span style="color:#00f">return</span> self.Add(c.Rd(), c.Rs1(), c.Rs2());
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> 0x40000033: <span style="color:#00f">return</span> self.Sub(c.Rd(), c.Rs1(), c.Rs2());
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> 0x00001033: <span style="color:#00f">return</span> self.Sll(c.Rd(), c.Rs1(), c.Rs2());
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> 0x00002033: <span style="color:#00f">return</span> self.Slt(c.Rd(), c.Rs1(), c.Rs2());
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> 0x00003033: <span style="color:#00f">return</span> self.Sltu(c.Rd(), c.Rs1(), c.Rs2());
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> 0x00004033: <span style="color:#00f">return</span> self.Xor(c.Rd(), c.Rs1(), c.Rs2());
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> 0x00005033: <span style="color:#00f">return</span> self.Srl(c.Rd(), c.Rs1(), c.Rs2());
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> 0x40005033: <span style="color:#00f">return</span> self.Sra(c.Rd(), c.Rs1(), c.Rs2());
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> 0x00006033: <span style="color:#00f">return</span> self.Or(c.Rd(), c.Rs1(), c.Rs2());
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> 0x00007033: <span style="color:#00f">return</span> self.And(c.Rd(), c.Rs1(), c.Rs2());
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> 0x00001013: <span style="color:#00f">return</span> self.Slli(c.Rd(), c.Rs1(), c.Shamtw());
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> 0x00005013: <span style="color:#00f">return</span> self.Srli(c.Rd(), c.Rs1(), c.Shamtw());
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> 0x40005013: <span style="color:#00f">return</span> self.Srai(c.Rd(), c.Rs1(), c.Shamtw());
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">switch</span> (code &amp; 0x0000707f) {
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> 0x00000063: <span style="color:#00f">return</span> self.Beq(c.Rs1(), c.Rs2(), c.Bimmediate());
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> 0x00001063: <span style="color:#00f">return</span> self.Bne(c.Rs1(), c.Rs2(), c.Bimmediate());
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> 0x00004063: <span style="color:#00f">return</span> self.Blt(c.Rs1(), c.Rs2(), c.Bimmediate());
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> 0x00005063: <span style="color:#00f">return</span> self.Bge(c.Rs1(), c.Rs2(), c.Bimmediate());
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> 0x00006063: <span style="color:#00f">return</span> self.Bltu(c.Rs1(), c.Rs2(), c.Bimmediate());
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> 0x00007063: <span style="color:#00f">return</span> self.Bgeu(c.Rs1(), c.Rs2(), c.Bimmediate());
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> 0x00000067: <span style="color:#00f">return</span> self.Jalr(c.Rd(), c.Rs1(), c.Iimmediate());
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> 0x00000013: <span style="color:#00f">return</span> self.Addi(c.Rd(), c.Rs1(), c.Iimmediate());
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> 0x00002013: <span style="color:#00f">return</span> self.Slti(c.Rd(), c.Rs1(), c.Iimmediate());
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> 0x00003013: <span style="color:#00f">return</span> self.Sltiu(c.Rd(), c.Rs1(), c.Iimmediate());
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> 0x00004013: <span style="color:#00f">return</span> self.Xori(c.Rd(), c.Rs1(), c.Iimmediate());
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> 0x00006013: <span style="color:#00f">return</span> self.Ori(c.Rd(), c.Rs1(), c.Iimmediate());
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> 0x00007013: <span style="color:#00f">return</span> self.Andi(c.Rd(), c.Rs1(), c.Iimmediate());
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> 0x00000003: <span style="color:#00f">return</span> self.Lb(c.Rd(), c.Rs1(), c.Iimmediate());
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> 0x00001003: <span style="color:#00f">return</span> self.Lh(c.Rd(), c.Rs1(), c.Iimmediate());
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> 0x00002003: <span style="color:#00f">return</span> self.Lw(c.Rd(), c.Rs1(), c.Iimmediate());
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> 0x00004003: <span style="color:#00f">return</span> self.Lbu(c.Rd(), c.Rs1(), c.Iimmediate());
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> 0x00005003: <span style="color:#00f">return</span> self.Lhu(c.Rd(), c.Rs1(), c.Iimmediate());
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> 0x00000023: <span style="color:#00f">return</span> self.Sb(c.Rs1(), c.Rs2(), c.Simmediate());
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> 0x00001023: <span style="color:#00f">return</span> self.Sh(c.Rs1(), c.Rs2(), c.Simmediate());
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> 0x00002023: <span style="color:#00f">return</span> self.Sw(c.Rs1(), c.Rs2(), c.Simmediate());
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> 0x0000000f: <span style="color:#00f">return</span> self.Fence(c.Fm(), c.Rd(), c.Rs1());
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">switch</span> (code &amp; 0x0000007f) {
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> 0x0000006f: <span style="color:#00f">return</span> self.Jal(c.Rd(), c.Jimmediate());
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> 0x00000037: <span style="color:#00f">return</span> self.Lui(c.Rd(), c.Uimmediate());
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> 0x00000017: <span style="color:#00f">return</span> self.Auipc(c.Rd(), c.Uimmediate());
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> self.Illegal(code);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// clang-format on
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#008000">// End of auto-generated code.
+</span></span></span></code></pre></div><h2 id="dispatching-risc-v-instructions-to-the-owl-2820-assembler">Dispatching RISC-V instructions to the Owl-2820 assembler</h2>
+<p>Fortunately, it&rsquo;s easy to open an editor and make a few simple substitutions to the generated code that will give us a function that decodes a RISC-V instruction and dispatches it to the Owl-2820 assembler. This in turn encodes the instruction for Owl-2820.</p>
+<p>Making those substitutions gives us the <code>Transcode()</code> function.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">void</span> Transcode(Assembler&amp; a, <span style="color:#2b91af">uint32_t</span> code)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    DecodeRv32 rv(code);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// clang-format off
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">switch</span> (code) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00000073: <span style="color:#00f">return</span> a.Ecall();
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00100073: <span style="color:#00f">return</span> a.Ebreak();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">switch</span> (code &amp; 0xfe00707f) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00000033: <span style="color:#00f">return</span> a.Add(rv.Rd(), rv.Rs1(), rv.Rs2());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x40000033: <span style="color:#00f">return</span> a.Sub(rv.Rd(), rv.Rs1(), rv.Rs2());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00001033: <span style="color:#00f">return</span> a.Sll(rv.Rd(), rv.Rs1(), rv.Rs2());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00002033: <span style="color:#00f">return</span> a.Slt(rv.Rd(), rv.Rs1(), rv.Rs2());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00003033: <span style="color:#00f">return</span> a.Sltu(rv.Rd(), rv.Rs1(), rv.Rs2());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00004033: <span style="color:#00f">return</span> a.Xor(rv.Rd(), rv.Rs1(), rv.Rs2());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00005033: <span style="color:#00f">return</span> a.Srl(rv.Rd(), rv.Rs1(), rv.Rs2());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x40005033: <span style="color:#00f">return</span> a.Sra(rv.Rd(), rv.Rs1(), rv.Rs2());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00006033: <span style="color:#00f">return</span> a.Or(rv.Rd(), rv.Rs1(), rv.Rs2());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00007033: <span style="color:#00f">return</span> a.And(rv.Rd(), rv.Rs1(), rv.Rs2());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00001013: <span style="color:#00f">return</span> a.Slli(rv.Rd(), rv.Rs1(), rv.Shamtw());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00005013: <span style="color:#00f">return</span> a.Srli(rv.Rd(), rv.Rs1(), rv.Shamtw());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x40005013: <span style="color:#00f">return</span> a.Srai(rv.Rd(), rv.Rs1(), rv.Shamtw());
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">switch</span> (code &amp; 0x0000707f) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00000063: <span style="color:#00f">return</span> a.Beq(rv.Rs1(), rv.Rs2(), rv.Bimmediate());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00001063: <span style="color:#00f">return</span> a.Bne(rv.Rs1(), rv.Rs2(), rv.Bimmediate());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00004063: <span style="color:#00f">return</span> a.Blt(rv.Rs1(), rv.Rs2(), rv.Bimmediate());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00005063: <span style="color:#00f">return</span> a.Bge(rv.Rs1(), rv.Rs2(), rv.Bimmediate());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00006063: <span style="color:#00f">return</span> a.Bltu(rv.Rs1(), rv.Rs2(), rv.Bimmediate());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00007063: <span style="color:#00f">return</span> a.Bgeu(rv.Rs1(), rv.Rs2(), rv.Bimmediate());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00000067: <span style="color:#00f">return</span> a.Jalr(rv.Rd(), rv.Iimmediate(),rv.Rs1());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00000013: <span style="color:#00f">return</span> a.Addi(rv.Rd(), rv.Rs1(), rv.Iimmediate());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00002013: <span style="color:#00f">return</span> a.Slti(rv.Rd(), rv.Rs1(), rv.Iimmediate());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00003013: <span style="color:#00f">return</span> a.Sltiu(rv.Rd(), rv.Rs1(), rv.Iimmediate());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00004013: <span style="color:#00f">return</span> a.Xori(rv.Rd(), rv.Rs1(), rv.Iimmediate());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00006013: <span style="color:#00f">return</span> a.Ori(rv.Rd(), rv.Rs1(), rv.Iimmediate());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00007013: <span style="color:#00f">return</span> a.Andi(rv.Rd(), rv.Rs1(), rv.Iimmediate());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00000003: <span style="color:#00f">return</span> a.Lb(rv.Rd(), rv.Iimmediate(), rv.Rs1());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00001003: <span style="color:#00f">return</span> a.Lh(rv.Rd(), rv.Iimmediate(), rv.Rs1());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00002003: <span style="color:#00f">return</span> a.Lw(rv.Rd(), rv.Iimmediate(), rv.Rs1());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00004003: <span style="color:#00f">return</span> a.Lbu(rv.Rd(), rv.Iimmediate(), rv.Rs1());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00005003: <span style="color:#00f">return</span> a.Lhu(rv.Rd(), rv.Iimmediate(), rv.Rs1());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00000023: <span style="color:#00f">return</span> a.Sb(rv.Rs1(), rv.Simmediate(), rv.Rs2());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00001023: <span style="color:#00f">return</span> a.Sh(rv.Rs1(), rv.Simmediate(), rv.Rs2());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00002023: <span style="color:#00f">return</span> a.Sw(rv.Rs1(), rv.Simmediate(), rv.Rs2());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x0000000f: <span style="color:#00f">return</span> a.Fence();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">switch</span> (code &amp; 0x0000007f) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x0000006f: <span style="color:#00f">return</span> a.Jal(rv.Rd(), rv.Jimmediate());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00000037: <span style="color:#00f">return</span> a.Lui(rv.Rd(), rv.Uimmediate());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00000017: <span style="color:#00f">return</span> a.Auipc(rv.Rd(), rv.Uimmediate());
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// clang-format on
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">return</span> a.Illegal(code);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>There&rsquo;s very little to explain here. The various <code>switch</code> statements are used to determine the instruction&rsquo;s opcode. When a match is found, then the instruction&rsquo;s operands are decoded by member functions of the <code>DecodeRv32</code> helper class and passed as arguments to the assembler which re-encodes the instruction for Owl-2820.</p>
+<h2 id="decoding-operands">Decoding operands</h2>
+<p><code>DecodeRv32</code> is a helper class for decoding operands from bitfields in a RISC-V instruction. It&rsquo;s akin to <a href="https://badlydrawnrod.github.io/posts/2024/04/07/lbavm-002/#decoding-operands">the decoder functions in the Owl-2820 VM&rsquo;s <code>decode</code> namespace</a>, but for RISC-V rather than Owl.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#00f">class</span> <span style="color:#2b91af">DecodeRv32</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">uint32_t</span> ins_{};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">public</span>:
+</span></span><span style="display:flex;"><span>    DecodeRv32(<span style="color:#2b91af">uint32_t</span> ins) : ins_{ins} {}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">uint32_t</span> Rd() <span style="color:#00f">const</span> { <span style="color:#00f">return</span> (ins_ &gt;&gt; 7) &amp; 0x1f; }
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">uint32_t</span> Rs1() <span style="color:#00f">const</span> { <span style="color:#00f">return</span> (ins_ &gt;&gt; 15) &amp; 0x1f; }
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">uint32_t</span> Rs2() <span style="color:#00f">const</span> { <span style="color:#00f">return</span> (ins_ &gt;&gt; 20) &amp; 0x1f; }
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">uint32_t</span> Shamtw() <span style="color:#00f">const</span> { <span style="color:#00f">return</span> (ins_ &gt;&gt; 20) &amp; 0x1f; }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">uint32_t</span> Bimmediate() <span style="color:#00f">const</span>
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">auto</span> imm12 = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;(ins_ &amp; 0x80000000) &gt;&gt; 19;     <span style="color:#008000">// ins[31] -&gt; sext(imm[12])
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">auto</span> imm11 = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;((ins_ &amp; 0x00000080) &lt;&lt; 4);    <span style="color:#008000">// ins[7] -&gt; imm[11]
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">auto</span> imm10_5 = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;((ins_ &amp; 0x7e000000) &gt;&gt; 20); <span style="color:#008000">// ins[30:25] -&gt; imm[10:5]
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">auto</span> imm4_1 = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;((ins_ &amp; 0x00000f00) &gt;&gt; 7);   <span style="color:#008000">// ins[11:8]  -&gt; imm[4:1]
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">return</span> <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">uint32_t</span>&gt;(imm12 | imm11 | imm10_5 | imm4_1);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">uint32_t</span> Iimmediate() <span style="color:#00f">const</span>
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">uint32_t</span>&gt;(
+</span></span><span style="display:flex;"><span>                (<span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;(ins_) &gt;&gt; 20)); <span style="color:#008000">// ins[31:20] -&gt; sext(imm[11:0])
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">uint32_t</span> Simmediate() <span style="color:#00f">const</span>
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">auto</span> imm11_5 =
+</span></span><span style="display:flex;"><span>                (<span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;(ins_ &amp; 0xfe000000)) &gt;&gt; 20; <span style="color:#008000">// ins[31:25] -&gt; sext(imm[11:5])
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">auto</span> imm4_0 = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;((ins_ &amp; 0x00000f80) &gt;&gt; 7); <span style="color:#008000">// ins[11:7]  -&gt; imm[4:0]
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">return</span> <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">uint32_t</span>&gt;(imm11_5 | imm4_0);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">uint32_t</span> Jimmediate() <span style="color:#00f">const</span>
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">auto</span> imm20 = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;(ins_ &amp; 0x80000000) &gt;&gt; 11;     <span style="color:#008000">// ins[31] -&gt; sext(imm[20])
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">auto</span> imm19_12 = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;(ins_ &amp; 0x000ff000);        <span style="color:#008000">// ins[19:12] -&gt; imm[19:12]
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">auto</span> imm11 = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;((ins_ &amp; 0x00100000) &gt;&gt; 9);    <span style="color:#008000">// ins[20] -&gt; imm[11]
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">auto</span> imm10_1 = <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;((ins_ &amp; 0x7fe00000) &gt;&gt; 20); <span style="color:#008000">// ins[30:21] -&gt; imm[10:1]
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">return</span> <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">uint32_t</span>&gt;(imm20 | imm19_12 | imm11 | imm10_1);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">uint32_t</span> Uimmediate() <span style="color:#00f">const</span>
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> ins_ &amp; 0xfffff000; <span style="color:#008000">// ins[31:12] -&gt; imm[31:12]
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    }
+</span></span><span style="display:flex;"><span>};
+</span></span></code></pre></div><h3 id="decoding-registers">Decoding registers</h3>
+<p>In RISC-V, there are 3 possible register encodings:</p>
+<ol>
+<li>The destination register <code>rd</code>.</li>
+<li>The source register <code>rs1</code>.</li>
+<li>The source register <code>rs2</code>.</li>
+</ol>
+<p>These operands are decoded by the <code>Rd()</code>, <code>Rs1()</code>, and <code>Rs2()</code> member functions, and are approximately equivalent in usage to Owl-2820&rsquo;s <code>r0</code>, <code>r1</code> and <code>r2</code> fields. They are very easy to decode, as they consist of a single shift operation and a single mask operation.</p>
+<h3 id="decoding-immediate-values">Decoding immediate values</h3>
+<p>Things become more complicated when decoding immediate values. For Owl-2820, immediate values are always encoded as a sequence of contiguous bits starting from the top-most bit of the instruction. This makes decoding and sign-extension easy to implement in software.</p>
+<p>However, RISC-V instructions are designed to be decoded in hardware, where there is no need to keep bits consecutive. <a href="https://badlydrawnrod.github.io/posts/2024/04/02/lbavm-001/#comparing-risc-v-encoding-with-owl-encoding">As we&rsquo;ve seen before</a>, the RISC-V encoding requires more work to decode in software. To illustrate this, compare the implementation of <code>Jimmediate()</code> in the example above with its Owl-2820 equivalent, <code>offs20()</code>, below.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#2b91af">uint32_t</span> offs20(<span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> ins)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">uint32_t</span>&gt;(<span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;(ins &amp; 0xfffff000) &gt;&gt; 11);
+</span></span><span style="display:flex;"><span>    }
+</span></span></code></pre></div><h1 id="running-the-program">Running the program</h1>
+<p>Now we have everything that we need to load the RV32I image and run it on the Owl-2820 VM. We can do that in a few simple steps:</p>
+<ul>
+<li>Load the RV32I image.</li>
+<li>Convert it to Owl-2820 encoding.</li>
+<li>Run the image on the Owl VM.</li>
+</ul>
+<h2 id="loading-the-rv32i-image">Loading the RV32I image</h2>
+<p>Firstly, we load <a href="https://badlydrawnrod.github.io/posts/2024/08/20/lbavm-008/#viewing-the-image">the RV32I image from part 8</a>. This is done by <code>LoadRv32i()</code> which represents the image as an array of bytes.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>std::span&lt;<span style="color:#2b91af">uint32_t</span>&gt; LoadRv32iImage()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// The RISC-V binary image from: https://badlydrawnrod.github.io/posts/2024/08/20/lbavm-008/
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#008000">// clang-format off
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">alignas</span>(<span style="color:#00f">alignof</span>(<span style="color:#2b91af">uint32_t</span>)) <span style="color:#00f">static</span> <span style="color:#2b91af">uint8_t</span> image[] = {
+</span></span><span style="display:flex;"><span>        0x13, 0x05, 0x00, 0x00, 0x93, 0x05, 0x00, 0x00, 0x13, 0x06, 0x00, 0x00, ... <span style="color:#008000">// etc
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        0x13, 0x85, 0x08, 0x00, 0xE3, 0x68, 0x07, 0xFF, 0x93, 0x08, 0x10, 0x00, ... <span style="color:#008000">// etc
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#008000">// ...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#008000">// ... etc
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#008000">// ...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        0x73, 0x00, 0x00, 0x00, 0x13, 0x06, 0x16, 0x00, 0xE3, 0x14, 0xF6, 0xFC, ... <span style="color:#008000">// etc
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        0x67, 0x80, 0x00, 0x00
+</span></span><span style="display:flex;"><span>    };
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// clang-format on
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">uint32_t</span>* imageBegin = <span style="color:#00f">reinterpret_cast</span>&lt;<span style="color:#2b91af">uint32_t</span>*&gt;(image);
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">uint32_t</span>* imageEnd = imageBegin + <span style="color:#00f">sizeof</span>(image) / <span style="color:#00f">sizeof</span>(<span style="color:#2b91af">uint32_t</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> std::span&lt;<span style="color:#2b91af">uint32_t</span>&gt;(imageBegin, imageEnd);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h2 id="converting-the-image-to-owl-2820-encoding">Converting the image to Owl-2820 encoding</h2>
+<p>Then we convert the image to Owl-2820 encoding with <code>Rv32iToOwl()</code>. This uses the assembler with <code>Transcode()</code> to change each instruction from RISC-V instruction encoding into Owl-2820 instruction encoding.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>std::vector&lt;<span style="color:#2b91af">uint32_t</span>&gt; Rv32iToOwl(std::span&lt;<span style="color:#2b91af">uint32_t</span>&gt; image)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    Assembler a;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">for</span> (<span style="color:#00f">auto</span> code : image)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        Transcode(a, code);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> a.Code();
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h2 id="running-the-converted-image-on-the-owl-2820-vm">Running the converted image on the Owl-2820 VM</h2>
+<p>Finally, we can run the resulting image on the Owl-2820 VM.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">int</span> main()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">try</span>
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Create a 4K memory image.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">constexpr</span> size_t memorySize = 4096;
+</span></span><span style="display:flex;"><span>        std::vector&lt;<span style="color:#2b91af">uint32_t</span>&gt; image(memorySize / <span style="color:#00f">sizeof</span>(<span style="color:#2b91af">uint32_t</span>));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">auto</span> rv32iImage = LoadRv32iImage();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Transcode it to Owl-2820 and copy the result into our VM image.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">auto</span> owlImage = Rv32iToOwl(rv32iImage);
+</span></span><span style="display:flex;"><span>        std::ranges::copy(owlImage, image.begin());
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        Run(image);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">catch</span> (<span style="color:#00f">const</span> std::exception&amp; e)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        std::cerr &lt;&lt; e.what() &lt;&lt; <span style="color:#a31515">&#39;\n&#39;</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h1 id="summary">Summary</h1>
+<p>Over the course of the last two posts, we have learned how cross-compile C for RISC-V, and how to load and run the resulting image on our Owl-2820 VM.</p>
+<h2 id="show-me-the-code">Show me the code</h2>
+<p>Here&rsquo;s a <a href="https://godbolt.org/z/G916GnMar">link to the fully runnable code</a> for this post on Compiler Explorer.</p>
+        </div>
+        
+        <div>
+            <ul id="tags">
+                
+                <li><a href="/tags/vm">vm</a></li>
+                
+                <li><a href="/tags/owl">owl</a></li>
+                
+            </ul>
+        </div>
+        
+    </article>
+</main>
+<aside class="wrapper">
+    <div>
+        <div>
+            <h3>Latest Posts</h3>
+        </div>
+        <div>
+            <ul>
+                
+                <li><a href="/posts/2024/09/01/lbavm-009/">Let&#39;s build a virtual machine: Part 9 - Running compiled C on the Owl-2820 CPU</a></li>
+                
+                <li><a href="/posts/2024/08/20/lbavm-008/">Let&#39;s build a virtual machine: Part 8 - Using a C compiler to target the Owl-2820 CPU</a></li>
+                
+                <li><a href="/posts/2024/07/30/lbavm-007/">Let&#39;s build a virtual machine: Part 7 - Draw the rest of the Owl</a></li>
+                
+                <li><a href="/posts/2024/07/21/lbavm-006/">Let&#39;s build a virtual machine: Part 6 - System calls</a></li>
+                
+                <li><a href="/posts/2024/07/05/lbavm-005/">Let&#39;s build a virtual machine: Part 5 - Memory</a></li>
+                
+            </ul>
+        </div>
+    </div>
+</aside> 
+	<footer class="wrapper">
+	<p>&copy; 2024 <a href="https://badlydrawnrod.github.io/">My Badly Drawn Self</a></p>
+</footer>
+
+</body>
+</html>

@@ -4,10 +4,17 @@
     <title>Owl on My Badly Drawn Self</title>
     <link>https://badlydrawnrod.github.io/tags/owl/</link>
     <description>Recent content in Owl on My Badly Drawn Self</description>
-    <generator>Hugo -- gohugo.io</generator>
+    <generator>Hugo</generator>
     <language>en</language>
-    <lastBuildDate>Tue, 20 Aug 2024 22:30:00 +0100</lastBuildDate>
+    <lastBuildDate>Sat, 31 Aug 2024 14:40:00 +0100</lastBuildDate>
     <atom:link href="https://badlydrawnrod.github.io/tags/owl/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Let&#39;s build a virtual machine: Part 9 - Running compiled C on the Owl-2820 CPU</title>
+      <link>https://badlydrawnrod.github.io/posts/2024/09/01/lbavm-009/</link>
+      <pubDate>Sat, 31 Aug 2024 14:40:00 +0100</pubDate>
+      <guid>https://badlydrawnrod.github.io/posts/2024/09/01/lbavm-009/</guid>
+      <description>&lt;p&gt;Loading and running a compiled image on an Owl-2820 VM.&lt;/p&gt;</description>
+    </item>
     <item>
       <title>Let&#39;s build a virtual machine: Part 8 - Using a C compiler to target the Owl-2820 CPU</title>
       <link>https://badlydrawnrod.github.io/posts/2024/08/20/lbavm-008/</link>
