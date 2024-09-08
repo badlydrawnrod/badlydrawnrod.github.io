@@ -153,65 +153,65 @@
 <p>To understand the assembly language output better, we need to understand how RV32I names and uses registers.</p>
 <p>RV32I has 32 integer registers, named x0 - x31, which are all 32-bit registers. The first of these, <em>x0</em>, always contains zero, and writing to it has no effect. The remaining registers are theoretically general purpose registers, but in practice certain conventions apply. The <a href="https://github.com/riscv-non-isa/riscv-elf-psabi-doc/blob/master/riscv-cc.adoc">RISC-V integer register naming convention</a> documentation on GitHub contains a table with the names of the integer registers and how they&rsquo;re used. I&rsquo;ve reproduced it in part here.</p>
 <table>
-<thead>
-<tr>
-<th style="text-align:left">Register</th>
-<th style="text-align:left">Name</th>
-<th style="text-align:left">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left">x0</td>
-<td style="text-align:left">zero</td>
-<td style="text-align:left">always contains zero (writing to <em>x0</em> has no effect)</td>
-</tr>
-<tr>
-<td style="text-align:left">x1</td>
-<td style="text-align:left">ra</td>
-<td style="text-align:left">return address</td>
-</tr>
-<tr>
-<td style="text-align:left">x2</td>
-<td style="text-align:left">sp</td>
-<td style="text-align:left">stack pointer</td>
-</tr>
-<tr>
-<td style="text-align:left">x3</td>
-<td style="text-align:left">gp</td>
-<td style="text-align:left">global pointer</td>
-</tr>
-<tr>
-<td style="text-align:left">x4</td>
-<td style="text-align:left">tp</td>
-<td style="text-align:left">thread pointer</td>
-</tr>
-<tr>
-<td style="text-align:left">x5 - x7</td>
-<td style="text-align:left">t0 - t2</td>
-<td style="text-align:left">temporary registers</td>
-</tr>
-<tr>
-<td style="text-align:left">x8 - x9</td>
-<td style="text-align:left">s0 - s1</td>
-<td style="text-align:left">callee-saved registers</td>
-</tr>
-<tr>
-<td style="text-align:left">x10 - x17</td>
-<td style="text-align:left">a0 - a7</td>
-<td style="text-align:left">argument registers</td>
-</tr>
-<tr>
-<td style="text-align:left">x18 - x27</td>
-<td style="text-align:left">s2 - s11</td>
-<td style="text-align:left">callee-saved registers</td>
-</tr>
-<tr>
-<td style="text-align:left">x28 - x31</td>
-<td style="text-align:left">t3 - t6</td>
-<td style="text-align:left">temporary registers</td>
-</tr>
-</tbody>
+  <thead>
+      <tr>
+          <th style="text-align: left">Register</th>
+          <th style="text-align: left">Name</th>
+          <th style="text-align: left">Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td style="text-align: left">x0</td>
+          <td style="text-align: left">zero</td>
+          <td style="text-align: left">always contains zero (writing to <em>x0</em> has no effect)</td>
+      </tr>
+      <tr>
+          <td style="text-align: left">x1</td>
+          <td style="text-align: left">ra</td>
+          <td style="text-align: left">return address</td>
+      </tr>
+      <tr>
+          <td style="text-align: left">x2</td>
+          <td style="text-align: left">sp</td>
+          <td style="text-align: left">stack pointer</td>
+      </tr>
+      <tr>
+          <td style="text-align: left">x3</td>
+          <td style="text-align: left">gp</td>
+          <td style="text-align: left">global pointer</td>
+      </tr>
+      <tr>
+          <td style="text-align: left">x4</td>
+          <td style="text-align: left">tp</td>
+          <td style="text-align: left">thread pointer</td>
+      </tr>
+      <tr>
+          <td style="text-align: left">x5 - x7</td>
+          <td style="text-align: left">t0 - t2</td>
+          <td style="text-align: left">temporary registers</td>
+      </tr>
+      <tr>
+          <td style="text-align: left">x8 - x9</td>
+          <td style="text-align: left">s0 - s1</td>
+          <td style="text-align: left">callee-saved registers</td>
+      </tr>
+      <tr>
+          <td style="text-align: left">x10 - x17</td>
+          <td style="text-align: left">a0 - a7</td>
+          <td style="text-align: left">argument registers</td>
+      </tr>
+      <tr>
+          <td style="text-align: left">x18 - x27</td>
+          <td style="text-align: left">s2 - s11</td>
+          <td style="text-align: left">callee-saved registers</td>
+      </tr>
+      <tr>
+          <td style="text-align: left">x28 - x31</td>
+          <td style="text-align: left">t3 - t6</td>
+          <td style="text-align: left">temporary registers</td>
+      </tr>
+  </tbody>
 </table>
 <h2 id="the-stack-frame">The stack frame</h2>
 <p>Now we know that <em>sp</em> is the stack pointer, <em>ra</em> is the return address register, and <em>s0</em> thru <em>s11</em> are callee-saved registers, we can get a better understanding of the code in the listing above that comes before the first horizontal line, and the code in the listing above that comes after the second horizontal line.</p>
@@ -283,60 +283,60 @@
 </span></span></span></code></pre></div><p>There are twenty-four instructions here. It may feel like a lot, but each instruction takes the form of an opcode, followed by zero or more operands. If we count the opcodes, then we&rsquo;ll find that the code in <code>main()</code>&rsquo;s body uses just nine of them.</p>
 <p>Here they are.</p>
 <table>
-<thead>
-<tr>
-<th style="text-align:left">Opcode</th>
-<th style="text-align:left">Meaning</th>
-<th style="text-align:left">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left">add</td>
-<td style="text-align:left">Add registers</td>
-<td style="text-align:left">adds the values in two registers and stores the result into another register</td>
-</tr>
-<tr>
-<td style="text-align:left">addi</td>
-<td style="text-align:left">Add Immediate</td>
-<td style="text-align:left">adds an immediate value and a register and stores the result in another register</td>
-</tr>
-<tr>
-<td style="text-align:left">beq</td>
-<td style="text-align:left">Branch if EQual</td>
-<td style="text-align:left">compares the content of two registers and jumps to a different location if they&rsquo;re equal</td>
-</tr>
-<tr>
-<td style="text-align:left">bltu</td>
-<td style="text-align:left">Branch if Less Than (Unsigned)</td>
-<td style="text-align:left">compares the unsigned values in two registers and jumps to a different location if the first is less than the second</td>
-</tr>
-<tr>
-<td style="text-align:left">call</td>
-<td style="text-align:left">Call</td>
-<td style="text-align:left">calls a function</td>
-</tr>
-<tr>
-<td style="text-align:left">li</td>
-<td style="text-align:left">Load Immediate</td>
-<td style="text-align:left">loads an immediate value into a register</td>
-</tr>
-<tr>
-<td style="text-align:left">lui</td>
-<td style="text-align:left">Load Upper Immediate</td>
-<td style="text-align:left">loads an immediate value into the upper bits of a register</td>
-</tr>
-<tr>
-<td style="text-align:left">j</td>
-<td style="text-align:left">Jump</td>
-<td style="text-align:left">jumps to a location</td>
-</tr>
-<tr>
-<td style="text-align:left">mv</td>
-<td style="text-align:left">Move</td>
-<td style="text-align:left">copies the value in one register into another register</td>
-</tr>
-</tbody>
+  <thead>
+      <tr>
+          <th style="text-align: left">Opcode</th>
+          <th style="text-align: left">Meaning</th>
+          <th style="text-align: left">Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td style="text-align: left">add</td>
+          <td style="text-align: left">Add registers</td>
+          <td style="text-align: left">adds the values in two registers and stores the result into another register</td>
+      </tr>
+      <tr>
+          <td style="text-align: left">addi</td>
+          <td style="text-align: left">Add Immediate</td>
+          <td style="text-align: left">adds an immediate value and a register and stores the result in another register</td>
+      </tr>
+      <tr>
+          <td style="text-align: left">beq</td>
+          <td style="text-align: left">Branch if EQual</td>
+          <td style="text-align: left">compares the content of two registers and jumps to a different location if they&rsquo;re equal</td>
+      </tr>
+      <tr>
+          <td style="text-align: left">bltu</td>
+          <td style="text-align: left">Branch if Less Than (Unsigned)</td>
+          <td style="text-align: left">compares the unsigned values in two registers and jumps to a different location if the first is less than the second</td>
+      </tr>
+      <tr>
+          <td style="text-align: left">call</td>
+          <td style="text-align: left">Call</td>
+          <td style="text-align: left">calls a function</td>
+      </tr>
+      <tr>
+          <td style="text-align: left">li</td>
+          <td style="text-align: left">Load Immediate</td>
+          <td style="text-align: left">loads an immediate value into a register</td>
+      </tr>
+      <tr>
+          <td style="text-align: left">lui</td>
+          <td style="text-align: left">Load Upper Immediate</td>
+          <td style="text-align: left">loads an immediate value into the upper bits of a register</td>
+      </tr>
+      <tr>
+          <td style="text-align: left">j</td>
+          <td style="text-align: left">Jump</td>
+          <td style="text-align: left">jumps to a location</td>
+      </tr>
+      <tr>
+          <td style="text-align: left">mv</td>
+          <td style="text-align: left">Move</td>
+          <td style="text-align: left">copies the value in one register into another register</td>
+      </tr>
+  </tbody>
 </table>
 <p>Modern CPUs can have hundreds of opcodes. Writing an emulator for one of them would be quite daunting. Fortunately, if we want our CPU to run the code in <code>main()</code>&rsquo;s body then we&rsquo;ll only need to implement the nine opcodes in the table above.</p>
 <p>In the <a href="https://badlydrawnrod.github.io/posts/2024/04/02/lbavm-001/">next post</a> in this series, we&rsquo;ll take a look at how we can do that.</p>
@@ -362,6 +362,8 @@
         <div>
             <ul>
                 
+                <li><a href="/posts/2024/09/08/lbavm-010/">Let&#39;s build a virtual machine: Part 10 - Running RISC-V directly</a></li>
+                
                 <li><a href="/posts/2024/09/01/lbavm-009/">Let&#39;s build a virtual machine: Part 9 - Running compiled C on the Owl-2820 CPU</a></li>
                 
                 <li><a href="/posts/2024/08/20/lbavm-008/">Let&#39;s build a virtual machine: Part 8 - Using a C compiler to target the Owl-2820 CPU</a></li>
@@ -369,8 +371,6 @@
                 <li><a href="/posts/2024/07/30/lbavm-007/">Let&#39;s build a virtual machine: Part 7 - Draw the rest of the Owl</a></li>
                 
                 <li><a href="/posts/2024/07/21/lbavm-006/">Let&#39;s build a virtual machine: Part 6 - System calls</a></li>
-                
-                <li><a href="/posts/2024/07/05/lbavm-005/">Let&#39;s build a virtual machine: Part 5 - Memory</a></li>
                 
             </ul>
         </div>

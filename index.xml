@@ -6,8 +6,15 @@
     <description>Recent content on My Badly Drawn Self</description>
     <generator>Hugo</generator>
     <language>en</language>
-    <lastBuildDate>Sat, 31 Aug 2024 14:40:00 +0100</lastBuildDate>
+    <lastBuildDate>Sun, 08 Sep 2024 14:30:00 +0100</lastBuildDate>
     <atom:link href="https://badlydrawnrod.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Let&#39;s build a virtual machine: Part 10 - Running RISC-V directly</title>
+      <link>https://badlydrawnrod.github.io/posts/2024/09/08/lbavm-010/</link>
+      <pubDate>Sun, 08 Sep 2024 14:30:00 +0100</pubDate>
+      <guid>https://badlydrawnrod.github.io/posts/2024/09/08/lbavm-010/</guid>
+      <description>&lt;p&gt;Modfiying the Owl-2820 VM to decode RISC-V instructions directly.&lt;/p&gt;</description>
+    </item>
     <item>
       <title>Let&#39;s build a virtual machine: Part 9 - Running compiled C on the Owl-2820 CPU</title>
       <link>https://badlydrawnrod.github.io/posts/2024/09/01/lbavm-009/</link>
@@ -209,7 +216,7 @@
       <link>https://badlydrawnrod.github.io/page/about/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       <guid>https://badlydrawnrod.github.io/page/about/</guid>
-      <description>I work at Sophos as a Principal Software Engineer. All opinions here are mine, not those of my employer.</description>
+      <description>&lt;p&gt;I work at &lt;a href=&#34;https://sophos.com&#34;&gt;Sophos&lt;/a&gt; as a Principal Software Engineer. All opinions here are mine, not those of my employer.&lt;/p&gt;</description>
     </item>
   </channel>
 </rss>

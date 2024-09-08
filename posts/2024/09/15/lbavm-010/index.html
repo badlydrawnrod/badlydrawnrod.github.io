@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Let&#39;s build a virtual machine: Part 10 - Running RISC-V directly</title>
+	
+	
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu|Lora">
+	<link rel="stylesheet" href="/css/style.css">
+	
+</head>
+<body>
+	<header class="wrapper">
+    <nav>
+        <a href="http://localhost:1313/">Home</a>
+        <ul>
+			
+            
+            <li><a href="/page/about/">About</a></li>
+            
+            <li><a href="/posts/">All posts</a></li>
+            
+        </ul>
+    </nav>
+    
+</header>
+	
+<main class="wrapper">
+    <article>
+        <p></p>
+        
+        <div class="date">1 September, 2024</div>
+        
+        <div>
+            <p>Modfiying the Owl-2820 VM to decode RISC-V instructions directly.</p>
+<h1 id="part-10-running-risc-v-instructions-directly">Part 10 Running RISC-V instructions directly</h1>
+<p>In the <a href="http://localhost:1313/posts/2024/09/01/lbavm-009/">last post</a> we were finally able to run a compiled C program on the Owl-2820 VM. We did this by converting an image from <a href="https://five-embeddev.com/riscv-user-isa-manual/Priv-v1.12/rv32.html">RISC-V</a> instruction encoding to Owl-2820 instruction encoding so that the Owl could run it.</p>
+<p>In this post, we&rsquo;re going to modify the Owl-2820 VM so that it can decode RISC-V instruction encoding and run the image directly.</p>
+<h1 id="dispatchers-and-instruction-handlers">Dispatchers and instruction handlers</h1>
+<p>We&rsquo;re already quite close to being able to do that. Take a look at this snippet from <a href="http://localhost:1313/posts/2024/09/01/lbavm-009/#dispatching-risc-v-instructions-to-the-owl-2820-assembler"><code>Transcode()</code></a> which converts from RISC-V instruction encoding to Owl-2820 instruction encoding.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">void</span> Transcode(Assembler&amp; a, <span style="color:#2b91af">uint32_t</span> code)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    DecodeRv32 rv(code);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">switch</span> (code) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00000073: <span style="color:#00f">return</span> a.Ecall();
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00100073: <span style="color:#00f">return</span> a.Ebreak();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">switch</span> (code &amp; 0xfe00707f) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00000033: <span style="color:#00f">return</span> a.Add(rv.Rd(), rv.Rs1(), rv.Rs2());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x40000033: <span style="color:#00f">return</span> a.Sub(rv.Rd(), rv.Rs1(), rv.Rs2());
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// ...
+</span></span></span></code></pre></div><p>In essence, <code>Transcode()</code> decodes a RISC-V instruction into an opcode and dispatches it, along with its operands, to a member function of the <code>Assembler</code> to encode it as an Owl-2820 instruction. The <code>Assembler</code> has other member functions that do things such as resolving labels and offsets, but these functions are not used by <code>Transcode()</code>. In this context, the <code>Assembler</code> is playing the role of a handler for Owl-2820 instructions, and the other functions are not required for this role.</p>
+<h2 id="the-role-of-an-instruction-handler">The role of an instruction handler</h2>
+<p>So, if the <code>Assembler</code> can play the role of an Owl-2820 instruction handler, then other classes can play this role also. We can think of the handler functions as a kind of interface or protocol that must be implemented by any class which fulfills that role.</p>
+<p>For instance, if we had an <code>OwlCpu</code> class that played the role of an Owl-2820 instruction handler, then we could write a dispatcher function that decodes a RISC-V instruction into an opcode and dispatches it, along with its operands, to a member function of the <code>OwlCpu</code> to execute it directly on the Owl-2820 CPU.</p>
+<p>The <code>DispatchRv32i()</code> function below does just that.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">void</span> DispatchRv32i(OwlCpu&amp; cpu, <span style="color:#2b91af">uint32_t</span> code)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    DecodeRv32 rv(code);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">switch</span> (code) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00000073: <span style="color:#00f">return</span> cpu.Ecall();
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00100073: <span style="color:#00f">return</span> cpu.Ebreak();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">switch</span> (code &amp; 0xfe00707f) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00000033: <span style="color:#00f">return</span> cpu.Add(rv.Rd(), rv.Rs1(), rv.Rs2());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x40000033: <span style="color:#00f">return</span> cpu.Sub(rv.Rd(), rv.Rs1(), rv.Rs2());
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// ...
+</span></span></span></code></pre></div><p>Its basic structure is identical to that of <code>Transcode()</code>. We&rsquo;ve merely changed the type, from <code>Assembler</code> to <code>OwlCpu</code>, yet we&rsquo;ve already got something that looks a lot like it could run RISC-V instructions directly.</p>
+<p>Admittedly we don&rsquo;t have an <code>OwlCpu</code> class yet, but there&rsquo;s something that <code>Assembler</code> and <code>OwlCpu</code> have in common. They can both be driven by what amounts to the same dispatcher function. From the perspective of the dispatcher function there is no difference between an <code>Assembler</code> and an <code>OwlCpu</code>.</p>
+<p>Clearly we&rsquo;re onto something here, and at this point you might consider extracting either a C++ interface consisting of pure virtual functions, or perhaps an abstract base class. However, let&rsquo;s not rush into writing an <code>IOwlHandler</code> or an <code>AbstractInstructionHandler</code> just yet, as we may not want the overhead of runtime polymorphism.</p>
+<p>No matter how we choose to implement it, with a C++ interface or otherwise, we have established that there is a pattern emerging here, in the shape of an instruction handler protocol that consists of handler functions for Owl-2820 instructions.</p>
+<p>Let&rsquo;s continue to explore our options, and what we might do with this protocol.</p>
+<h2 id="substituting-dispatchers">Substituting dispatchers</h2>
+<p>Using this protocol, we could substitute the dispatcher for RISC-V encoded instructions with a dispatcher for Owl-2820 encoded instructions. This new dispatcher would dispatch Owl-2820 encoded instructions for execution on the same <code>OwlCpu</code> class.</p>
+<p>In this case, we&rsquo;ve substituted the dispatcher and left the instruction handler unchanged.</p>
+<p>Same instruction handler. Different dispatcher.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">void</span> DispatchOwl(OwlCpu&amp; cpu, <span style="color:#2b91af">uint32_t</span> ins)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">using</span> <span style="color:#00f">namespace</span> decode;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Decode the word to extract the opcode.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">const</span> Opcode opcode = Opcode(ins &amp; 0x7f);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Dispatch it and execute it.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">switch</span> (opcode)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Ecall: <span style="color:#00f">return</span> cpu.Ecall();
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Ebreak: <span style="color:#00f">return</span> cpu.Ebreak();
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Add: <span style="color:#00f">return</span> cpu.Add(r0(ins), r1(ins), r2(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Sub: <span style="color:#00f">return</span> cpu.Sub(r0(ins), r1(ins), r2(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// ...
+</span></span></span></code></pre></div><h2 id="substituting-instruction-handlers">Substituting instruction handlers</h2>
+<p>Similarly, we could substitute the instruction handler with a disassembler. Here&rsquo;s a dissassembler for Owl-2820 encoded instructions.</p>
+<p>This time, we&rsquo;ve substituted the instruction handler and left the dispatcher unchanged.</p>
+<p>Same dispatcher. Different instruction handler.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">void</span> DisassembleOwl(OwlDisassembler&amp; d, <span style="color:#2b91af">uint32_t</span> ins)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">using</span> <span style="color:#00f">namespace</span> decode;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Decode the word to extract the opcode.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">const</span> Opcode opcode = Opcode(ins &amp; 0x7f);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Dispatch it and display it.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">switch</span> (opcode)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Ecall: <span style="color:#00f">return</span> d.Ecall();
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Ebreak: <span style="color:#00f">return</span> d.Ebreak();
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Add: <span style="color:#00f">return</span> d.Add(r0(ins), r1(ins), r2(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Sub: <span style="color:#00f">return</span> d.Sub(r0(ins), r1(ins), r2(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// ...
+</span></span></span></code></pre></div><h2 id="dispatchers-require-instruction-handlers">Dispatchers require instruction handlers</h2>
+<p>The dispatchers know nothing about the way that the instruction handlers are implemented. All that a dispatcher needs is that the thing that it is dispatching to conforms to the requirements of an instruction handler. Behind the scenes, the instruction handler could be implemented by a flock of flying squirrels but the dispatcher would neither know nor care. For a dispatcher to work, its instruction handler has to meet the requirements of the protocol, nothing more.</p>
+<p>Going the other way, there is no requirement for instruction handlers to know anything about dispatchers.</p>
+<p>Being able to vary both dispatcher and instruction handler implementations gives us a lot of flexibility. By substituting one dispatcher with another, we can deal with both Owl-2820 encoded instructions and RISC-V encoded instructions. By changing the instruction handler, we can assemble those instructions, or execute them, or disassemble them. In a more distant future perhaps we could reach the point of transpiling those instructions to native machine code.</p>
+<p>Being able to think of the problem conceptually is very promising, but we&rsquo;ve yet to implement a single instruction handler other than the <code>Assembler</code>. Let&rsquo;s rectify that by implementing an instruction handler that executes Owl-2820 CPU instructions.</p>
+<h1 id="an-instruction-handler-for-the-owl-2820-cpu">An instruction handler for the Owl-2820 CPU</h1>
+<p>The Owl-2820 CPU implementation exists only inside the <code>Run()</code> function. in which its state is implemented by a handful of local variables that represent its registers, its memory, and whether it is done or not. Its behaviour is implemented by a <code>while</code> loop around a <code>switch</code> statement in which each instruction is handled by a different <code>case</code>.</p>
+<p>Let&rsquo;s convert that to an <code>OwlCpu</code> class whose member functions have the same names as those called by <code>Transcode()</code>. In other words, let&rsquo;s implement an <code>OwlCpu</code> that meets the requirements of the instruction handler role.</p>
+<p>This will allow us to implement both <code>DispatchOwl()</code> and <code>DispatchRv32i()</code> in terms of <code>OwlCpu</code>.</p>
+<h2 id="implementing-state">Implementing state</h2>
+<p>Here&rsquo;s how state is represented in the <code>Run()</code> function:</p>
+<ul>
+<li><code>code</code> and <code>memory</code> are word-addressable and byte-addressable views of the image&rsquo;s memory</li>
+<li><code>pc</code> and <code>nextPc</code> are the program counter and the address of the next instruction</li>
+<li><code>x[32]</code> is the state of the integer registers</li>
+<li><code>done</code> is a flag that determines if the CPU has finished</li>
+</ul>
+<p>At startup, <code>Run()</code> sets these to their initial values prior to entering the <code>while</code> loop. Most values are set to zero, other than <code>code</code> and <code>memory</code> which point to the image, and the stack pointer which is set to the end of memory.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">void</span> Run(std::span&lt;<span style="color:#2b91af">uint32_t</span>&gt; image)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">using</span> <span style="color:#00f">namespace</span> decode;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Get a read-only, word addressable view of the image for fetching instructions.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">const</span> <span style="color:#00f">auto</span> code = image;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Get a byte-addressable view of the image for memory accesses.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">auto</span> memory = std::as_writable_bytes(image);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Set pc and nextPc to their initial values.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#2b91af">uint32_t</span> pc = 0;     <span style="color:#008000">// The program counter.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#2b91af">uint32_t</span> nextPc = 0; <span style="color:#008000">// The address of the next instruction.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Set all the integer registers to zero.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#2b91af">uint32_t</span> x[32] = {}; <span style="color:#008000">// The integer registers.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Set the stack pointer to the end of memory.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    x[sp] = <span style="color:#2b91af">uint32_t</span>(memory.size());
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">constexpr</span> <span style="color:#2b91af">uint32_t</span> wordSize = <span style="color:#00f">sizeof</span>(<span style="color:#2b91af">uint32_t</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">bool</span> done = false;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">while</span> (!done)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// ...
+</span></span></span></code></pre></div><p>In the <code>OwlCpu</code> class, state is represented by member variables whose initial values are set as shown in the code below.  In this case, <code>code</code> and <code>memory</code> are set by the constructor&rsquo;s initialization list, and the stack pointer is set to the end of memory in the constructor&rsquo;s body.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#00f">class</span> <span style="color:#2b91af">OwlCpu</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">uint32_t</span> pc = 0;             <span style="color:#008000">// The program counter.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#2b91af">uint32_t</span> nextPc = 0;         <span style="color:#008000">// The address of the next instruction.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#2b91af">uint32_t</span> x[32] = {};         <span style="color:#008000">// The integer registers.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#2b91af">bool</span> done = false;           <span style="color:#008000">// Are we there yet?
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    std::span&lt;<span style="color:#2b91af">uint32_t</span>&gt; code;    <span style="color:#008000">// Non-owning.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    std::span&lt;std::byte&gt; memory; <span style="color:#008000">// Non-owning.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">public</span>:
+</span></span><span style="display:flex;"><span>    OwlCpu(std::span&lt;std::<span style="color:#2b91af">uint32_t</span>&gt; image) : code{image}, memory{std::as_writable_bytes(image)}
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Set the stack pointer to the end of memory.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        x[sp] = <span style="color:#2b91af">uint32_t</span>(memory.size());
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// ...
+</span></span></span></code></pre></div><h2 id="implementing-behaviour">Implementing behaviour</h2>
+<h3 id="fetching-instructions">Fetching instructions</h3>
+<p>After initializing the CPU&rsquo;s state, <code>Run()</code> enters a <code>while</code> loop that repeatedly fetches the next instruction and dispatches it until the CPU is told to stop by an instruction or syscall that sets <code>done</code> to true.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#008000">// ...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">while</span> (!done)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Fetch a 32-bit word from the address pointed to by the program counter.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        pc = nextPc;
+</span></span><span style="display:flex;"><span>        nextPc += wordSize;
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> ins = AsLE(code[pc / wordSize]);
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// ...
+</span></span></span></code></pre></div><p>In the <code>OwlCpu</code> class, <code>done</code>, <code>pc</code> and <code>nextPc</code> are private member variables. We&rsquo;d rather not expose <code>OwlCpu</code>&rsquo;s innards as we&rsquo;d like to maintain its invariants, so we&rsquo;ll give the <code>OwlCpu</code> class some member functions, <code>Done()</code> and <code>Fetch()</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#00f">class</span> <span style="color:#2b91af">OwlCpu</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// ...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#2b91af">bool</span> Done() <span style="color:#00f">const</span>
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> done;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">uint32_t</span> Fetch()
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">constexpr</span> <span style="color:#2b91af">uint32_t</span> wordSize = <span style="color:#00f">sizeof</span>(<span style="color:#2b91af">uint32_t</span>);
+</span></span><span style="display:flex;"><span>        pc = nextPc;
+</span></span><span style="display:flex;"><span>        nextPc += wordSize;
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> AsLE(code[pc / wordSize]);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// ...
+</span></span></span></code></pre></div><h3 id="executing-instructions">Executing instructions</h3>
+<p>Inside the <code>while</code> loop, <code>Run()</code> uses a <code>switch</code> statement to dispatch each instruction to a <code>case</code> statement that implements its behaviour.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>        <span style="color:#008000">// ...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#008000">// Decode the word to extract the opcode.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">const</span> Opcode opcode = Opcode(ins &amp; 0x7f);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Dispatch it and execute it.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">switch</span> (opcode)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#008000">// System instructions.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Ecall: {
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">const</span> <span style="color:#00f">auto</span> syscall = Syscall(x[a7]);
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">switch</span> (syscall)
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> Syscall::Exit:
+</span></span><span style="display:flex;"><span>                std::cout &lt;&lt; <span style="color:#a31515">&#34;Exiting with status &#34;</span> &lt;&lt; x[a0] &lt;&lt; <span style="color:#a31515">&#39;\n&#39;</span>;
+</span></span><span style="display:flex;"><span>                done = true;
+</span></span><span style="display:flex;"><span>                <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// ...
+</span></span></span></code></pre></div><p>For the <code>OwlCpu</code>, rather than writing a <code>case</code> statement for each instruction, we will write a member function that does the same thing. Taken as a whole, these member functions allow the <code>OwlCpu</code> to meet the requirements of the instruction handler role.</p>
+<p>There are about forty instructions. The conversion from <code>case</code> statement to member function is fairly mechanical, so I&rsquo;ll illustrate this with a couple of examples rather than showing them all.</p>
+<p>Here&rsquo;s how <code>Ecall</code> is implemented as a case statement inside <code>Run()</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>        <span style="color:#008000">// ...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">case</span> Opcode::Ecall: {
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">const</span> <span style="color:#00f">auto</span> syscall = Syscall(x[a7]);
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">switch</span> (syscall)
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> Syscall::Exit:
+</span></span><span style="display:flex;"><span>                std::cout &lt;&lt; <span style="color:#a31515">&#34;Exiting with status &#34;</span> &lt;&lt; x[a0] &lt;&lt; <span style="color:#a31515">&#39;\n&#39;</span>;
+</span></span><span style="display:flex;"><span>                done = true;
+</span></span><span style="display:flex;"><span>                <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">case</span> Syscall::PrintFib:
+</span></span><span style="display:flex;"><span>                std::cout &lt;&lt; <span style="color:#a31515">&#34;fib(&#34;</span> &lt;&lt; x[a0] &lt;&lt; <span style="color:#a31515">&#34;) = &#34;</span> &lt;&lt; x[a1] &lt;&lt; <span style="color:#a31515">&#39;\n&#39;</span>;
+</span></span><span style="display:flex;"><span>                <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// ...
+</span></span></span></code></pre></div><p>Here&rsquo;s <code>Ecall</code> reimplemented as a member function of <code>OwlCpu</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#00f">class</span> <span style="color:#2b91af">OwlCpu</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// ...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#2b91af">void</span> Ecall()
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> <span style="color:#00f">auto</span> syscall = Syscall(x[a7]);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">switch</span> (syscall)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Syscall::Exit:
+</span></span><span style="display:flex;"><span>            std::cout &lt;&lt; <span style="color:#a31515">&#34;Exiting with status &#34;</span> &lt;&lt; x[a0] &lt;&lt; <span style="color:#a31515">&#39;\n&#39;</span>;
+</span></span><span style="display:flex;"><span>            done = true;
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Syscall::PrintFib:
+</span></span><span style="display:flex;"><span>            std::cout &lt;&lt; <span style="color:#a31515">&#34;fib(&#34;</span> &lt;&lt; x[a0] &lt;&lt; <span style="color:#a31515">&#34;) = &#34;</span> &lt;&lt; x[a1] &lt;&lt; <span style="color:#a31515">&#39;\n&#39;</span>;
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// ...
+</span></span></span></code></pre></div><p>Similarly, here&rsquo;s <code>Add</code> inside of <code>Run()</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>        <span style="color:#008000">// ...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">case</span> Opcode::Add: {
+</span></span><span style="display:flex;"><span>            <span style="color:#008000">// r0 &lt;- r1 + r2
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>            x[r0(ins)] = x[r1(ins)] + x[r2(ins)];
+</span></span><span style="display:flex;"><span>            x[0] = 0; <span style="color:#008000">// Ensure x0 is always zero.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>            <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// ...
+</span></span></span></code></pre></div><p>And here&rsquo;s <code>Add()</code> as a member function of <code>OwlCpu</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#00f">class</span> <span style="color:#2b91af">OwlCpu</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// ...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#2b91af">void</span> Add(<span style="color:#2b91af">uint32_t</span> r0, <span style="color:#2b91af">uint32_t</span> r1, <span style="color:#2b91af">uint32_t</span> r2)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// r0 &lt;- r1 + r2
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        x[r0] = x[r1] + x[r2];
+</span></span><span style="display:flex;"><span>        x[0] = 0; <span style="color:#008000">// Ensure x0 is always zero.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// ...
+</span></span></span></code></pre></div><p>The other instructions can be reimplemented in much the same way.</p>
+<h3 id="dispatching-instructions">Dispatching instructions</h3>
+<p>We can replace each case of the <code>switch</code> statement with code that calls the equivalent member functions of <code>OwlCpu</code>, and put it inside a <code>DispatchOwl()</code> function like this.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">void</span> DispatchOwl(OwlCpu&amp; cpu, <span style="color:#2b91af">uint32_t</span> ins)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">using</span> <span style="color:#00f">namespace</span> decode;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Decode the word to extract the opcode.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">const</span> Opcode opcode = Opcode(ins &amp; 0x7f);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Dispatch it and execute it.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#008000">// clang-format off
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">switch</span> (opcode)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Ecall: <span style="color:#00f">return</span> cpu.Ecall();
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Ebreak: <span style="color:#00f">return</span> cpu.Ebreak();
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Add: <span style="color:#00f">return</span> cpu.Add(r0(ins), r1(ins), r2(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Sub: <span style="color:#00f">return</span> cpu.Sub(r0(ins), r1(ins), r2(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Sll: <span style="color:#00f">return</span> cpu.Sll(r0(ins), r1(ins), r2(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Slt: <span style="color:#00f">return</span> cpu.Slt(r0(ins), r1(ins), r2(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Sltu: <span style="color:#00f">return</span> cpu.Sltu(r0(ins), r1(ins), r2(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Xor: <span style="color:#00f">return</span> cpu.Xor(r0(ins), r1(ins), r2(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Srl: <span style="color:#00f">return</span> cpu.Srl(r0(ins), r1(ins), r2(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Sra: <span style="color:#00f">return</span> cpu.Sra(r0(ins), r1(ins), r2(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Or: <span style="color:#00f">return</span> cpu.Or(r0(ins), r1(ins), r2(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::And: <span style="color:#00f">return</span> cpu.And(r0(ins), r1(ins), r2(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Slli: <span style="color:#00f">return</span> cpu.Slli(r0(ins), r1(ins), shift(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Srli: <span style="color:#00f">return</span> cpu.Srli(r0(ins), r1(ins), shift(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Srai: <span style="color:#00f">return</span> cpu.Srai(r0(ins), r1(ins), shift(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Beq: <span style="color:#00f">return</span> cpu.Beq(r0(ins), r1(ins), offs12(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Bne: <span style="color:#00f">return</span> cpu.Bne(r0(ins), r1(ins), offs12(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Blt: <span style="color:#00f">return</span> cpu.Blt(r0(ins), r1(ins), offs12(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Bge: <span style="color:#00f">return</span> cpu.Bge(r0(ins), r1(ins), offs12(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Bltu: <span style="color:#00f">return</span> cpu.Bltu(r0(ins), r1(ins), offs12(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Bgeu: <span style="color:#00f">return</span> cpu.Bgeu(r0(ins), r1(ins), offs12(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Addi: <span style="color:#00f">return</span> cpu.Addi(r0(ins), r1(ins), imm12(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Slti: <span style="color:#00f">return</span> cpu.Slti(r0(ins), r1(ins), imm12(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Sltiu: <span style="color:#00f">return</span> cpu.Sltiu(r0(ins), r1(ins), imm12(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Xori: <span style="color:#00f">return</span> cpu.Xori(r0(ins), r1(ins), imm12(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Ori: <span style="color:#00f">return</span> cpu.Ori(r0(ins), r1(ins), imm12(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Andi: <span style="color:#00f">return</span> cpu.Andi(r0(ins), r1(ins), imm12(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Lb: <span style="color:#00f">return</span> cpu.Lb(r0(ins), imm12(ins), r1(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Lbu: <span style="color:#00f">return</span> cpu.Lbu(r0(ins), imm12(ins), r1(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Lh: <span style="color:#00f">return</span> cpu.Lh(r0(ins), imm12(ins), r1(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Lhu: <span style="color:#00f">return</span> cpu.Lhu(r0(ins), imm12(ins), r1(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Lw: <span style="color:#00f">return</span> cpu.Lw(r0(ins), imm12(ins), r1(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Sb: <span style="color:#00f">return</span> cpu.Sb(r0(ins), imm12(ins), r1(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Sh: <span style="color:#00f">return</span> cpu.Sh(r0(ins), imm12(ins), r1(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Sw: <span style="color:#00f">return</span> cpu.Sw(r0(ins), imm12(ins), r1(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Fence: <span style="color:#00f">return</span> cpu.Fence();
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Jalr: <span style="color:#00f">return</span> cpu.Jalr(r0(ins), offs12(ins), r1(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Jal: <span style="color:#00f">return</span> cpu.Jal(r0(ins), offs20(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Lui: <span style="color:#00f">return</span> cpu.Lui(r0(ins), uimm20(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Auipc: <span style="color:#00f">return</span> cpu.Auipc(r0(ins), uimm20(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::J: <span style="color:#00f">return</span> cpu.J(offs20(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Call: <span style="color:#00f">return</span> cpu.Call(offs20(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Ret: <span style="color:#00f">return</span> cpu.Ret();
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Li: <span style="color:#00f">return</span> cpu.Li(r0(ins), imm12(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Mv: <span style="color:#00f">return</span> cpu.Mv(r0(ins), r1(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">default</span>: <span style="color:#00f">return</span> cpu.Illegal(ins);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// clang-format on
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>}
+</span></span></code></pre></div><h1 id="rewriting-run">Rewriting Run()</h1>
+<p>Now that we have an Owl-2820 instruction handler, <code>OwlCpu</code>, we can drive it with a dispatcher.</p>
+<p>We have a dispatcher function for Owl-2820 encoded instructions in the form of <code>DispatchOwl()</code> from the previous section. This will let us run Owl-2820 encoded instructions on the <code>OwlCpu</code>.</p>
+<p>Similarly, we have a dispatcher function for RISC-V encoded instructions in the form of the <code>DispatchRv32i()</code> function that we saw at the top of this post. This will let us run RISC-V encoded instructions on the <code>OwlCpu</code>.</p>
+<h2 id="running-owl-2820-encoded-instructions-on-the-owl-cpu">Running Owl-2820 encoded instructions on the Owl CPU</h2>
+<p>To run Owl-2820 encoded instructions, we can replace the <code>Run()</code> function with the following code that uses an <code>OwlCpu</code> instruction handler with the <code>DispatchOwl()</code> dispatcher function.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">void</span> Run(std::span&lt;<span style="color:#2b91af">uint32_t</span>&gt; image)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    OwlCpu cpu(image);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">while</span> (!cpu.Done())
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> ins = cpu.Fetch();
+</span></span><span style="display:flex;"><span>        DispatchOwl(cpu, ins);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h2 id="running-risc-v-encoded-instructions-on-the-owl-cpu">Running RISC-V encoded instructions on the Owl CPU</h2>
+<p>If we simply change the dispatcher from <code>DispatchOwl()</code> to <code>DispatchRv32i()</code>, then we can write a <code>RunRv32i()</code> function that dispatches RISC-V encoded instructions directly onto the Owl-2820 CPU.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">void</span> RunRv32i(std::span&lt;<span style="color:#2b91af">uint32_t</span>&gt; image)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    OwlCpu cpu(image);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">while</span> (!cpu.Done())
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> ins = cpu.Fetch();
+</span></span><span style="display:flex;"><span>        DispatchRv32i(cpu, ins);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h2 id="show-me-the-code">Show me the code</h2>
+<p>Here&rsquo;s a <a href="https://godbolt.org/z/vq4e1dqKP">link to the fully runnable code</a> on Compiler Explorer.</p>
+<p>Its <code>main()</code> function loads the program image and runs it twice: once as a RISC-V encoded image using <code>RunRv32i()</code>, and once as an Owl-2820 encoded image using <code>Run()</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">int</span> main()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">try</span>
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Create a 4K memory image.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">constexpr</span> size_t memorySize = 4096;
+</span></span><span style="display:flex;"><span>        std::vector&lt;<span style="color:#2b91af">uint32_t</span>&gt; image(memorySize / <span style="color:#00f">sizeof</span>(<span style="color:#2b91af">uint32_t</span>));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">auto</span> rv32iImage = LoadRv32iImage();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Copy the result into our VM image to run it directly.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        std::ranges::copy(rv32iImage, image.begin());
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        std::cout &lt;&lt; <span style="color:#a31515">&#34;Running RISC-V encoded instructions...</span><span style="color:#a31515">\n</span><span style="color:#a31515">&#34;</span>;
+</span></span><span style="display:flex;"><span>        RunRv32i(image);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Transcode it to Owl-2820 and copy the result into our VM image.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">auto</span> owlImage = Rv32iToOwl(rv32iImage);
+</span></span><span style="display:flex;"><span>        std::ranges::copy(owlImage, image.begin());
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        std::cout &lt;&lt; <span style="color:#a31515">&#34;</span><span style="color:#a31515">\n</span><span style="color:#a31515">Running Owl-2820 encoded instructions...</span><span style="color:#a31515">\n</span><span style="color:#a31515">&#34;</span>;
+</span></span><span style="display:flex;"><span>        Run(image);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">catch</span> (<span style="color:#00f">const</span> std::exception&amp; e)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        std::cerr &lt;&lt; e.what() &lt;&lt; <span style="color:#a31515">&#39;\n&#39;</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h1 id="benchmarking">Benchmarking</h1>
+<p>If we can run RISC-V encoded instructions directly, why wouldn&rsquo;t we do that by default? Why go to the effort of transcoding an image to the Owl-2820 instruction encoding? It&rsquo;s a good question.</p>
+<p>I&rsquo;ve stated previously that <a href="http://localhost:1313/posts/2024/04/02/lbavm-001/#comparing-risc-v-encoding-with-owl-encoding">it takes more work to decode the RISC-V instruction encoding in software than it does to decode the Owl-2820 instruction encoding</a>. Until now, you&rsquo;ve had to take my word for it.</p>
+<p>Let&rsquo;s modify the program slightly so that we can benchmark it. This will show how the difference in encoding translates to a difference in timing.</p>
+<h2 id="disabling-output">Disabling output</h2>
+<p>We have to disable the output from <code>Exit</code> and <code>PrintFib</code>. If we don&rsquo;t do this, then the timings will be dominated by how quickly the terminal can scroll.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#008000">// System instructions.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> Ecall()
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> <span style="color:#00f">auto</span> syscall = Syscall(x[a7]);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">switch</span> (syscall)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Syscall::Exit:
+</span></span><span style="display:flex;"><span>            <span style="color:#008000">// std::cout &lt;&lt; &#34;Exiting with status &#34; &lt;&lt; x[a0] &lt;&lt; &#39;\n&#39;;
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>            done = true;
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Syscall::PrintFib:
+</span></span><span style="display:flex;"><span>            <span style="color:#008000">// std::cout &lt;&lt; &#34;fib(&#34; &lt;&lt; x[a0] &lt;&lt; &#34;) = &#34; &lt;&lt; x[a1] &lt;&lt; &#39;\n&#39;;
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>            <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span></code></pre></div><h2 id="measuring-how-long-it-takes-to-run-each-image">Measuring how long it takes to run each image</h2>
+<p>We&rsquo;d like to know how long it takes to run each image. However, if we only run an image for a small number of iterations, then the timings will vary wildly due to the granularity of the timing mechanism.</p>
+<p>To get a meaningful measurement then we need to run each image several times. And by several times, I don&rsquo;t just mean  ten iterations, or even one hundred iterations. I mean at least one hundred thousand iterations, or better still, one million iterations.</p>
+<p>Here&rsquo;s the code. It measures the time that it takes to run one million iterations of each image, then it outputs the results.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">int</span> main()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">try</span>
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Create a 4K memory image.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">constexpr</span> size_t memorySize = 4096;
+</span></span><span style="display:flex;"><span>        std::vector&lt;<span style="color:#2b91af">uint32_t</span>&gt; image(memorySize / <span style="color:#00f">sizeof</span>(<span style="color:#2b91af">uint32_t</span>));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">auto</span> rv32iImage = LoadRv32iImage();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Crude microbenchmark.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">constexpr</span> <span style="color:#2b91af">int</span> attempts = 1&#39;000&#39;000;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Copy the result into our VM image to run it directly.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        std::ranges::copy(rv32iImage, image.begin());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> <span style="color:#00f">auto</span> startRv32i{std::chrono::steady_clock::now()};
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">for</span> (<span style="color:#2b91af">int</span> i = 0; i &lt; attempts; i++)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            RunRv32i(image);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> <span style="color:#00f">auto</span> endRv32i{std::chrono::steady_clock::now()};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Transcode it to Owl-2820 and copy the result into our VM image.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">auto</span> owlImage = Rv32iToOwl(rv32iImage);
+</span></span><span style="display:flex;"><span>        std::ranges::copy(owlImage, image.begin());
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Run it as Owl-2820.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">const</span> <span style="color:#00f">auto</span> startOwl{std::chrono::steady_clock::now()};
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">for</span> (<span style="color:#2b91af">int</span> i = 0; i &lt; attempts; i++)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            Run(image);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> <span style="color:#00f">auto</span> endOwl{std::chrono::steady_clock::now()};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> std::chrono::duration&lt;<span style="color:#2b91af">double</span>&gt; elapsedRv32i{endRv32i - startRv32i};
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> std::chrono::duration&lt;<span style="color:#2b91af">double</span>&gt; elapsedOwl{endOwl - startOwl};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        std::cout &lt;&lt; <span style="color:#a31515">&#34;Elapsed Rv32i: &#34;</span> &lt;&lt; elapsedRv32i &lt;&lt; <span style="color:#a31515">&#39;\n&#39;</span>;
+</span></span><span style="display:flex;"><span>        std::cout &lt;&lt; <span style="color:#a31515">&#34;Elapsed   Owl: &#34;</span> &lt;&lt; elapsedOwl &lt;&lt; <span style="color:#a31515">&#34;</span><span style="color:#a31515">\n\n</span><span style="color:#a31515">&#34;</span>;
+</span></span><span style="display:flex;"><span>        std::cout &lt;&lt; <span style="color:#a31515">&#34;RV32I timing as percentage of Owl: &#34;</span> &lt;&lt; 100.0 * (elapsedRv32i / elapsedOwl) &lt;&lt; <span style="color:#a31515">&#39;\n&#39;</span>;
+</span></span><span style="display:flex;"><span>        std::cout &lt;&lt; <span style="color:#a31515">&#34;Owl timing as percentage of RV32I: &#34;</span> &lt;&lt; 100.0 * (elapsedOwl / elapsedRv32i) &lt;&lt; <span style="color:#a31515">&#39;\n&#39;</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">catch</span> (<span style="color:#00f">const</span> std::exception&amp; e)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        std::cerr &lt;&lt; e.what() &lt;&lt; <span style="color:#a31515">&#39;\n&#39;</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h2 id="the-results">The results</h2>
+<p>Here&rsquo;s some typical output from my development machine.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>Elapsed Rv32i: 12.5614s
+</span></span><span style="display:flex;"><span>Elapsed   Owl: 7.21679s
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>RV32I timing as percentage of Owl: 174.058
+</span></span><span style="display:flex;"><span>Owl timing as percentage of RV32I: 57.452
+</span></span></code></pre></div><p>This may be a crude microbenchmark, but it is very clear that running Owl-2820 encoded instructions is quicker than running RISC-V encoded instructions directly.</p>
+<p>We saw in <a href="http://localhost:1313/posts/2024/04/02/lbavm-001/#comparing-risc-v-encoding-with-owl-encoding">Part 1</a> that decoding RISC-V encoded instructions in software is more complicated than decoding Owl-2820 instructions, but now we have numbers to back that up.</p>
+<h1 id="summary">Summary</h1>
+<p>In this post we finally managed to run a RISC-V image directly on the Owl-2820 VM.</p>
+<p>We did so by identifying the roles of dispatchers and instruction handlers. We wrote an <code>OwlCpu</code> instruction handler that executes instructions on an Owl-2820 CPU, and we wrote dispatchers for both RISC-V encoded instructions and Owl-2820 encoded instructions. We also saw that we could use the same approach to write other instructions handlers, such as a disassembler.</p>
+<p>Finally, we benchmarked the difference in performance between RISC-V encoded instructions and Owl-2820 encoded instructions, and discovered that Owl-2820 encoded instructions are measurably quicker to dispatch.</p>
+<h2 id="show-me-the-code-1">Show me the code</h2>
+<p>Here&rsquo;s a <a href="https://godbolt.org/z/vq4e1dqKP">link to the fully runnable code</a> on Compiler Explorer.</p>
+<p>It doesn&rsquo;t include the benchmarking code, as Compiler Explorer understandably has a limit on how long anything can run for.</p>
+        </div>
+        
+        <div>
+            <ul id="tags">
+                
+                <li><a href="/tags/vm">vm</a></li>
+                
+                <li><a href="/tags/owl">owl</a></li>
+                
+            </ul>
+        </div>
+        
+    </article>
+</main>
+<aside class="wrapper">
+    <div>
+        <div>
+            <h3>Latest Posts</h3>
+        </div>
+        <div>
+            <ul>
+                
+                <li><a href="/posts/2024/09/15/lbavm-010/">Let&#39;s build a virtual machine: Part 10 - Running RISC-V directly</a></li>
+                
+                <li><a href="/posts/2024/09/01/lbavm-009/">Let&#39;s build a virtual machine: Part 9 - Running compiled C on the Owl-2820 CPU</a></li>
+                
+                <li><a href="/posts/2024/08/20/lbavm-008/">Let&#39;s build a virtual machine: Part 8 - Using a C compiler to target the Owl-2820 CPU</a></li>
+                
+                <li><a href="/posts/2024/07/30/lbavm-007/">Let&#39;s build a virtual machine: Part 7 - Draw the rest of the Owl</a></li>
+                
+                <li><a href="/posts/2024/07/21/lbavm-006/">Let&#39;s build a virtual machine: Part 6 - System calls</a></li>
+                
+            </ul>
+        </div>
+    </div>
+</aside> 
+	<footer class="wrapper">
+	<p>&copy; 2024 <a href="http://localhost:1313/">My Badly Drawn Self</a></p>
+</footer>
+
+</body>
+</html>

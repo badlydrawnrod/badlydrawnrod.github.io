@@ -69,22 +69,22 @@
 <p>On the Owl-2820 CPU, a syscall is implemented by setting a register to the syscall number, then using the <code>ecall</code> instruction to invoke the syscall itself.</p>
 <p>In the the example below, the syscall number is held in the <em>a7</em> register, and we have the following syscalls available to us.</p>
 <table>
-<thead>
-<tr>
-<th style="text-align:left">Syscall (number in a7)</th>
-<th style="text-align:left">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left">0</td>
-<td style="text-align:left">Exit the process. <em>a0</em> contains the exit status.</td>
-</tr>
-<tr>
-<td style="text-align:left">1</td>
-<td style="text-align:left">Displays a string to stdout. <em>a0</em> contains the address of the string to display.</td>
-</tr>
-</tbody>
+  <thead>
+      <tr>
+          <th style="text-align: left">Syscall (number in a7)</th>
+          <th style="text-align: left">Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td style="text-align: left">0</td>
+          <td style="text-align: left">Exit the process. <em>a0</em> contains the exit status.</td>
+      </tr>
+      <tr>
+          <td style="text-align: left">1</td>
+          <td style="text-align: left">Displays a string to stdout. <em>a0</em> contains the address of the string to display.</td>
+      </tr>
+  </tbody>
 </table>
 <p>The example program makes two syscalls. It uses syscall 1 to display a string, then it exits the process by invoking syscall 0.</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span>    <span style="color:#008000">; display a message using (syscall 1)
@@ -217,6 +217,8 @@
         <div>
             <ul>
                 
+                <li><a href="/posts/2024/09/08/lbavm-010/">Let&#39;s build a virtual machine: Part 10 - Running RISC-V directly</a></li>
+                
                 <li><a href="/posts/2024/09/01/lbavm-009/">Let&#39;s build a virtual machine: Part 9 - Running compiled C on the Owl-2820 CPU</a></li>
                 
                 <li><a href="/posts/2024/08/20/lbavm-008/">Let&#39;s build a virtual machine: Part 8 - Using a C compiler to target the Owl-2820 CPU</a></li>
@@ -224,8 +226,6 @@
                 <li><a href="/posts/2024/07/30/lbavm-007/">Let&#39;s build a virtual machine: Part 7 - Draw the rest of the Owl</a></li>
                 
                 <li><a href="/posts/2024/07/21/lbavm-006/">Let&#39;s build a virtual machine: Part 6 - System calls</a></li>
-                
-                <li><a href="/posts/2024/07/05/lbavm-005/">Let&#39;s build a virtual machine: Part 5 - Memory</a></li>
                 
             </ul>
         </div>

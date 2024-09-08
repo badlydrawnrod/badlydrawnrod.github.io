@@ -165,107 +165,107 @@
 <h2 id="the-owl-2820-calling-convention">The Owl-2820 calling convention</h2>
 <p>In <a href="https://badlydrawnrod.github.io/posts/2024/04/02/lbavm-001/">Part 1</a> of this series I introduced the Owl-2820 registers, and stated that they&rsquo;d have the same names and usages as RV32I.</p>
 <table>
-<thead>
-<tr>
-<th style="text-align:left">Register</th>
-<th style="text-align:left">Name</th>
-<th style="text-align:left">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left">x0</td>
-<td style="text-align:left">zero</td>
-<td style="text-align:left">always contains zero (writing to <em>x0</em> has no effect)</td>
-</tr>
-<tr>
-<td style="text-align:left">x1</td>
-<td style="text-align:left">ra</td>
-<td style="text-align:left">return address</td>
-</tr>
-<tr>
-<td style="text-align:left">x2</td>
-<td style="text-align:left">sp</td>
-<td style="text-align:left">stack pointer</td>
-</tr>
-<tr>
-<td style="text-align:left">x3</td>
-<td style="text-align:left">gp</td>
-<td style="text-align:left">global pointer</td>
-</tr>
-<tr>
-<td style="text-align:left">x4</td>
-<td style="text-align:left">tp</td>
-<td style="text-align:left">thread pointer</td>
-</tr>
-<tr>
-<td style="text-align:left">x5 - x7</td>
-<td style="text-align:left">t0 - t2</td>
-<td style="text-align:left">temporary registers</td>
-</tr>
-<tr>
-<td style="text-align:left">x8 - x9</td>
-<td style="text-align:left">s0 - s1</td>
-<td style="text-align:left">callee-saved registers</td>
-</tr>
-<tr>
-<td style="text-align:left">x10 - x17</td>
-<td style="text-align:left">a0 - a7</td>
-<td style="text-align:left">argument registers</td>
-</tr>
-<tr>
-<td style="text-align:left">x18 - x27</td>
-<td style="text-align:left">s2 - s11</td>
-<td style="text-align:left">callee-saved registers</td>
-</tr>
-<tr>
-<td style="text-align:left">x28 - x31</td>
-<td style="text-align:left">t3 - t6</td>
-<td style="text-align:left">temporary registers</td>
-</tr>
-</tbody>
+  <thead>
+      <tr>
+          <th style="text-align: left">Register</th>
+          <th style="text-align: left">Name</th>
+          <th style="text-align: left">Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td style="text-align: left">x0</td>
+          <td style="text-align: left">zero</td>
+          <td style="text-align: left">always contains zero (writing to <em>x0</em> has no effect)</td>
+      </tr>
+      <tr>
+          <td style="text-align: left">x1</td>
+          <td style="text-align: left">ra</td>
+          <td style="text-align: left">return address</td>
+      </tr>
+      <tr>
+          <td style="text-align: left">x2</td>
+          <td style="text-align: left">sp</td>
+          <td style="text-align: left">stack pointer</td>
+      </tr>
+      <tr>
+          <td style="text-align: left">x3</td>
+          <td style="text-align: left">gp</td>
+          <td style="text-align: left">global pointer</td>
+      </tr>
+      <tr>
+          <td style="text-align: left">x4</td>
+          <td style="text-align: left">tp</td>
+          <td style="text-align: left">thread pointer</td>
+      </tr>
+      <tr>
+          <td style="text-align: left">x5 - x7</td>
+          <td style="text-align: left">t0 - t2</td>
+          <td style="text-align: left">temporary registers</td>
+      </tr>
+      <tr>
+          <td style="text-align: left">x8 - x9</td>
+          <td style="text-align: left">s0 - s1</td>
+          <td style="text-align: left">callee-saved registers</td>
+      </tr>
+      <tr>
+          <td style="text-align: left">x10 - x17</td>
+          <td style="text-align: left">a0 - a7</td>
+          <td style="text-align: left">argument registers</td>
+      </tr>
+      <tr>
+          <td style="text-align: left">x18 - x27</td>
+          <td style="text-align: left">s2 - s11</td>
+          <td style="text-align: left">callee-saved registers</td>
+      </tr>
+      <tr>
+          <td style="text-align: left">x28 - x31</td>
+          <td style="text-align: left">t3 - t6</td>
+          <td style="text-align: left">temporary registers</td>
+      </tr>
+  </tbody>
 </table>
 <p>If we turn this table around, and use the symbolic register names, then we can see some aspects of how the Owl-2820 calling convention works.</p>
 <table>
-<thead>
-<tr>
-<th style="text-align:left">Registers</th>
-<th style="text-align:left">Calling Convention Usage</th>
-<th style="text-align:left">Who saves?</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left">a0 - a1</td>
-<td style="text-align:left">argument registers, used to pass arguments from the caller to the callee, and to return values from the callee back to the caller</td>
-<td style="text-align:left">caller</td>
-</tr>
-<tr>
-<td style="text-align:left">a2 - a7</td>
-<td style="text-align:left">argument registers, used to pass arguments from the caller to the callee</td>
-<td style="text-align:left">caller</td>
-</tr>
-<tr>
-<td style="text-align:left">s0</td>
-<td style="text-align:left">frame pointer</td>
-<td style="text-align:left">callee</td>
-</tr>
-<tr>
-<td style="text-align:left">s1 - s11</td>
-<td style="text-align:left">callee-saved registers</td>
-<td style="text-align:left">callee</td>
-</tr>
-<tr>
-<td style="text-align:left">t0 - t6</td>
-<td style="text-align:left">temporary registers, not preserved by the callee, so must be preserved by the caller if used after the call</td>
-<td style="text-align:left">caller</td>
-</tr>
-<tr>
-<td style="text-align:left">ra</td>
-<td style="text-align:left">return address</td>
-<td style="text-align:left">callee</td>
-</tr>
-</tbody>
+  <thead>
+      <tr>
+          <th style="text-align: left">Registers</th>
+          <th style="text-align: left">Calling Convention Usage</th>
+          <th style="text-align: left">Who saves?</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td style="text-align: left">a0 - a1</td>
+          <td style="text-align: left">argument registers, used to pass arguments from the caller to the callee, and to return values from the callee back to the caller</td>
+          <td style="text-align: left">caller</td>
+      </tr>
+      <tr>
+          <td style="text-align: left">a2 - a7</td>
+          <td style="text-align: left">argument registers, used to pass arguments from the caller to the callee</td>
+          <td style="text-align: left">caller</td>
+      </tr>
+      <tr>
+          <td style="text-align: left">s0</td>
+          <td style="text-align: left">frame pointer</td>
+          <td style="text-align: left">callee</td>
+      </tr>
+      <tr>
+          <td style="text-align: left">s1 - s11</td>
+          <td style="text-align: left">callee-saved registers</td>
+          <td style="text-align: left">callee</td>
+      </tr>
+      <tr>
+          <td style="text-align: left">t0 - t6</td>
+          <td style="text-align: left">temporary registers, not preserved by the callee, so must be preserved by the caller if used after the call</td>
+          <td style="text-align: left">caller</td>
+      </tr>
+      <tr>
+          <td style="text-align: left">ra</td>
+          <td style="text-align: left">return address</td>
+          <td style="text-align: left">callee</td>
+      </tr>
+  </tbody>
 </table>
 <p>In particular, we can see that registers <em>a0</em> through <em>a7</em> are used to pass arguments from the caller to the called subroutine, and we can see that registers <em>a0</em> and sometimes <em>a1</em> are used to return values from the called subroutine back to the caller.</p>
 <p>We can also see that register <em>ra</em> is used to hold the return address.</p>
@@ -345,6 +345,8 @@
         <div>
             <ul>
                 
+                <li><a href="/posts/2024/09/08/lbavm-010/">Let&#39;s build a virtual machine: Part 10 - Running RISC-V directly</a></li>
+                
                 <li><a href="/posts/2024/09/01/lbavm-009/">Let&#39;s build a virtual machine: Part 9 - Running compiled C on the Owl-2820 CPU</a></li>
                 
                 <li><a href="/posts/2024/08/20/lbavm-008/">Let&#39;s build a virtual machine: Part 8 - Using a C compiler to target the Owl-2820 CPU</a></li>
@@ -352,8 +354,6 @@
                 <li><a href="/posts/2024/07/30/lbavm-007/">Let&#39;s build a virtual machine: Part 7 - Draw the rest of the Owl</a></li>
                 
                 <li><a href="/posts/2024/07/21/lbavm-006/">Let&#39;s build a virtual machine: Part 6 - System calls</a></li>
-                
-                <li><a href="/posts/2024/07/05/lbavm-005/">Let&#39;s build a virtual machine: Part 5 - Memory</a></li>
                 
             </ul>
         </div>

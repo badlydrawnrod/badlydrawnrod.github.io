@@ -90,46 +90,46 @@
 </span></span></code></pre></div><h3 id="compiler-options">Compiler options</h3>
 <p>Here&rsquo;s a breakdown of the command line options, with links to their full descriptions if you want more detail.</p>
 <table>
-<thead>
-<tr>
-<th style="text-align:left">Option</th>
-<th style="text-align:left">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left"><code>-S</code></td>
-<td style="text-align:left">only run preprocess and compile steps (i.e., don&rsquo;t assemble, don&rsquo;t link). <a href="https://gcc.gnu.org/onlinedocs/gcc/Overall-Options.html">More&hellip;</a></td>
-</tr>
-<tr>
-<td style="text-align:left"><code>-Os</code></td>
-<td style="text-align:left">enables <code>-O2</code> level optimization except those optimizations that could increase code size. <a href="https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html">More&hellip;</a></td>
-</tr>
-<tr>
-<td style="text-align:left"><code>--target=riscv32</code></td>
-<td style="text-align:left">generate code for a 32-bit RISC-V target.</td>
-</tr>
-<tr>
-<td style="text-align:left"><code>-march=rv32i</code></td>
-<td style="text-align:left">specifically target the <code>rv32i</code> architecture without any extensions. <a href="https://gcc.gnu.org/onlinedocs/gcc/RISC-V-Options.html">More&hellip;</a></td>
-</tr>
-<tr>
-<td style="text-align:left"><code>-mabi=ilp32</code></td>
-<td style="text-align:left">specifies that integer types (int, long, pointer) are all 32-bit and that there is no floating point. <a href="https://gcc.gnu.org/onlinedocs/gcc/RISC-V-Options.html">More&hellip;</a></td>
-</tr>
-<tr>
-<td style="text-align:left"><code>-ffreestanding</code></td>
-<td style="text-align:left">assert that the compilation takes place in a freestanding environment. <a href="https://gcc.gnu.org/onlinedocs/gcc/Link-Options.html">More&hellip;</a></td>
-</tr>
-<tr>
-<td style="text-align:left"><code>-ffunction-sections</code></td>
-<td style="text-align:left">place each function in its own section. <a href="https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html">More&hellip;</a></td>
-</tr>
-<tr>
-<td style="text-align:left"><code>-fdata-sections</code></td>
-<td style="text-align:left">place each data in its own section. <a href="https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html">More&hellip;</a></td>
-</tr>
-</tbody>
+  <thead>
+      <tr>
+          <th style="text-align: left">Option</th>
+          <th style="text-align: left">Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td style="text-align: left"><code>-S</code></td>
+          <td style="text-align: left">only run preprocess and compile steps (i.e., don&rsquo;t assemble, don&rsquo;t link). <a href="https://gcc.gnu.org/onlinedocs/gcc/Overall-Options.html">More&hellip;</a></td>
+      </tr>
+      <tr>
+          <td style="text-align: left"><code>-Os</code></td>
+          <td style="text-align: left">enables <code>-O2</code> level optimization except those optimizations that could increase code size. <a href="https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html">More&hellip;</a></td>
+      </tr>
+      <tr>
+          <td style="text-align: left"><code>--target=riscv32</code></td>
+          <td style="text-align: left">generate code for a 32-bit RISC-V target.</td>
+      </tr>
+      <tr>
+          <td style="text-align: left"><code>-march=rv32i</code></td>
+          <td style="text-align: left">specifically target the <code>rv32i</code> architecture without any extensions. <a href="https://gcc.gnu.org/onlinedocs/gcc/RISC-V-Options.html">More&hellip;</a></td>
+      </tr>
+      <tr>
+          <td style="text-align: left"><code>-mabi=ilp32</code></td>
+          <td style="text-align: left">specifies that integer types (int, long, pointer) are all 32-bit and that there is no floating point. <a href="https://gcc.gnu.org/onlinedocs/gcc/RISC-V-Options.html">More&hellip;</a></td>
+      </tr>
+      <tr>
+          <td style="text-align: left"><code>-ffreestanding</code></td>
+          <td style="text-align: left">assert that the compilation takes place in a freestanding environment. <a href="https://gcc.gnu.org/onlinedocs/gcc/Link-Options.html">More&hellip;</a></td>
+      </tr>
+      <tr>
+          <td style="text-align: left"><code>-ffunction-sections</code></td>
+          <td style="text-align: left">place each function in its own section. <a href="https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html">More&hellip;</a></td>
+      </tr>
+      <tr>
+          <td style="text-align: left"><code>-fdata-sections</code></td>
+          <td style="text-align: left">place each data in its own section. <a href="https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html">More&hellip;</a></td>
+      </tr>
+  </tbody>
 </table>
 <h3 id="assembly-language-output">Assembly language output</h3>
 <p>That gives us some assembly language output in a file <code>fib.s</code>. I&rsquo;ve shaved off a few lines from the top and bottom, but you can see that it&rsquo;s very similar to versions of <code>fib</code> that we&rsquo;ve seen previously.</p>
@@ -182,18 +182,18 @@
 </span></span></code></pre></div><h3 id="compiler-options-1">Compiler options</h3>
 <p>Here&rsquo;s a description of the <code>-c</code> command line option.</p>
 <table>
-<thead>
-<tr>
-<th style="text-align:left">Option</th>
-<th style="text-align:left">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left"><code>-c</code></td>
-<td style="text-align:left">only run the preprocess, compile and assemble steps (i.e., don&rsquo;t link). <a href="https://gcc.gnu.org/onlinedocs/gcc/Overall-Options.html">More&hellip;</a></td>
-</tr>
-</tbody>
+  <thead>
+      <tr>
+          <th style="text-align: left">Option</th>
+          <th style="text-align: left">Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td style="text-align: left"><code>-c</code></td>
+          <td style="text-align: left">only run the preprocess, compile and assemble steps (i.e., don&rsquo;t link). <a href="https://gcc.gnu.org/onlinedocs/gcc/Overall-Options.html">More&hellip;</a></td>
+      </tr>
+  </tbody>
 </table>
 <h3 id="disassembling">Disassembling</h3>
 <p>We can disassemble the resulting object file, <code>fib.o</code>, with <code>llvm-objdump</code>.</p>
@@ -262,22 +262,22 @@
 </span></span></code></pre></div><h3 id="command-line-options">Command line options</h3>
 <p>Here&rsquo;s what those options mean.</p>
 <table>
-<thead>
-<tr>
-<th style="text-align:left">Option</th>
-<th style="text-align:left">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left"><code>-nostdlib</code></td>
-<td style="text-align:left">do not use the standard system library startup files or libraries when linking.  <a href="https://gcc.gnu.org/onlinedocs/gcc/Link-Options.html">More&hellip;</a></td>
-</tr>
-<tr>
-<td style="text-align:left"><code>-nodefaultlibs</code></td>
-<td style="text-align:left">do not use the standard system libraries when linking. <a href="https://gcc.gnu.org/onlinedocs/gcc/Link-Options.html">More&hellip;</a></td>
-</tr>
-</tbody>
+  <thead>
+      <tr>
+          <th style="text-align: left">Option</th>
+          <th style="text-align: left">Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td style="text-align: left"><code>-nostdlib</code></td>
+          <td style="text-align: left">do not use the standard system library startup files or libraries when linking.  <a href="https://gcc.gnu.org/onlinedocs/gcc/Link-Options.html">More&hellip;</a></td>
+      </tr>
+      <tr>
+          <td style="text-align: left"><code>-nodefaultlibs</code></td>
+          <td style="text-align: left">do not use the standard system libraries when linking. <a href="https://gcc.gnu.org/onlinedocs/gcc/Link-Options.html">More&hellip;</a></td>
+      </tr>
+  </tbody>
 </table>
 <h3 id="output-1">Output</h3>
 <p>However, the linker still complains because we don&rsquo;t have an implementation of <code>print_fib()</code>.</p>
@@ -480,34 +480,34 @@
 </span></span></code></pre></div><h3 id="compiler-options-2">Compiler options</h3>
 <p>The <code>-Wl</code> option is used to pass options to the linker.</p>
 <table>
-<thead>
-<tr>
-<th style="text-align:left">Option</th>
-<th style="text-align:left">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left"><code>-Wl,</code></td>
-<td style="text-align:left">pass a comma separated list of options to the linker. <a href="https://gcc.gnu.org/onlinedocs/gcc/Link-Options.html">More&hellip;</a></td>
-</tr>
-</tbody>
+  <thead>
+      <tr>
+          <th style="text-align: left">Option</th>
+          <th style="text-align: left">Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td style="text-align: left"><code>-Wl,</code></td>
+          <td style="text-align: left">pass a comma separated list of options to the linker. <a href="https://gcc.gnu.org/onlinedocs/gcc/Link-Options.html">More&hellip;</a></td>
+      </tr>
+  </tbody>
 </table>
 <h3 id="linker-options">Linker options</h3>
 <p>The <code>--section-start</code> linker option specifies the start address, in hex, of a named section.</p>
 <table>
-<thead>
-<tr>
-<th style="text-align:left">Linker Option</th>
-<th style="text-align:left">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left"><code>--section-start=&lt;name&gt;=&lt;addr&gt;</code></td>
-<td style="text-align:left">set the start address of section <code>&lt;name&gt;</code> to hexadecimal address <code>&lt;addr&gt;</code>. <a href="https://linux.die.net/man/1/ld">More&hellip;</a></td>
-</tr>
-</tbody>
+  <thead>
+      <tr>
+          <th style="text-align: left">Linker Option</th>
+          <th style="text-align: left">Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td style="text-align: left"><code>--section-start=&lt;name&gt;=&lt;addr&gt;</code></td>
+          <td style="text-align: left">set the start address of section <code>&lt;name&gt;</code> to hexadecimal address <code>&lt;addr&gt;</code>. <a href="https://linux.die.net/man/1/ld">More&hellip;</a></td>
+      </tr>
+  </tbody>
 </table>
 <h3 id="disassembling-2">Disassembling</h3>
 <p>Let&rsquo;s disassemble the resulting ELF binary.</p>
@@ -618,6 +618,8 @@
         <div>
             <ul>
                 
+                <li><a href="/posts/2024/09/08/lbavm-010/">Let&#39;s build a virtual machine: Part 10 - Running RISC-V directly</a></li>
+                
                 <li><a href="/posts/2024/09/01/lbavm-009/">Let&#39;s build a virtual machine: Part 9 - Running compiled C on the Owl-2820 CPU</a></li>
                 
                 <li><a href="/posts/2024/08/20/lbavm-008/">Let&#39;s build a virtual machine: Part 8 - Using a C compiler to target the Owl-2820 CPU</a></li>
@@ -625,8 +627,6 @@
                 <li><a href="/posts/2024/07/30/lbavm-007/">Let&#39;s build a virtual machine: Part 7 - Draw the rest of the Owl</a></li>
                 
                 <li><a href="/posts/2024/07/21/lbavm-006/">Let&#39;s build a virtual machine: Part 6 - System calls</a></li>
-                
-                <li><a href="/posts/2024/07/05/lbavm-005/">Let&#39;s build a virtual machine: Part 5 - Memory</a></li>
                 
             </ul>
         </div>

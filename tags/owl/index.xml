@@ -6,8 +6,15 @@
     <description>Recent content in Owl on My Badly Drawn Self</description>
     <generator>Hugo</generator>
     <language>en</language>
-    <lastBuildDate>Sat, 31 Aug 2024 14:40:00 +0100</lastBuildDate>
+    <lastBuildDate>Sun, 08 Sep 2024 14:30:00 +0100</lastBuildDate>
     <atom:link href="https://badlydrawnrod.github.io/tags/owl/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Let&#39;s build a virtual machine: Part 10 - Running RISC-V directly</title>
+      <link>https://badlydrawnrod.github.io/posts/2024/09/08/lbavm-010/</link>
+      <pubDate>Sun, 08 Sep 2024 14:30:00 +0100</pubDate>
+      <guid>https://badlydrawnrod.github.io/posts/2024/09/08/lbavm-010/</guid>
+      <description>&lt;p&gt;Modfiying the Owl-2820 VM to decode RISC-V instructions directly.&lt;/p&gt;</description>
+    </item>
     <item>
       <title>Let&#39;s build a virtual machine: Part 9 - Running compiled C on the Owl-2820 CPU</title>
       <link>https://badlydrawnrod.github.io/posts/2024/09/01/lbavm-009/</link>
