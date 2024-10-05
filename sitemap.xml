@@ -2,31 +2,31 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
+    <loc>https://badlydrawnrod.github.io/categories/</loc>
+    <lastmod>2024-10-05T14:45:00+01:00</lastmod>
+  </url><url>
     <loc>https://badlydrawnrod.github.io/posts/2024/10/05/lbavm-011/</loc>
     <lastmod>2024-10-05T14:45:00+01:00</lastmod>
   </url><url>
     <loc>https://badlydrawnrod.github.io/</loc>
     <lastmod>2024-10-05T14:45:00+01:00</lastmod>
   </url><url>
+    <loc>https://badlydrawnrod.github.io/tags/owl/</loc>
+    <lastmod>2024-10-05T14:45:00+01:00</lastmod>
+  </url><url>
     <loc>https://badlydrawnrod.github.io/posts/</loc>
     <lastmod>2024-10-05T14:45:00+01:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/categories/</loc>
-    <lastmod>2024-09-08T14:30:00+01:00</lastmod>
-  </url><url>
-    <loc>https://badlydrawnrod.github.io/posts/2024/09/08/lbavm-010/</loc>
-    <lastmod>2024-09-08T14:30:00+01:00</lastmod>
-  </url><url>
-    <loc>https://badlydrawnrod.github.io/tags/owl/</loc>
-    <lastmod>2024-09-08T14:30:00+01:00</lastmod>
-  </url><url>
     <loc>https://badlydrawnrod.github.io/categories/series/</loc>
-    <lastmod>2024-09-08T14:30:00+01:00</lastmod>
+    <lastmod>2024-10-05T14:45:00+01:00</lastmod>
   </url><url>
     <loc>https://badlydrawnrod.github.io/tags/</loc>
-    <lastmod>2024-09-08T14:30:00+01:00</lastmod>
+    <lastmod>2024-10-05T14:45:00+01:00</lastmod>
   </url><url>
     <loc>https://badlydrawnrod.github.io/tags/vm/</loc>
+    <lastmod>2024-10-05T14:45:00+01:00</lastmod>
+  </url><url>
+    <loc>https://badlydrawnrod.github.io/posts/2024/09/08/lbavm-010/</loc>
     <lastmod>2024-09-08T14:30:00+01:00</lastmod>
   </url><url>
     <loc>https://badlydrawnrod.github.io/posts/2024/09/01/lbavm-009/</loc>
