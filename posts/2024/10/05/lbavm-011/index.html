@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Let&#39;s build a virtual machine: Part 11 - Revisiting the instruction handler</title>
+	
+	
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu|Lora">
+	<link rel="stylesheet" href="/css/style.css">
+	
+</head>
+<body>
+	<header class="wrapper">
+    <nav>
+        <a href="https://badlydrawnrod.github.io/">Home</a>
+        <ul>
+			
+            
+            <li><a href="/page/about/">About</a></li>
+            
+            <li><a href="/posts/">All posts</a></li>
+            
+        </ul>
+    </nav>
+    
+</header>
+	
+<main class="wrapper">
+    <article>
+        <p></p>
+        
+        <div class="date">5 October, 2024</div>
+        
+        <div>
+            <p>Expressing the idea of an instruction handler using C++ concepts.</p>
+<h1 id="part-11-revisiting-the-instruction-handler">Part 11 Revisiting the instruction handler</h1>
+<p>In <a href="https://badlydrawnrod.github.io/posts/2024/09/08/lbavm-010/">part 10 - running RISC-V instructions directly</a>, we were able to run RISC-V code directly on the Owl VM, and ran benchmarks to show that the VM is quicker when it uses the Owl-2820 instruction encoding than it is when it decodes RISC-V instructions directly.</p>
+<p>To do that, we used three different dispatcher functions.</p>
+<ol>
+<li><code>Transcode()</code> dispatches RISC-V encoded instructions to the Owl-2820 <code>Assembler</code>.</li>
+<li><code>DispatchRv32i()</code> dispatches RISC-V encoded instructions to the <code>OwlCpu</code>.</li>
+<li><code>DispatchOwl()</code> dispatches Owl-2820 encoded instructions to the <code>OwlCpu</code>.</li>
+</ol>
+<p>Each dispatcher function decodes instructions into opcodes and operands, then dispatches them to a class that fulfils the role of an <em>instruction handler</em>.</p>
+<p>In <a href="https://badlydrawnrod.github.io/posts/2024/09/08/lbavm-010/">part 10</a>, I described instruction handlers as a protocol implemented in terms of handler functions for Owl-2820 instructions. In this post, we&rsquo;ll see how we can take the representation of an instruction handler from mere convention, to a representation in C++ that can be enforced by the compiler.</p>
+<h1 id="instruction-handlers-by-convention">Instruction handlers by convention</h1>
+<p>Let&rsquo;s review how instruction handlers are used by the dispatcher functions.</p>
+<p><code>Transcode()</code> dispatches RISC-V encoded instructions to the Owl-2820 <code>Assembler</code>. Here, the <code>Assembler</code> fulfils the role of the instruction handler by assembling instructions in Owl-2820 encoding.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">void</span> Transcode(Assembler&amp; a, <span style="color:#2b91af">uint32_t</span> code)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    DecodeRv32 rv(code);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">switch</span> (code) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00000073: <span style="color:#00f">return</span> a.Ecall();
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00100073: <span style="color:#00f">return</span> a.Ebreak();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">switch</span> (code &amp; 0xfe00707f) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00000033: <span style="color:#00f">return</span> a.Add(rv.Rd(), rv.Rs1(), rv.Rs2());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x40000033: <span style="color:#00f">return</span> a.Sub(rv.Rd(), rv.Rs1(), rv.Rs2());
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// ...
+</span></span></span></code></pre></div><p>Similarly, <code>DispatchRv32i()</code> dispatches RISC-V encoded instructions to the <code>OwlCpu</code>. Here, <code>OwlCpu</code> fulfils the role of the instruction handler by executing the instructions.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">void</span> DispatchRv32i(OwlCpu&amp; cpu, <span style="color:#2b91af">uint32_t</span> code)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    DecodeRv32 rv(code);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">switch</span> (code) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00000073: <span style="color:#00f">return</span> cpu.Ecall();
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00100073: <span style="color:#00f">return</span> cpu.Ebreak();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">switch</span> (code &amp; 0xfe00707f) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00000033: <span style="color:#00f">return</span> cpu.Add(rv.Rd(), rv.Rs1(), rv.Rs2());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x40000033: <span style="color:#00f">return</span> cpu.Sub(rv.Rd(), rv.Rs1(), rv.Rs2());
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// ...
+</span></span></span></code></pre></div><p>If we were to implement a disassembler then we could have <code>DisassembleRv32i()</code> which dispatches RISC-V encoded instructions to a <code>Disassembler</code> class. In this case, <code>Disassembler</code> fulfils the role of the instruction handler by disassembling the instructions and writing them to stdout.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">void</span> DisassembleRv32i(Disassembler&amp; d, <span style="color:#2b91af">uint32_t</span> code)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    DecodeRv32 rv(code);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">switch</span> (code) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00000073: <span style="color:#00f">return</span> d.Ecall();
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00100073: <span style="color:#00f">return</span> d.Ebreak();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">switch</span> (code &amp; 0xfe00707f) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00000033: <span style="color:#00f">return</span> d.Add(rv.Rd(), rv.Rs1(), rv.Rs2());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x40000033: <span style="color:#00f">return</span> d.Sub(rv.Rd(), rv.Rs1(), rv.Rs2());
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// ...
+</span></span></span></code></pre></div><p>The body of the dispatcher function differs very little between examples. The only thing that differs from function to function is the type of the instruction handler. <code>Transcode()</code> dispatches to <code>Assembler</code>, <code>DispatchRv32i()</code> dispatches to <code>OwlCpu</code>, and <code>DisassembleRv32i()</code> dispatches to <code>Disassembler</code>.</p>
+<p>Although I&rsquo;ve been describing <code>Assembler</code>, <code>Disassembler</code> and <code>OwlCpu</code> as instruction handlers, until now the notion of instruction handler has been something that we&rsquo;ve been enforcing by convention only. In other words, it is not something that the compiler can enforce on our behalf.</p>
+<p>If, however, we were to make this more than just a convention by encoding it in C++ as an <code>InstructionHandler</code>, then not only could the compiler enforce it for us, but also we wouldn&rsquo;t have to write the same dispatcher function again and again for different instruction handlers.</p>
+<p>How do we go from this idea of &ldquo;instruction handler&rdquo;, implemented by convention only, to a C++ <code>InstructionHandler</code>?</p>
+<h1 id="instruction-handlers-as-c-interfaces">Instruction handlers as C++ interfaces</h1>
+<p>We could specify <code>InstructionHandler</code> as a C++ interface, i.e., a class whose members are all <a href="https://en.cppreference.com/w/cpp/language/abstract_class">pure virtual functions</a>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#00f">class</span> <span style="color:#2b91af">InstructionHandler</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span><span style="color:#00f">public</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> Ecall() = 0;
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> Ebreak() = 0;
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> Add(<span style="color:#2b91af">uint32_t</span> r0, <span style="color:#2b91af">uint32_t</span> r1, <span style="color:#2b91af">uint32_t</span> r2) = 0;
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> Sub(<span style="color:#2b91af">uint32_t</span> r0, <span style="color:#2b91af">uint32_t</span> r1, <span style="color:#2b91af">uint32_t</span> r2) = 0;
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// ...
+</span></span></span></code></pre></div><p>Each instruction handler class would derive from the <code>InstructionHandler</code> interface and override its virtual functions. For example, here&rsquo;s how the <code>Assembler</code> would do it.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#00f">class</span> <span style="color:#2b91af">Assembler</span> : <span style="color:#00f">public</span> InstructionHandler
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span><span style="color:#00f">public</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> Ecall() <span style="color:#00f">override</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> Ebreak() <span style="color:#00f">override</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> Add(<span style="color:#2b91af">uint32_t</span> r0, <span style="color:#2b91af">uint32_t</span> r1, <span style="color:#2b91af">uint32_t</span> r2) <span style="color:#00f">override</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> Sub(<span style="color:#2b91af">uint32_t</span> r0, <span style="color:#2b91af">uint32_t</span> r1, <span style="color:#2b91af">uint32_t</span> r2) <span style="color:#00f">override</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// ...
+</span></span></span></code></pre></div><p>Given this <code>InstructionHandler</code> interface, we could implement a single dispatcher function for RISC-V encoded instructions, like this.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">void</span> DispatchRv32i(InstructionHandler&amp; handler, <span style="color:#2b91af">uint32_t</span> code)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    DecodeRv32 rv(code);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">switch</span> (code) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00000073: <span style="color:#00f">return</span> handler.Ecall();
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00100073: <span style="color:#00f">return</span> handler.Ebreak();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">switch</span> (code &amp; 0xfe00707f) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00000033: <span style="color:#00f">return</span> handler.Add(rv.Rd(), rv.Rs1(), rv.Rs2());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x40000033: <span style="color:#00f">return</span> handler.Sub(rv.Rd(), rv.Rs1(), rv.Rs2());
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// ...
+</span></span></span></code></pre></div><p>Similarly, we could implement a single dispatcher function for Owl-2820 encoded instructions.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">void</span> DispatchOwl(InstructionHandler&amp; handler, <span style="color:#2b91af">uint32_t</span> code)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">using</span> <span style="color:#00f">namespace</span> decode;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">const</span> Opcode opcode = Opcode(code &amp; 0x7f);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">switch</span> (opcode)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Ecall: <span style="color:#00f">return</span> handler.Ecall();
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Ebreak: <span style="color:#00f">return</span> handler.Ebreak();
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Add: <span style="color:#00f">return</span> handler.Add(r0(ins), r1(ins), r2(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Sub: <span style="color:#00f">return</span> handler.Sub(r0(ins), r1(ins), r2(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// ...
+</span></span></span></code></pre></div><p>At first glance, an <code>InstructionHandler</code> interface is a promising approach that is easy to implement. But what are its trade-offs?</p>
+<h2 id="notational-convenience-vs-run-time-performance">Notational convenience vs run time performance</h2>
+<p>The first trade-off has to do with the mechanism by which interfaces are implemented in C++.</p>
+<p>We used a pure virtual base class to specify the <code>InstructionHandler</code> interface, then overrode its member functions in the derived classes. However, virtual functions have a small performance penalty, because each function call involves an indirect call via a <a href="https://en.wikipedia.org/wiki/Virtual_method_table">vtable</a>. This is fractionally slower than making a direct call.</p>
+<p>For some applications, and indeed for the <code>Assembler</code> and <code>Disassembler</code> classes, the extra cost of invoking a virtual function is small in proportion to the cost of the function itself.</p>
+<p>However, for the <code>OwlCpu</code> class, each function body is tiny and performs only a few native instructions itself. As a result, the cost of an indirect call is proportionately higher than it would be for functions that do more work, such as those in the <code>Disassembler</code>. This is exacerbated by the fact that we might run the <code>Assembler</code> or <code>Disassembler</code> once, but when we&rsquo;re running the VM itself then each instruction may be run many times over in a hot loop, so the overhead of indirect calls will be measurable over time.</p>
+<p>Admittedly, modern C++ compilers are remarkably good at <a href="https://quuxplusone.github.io/blog/2021/02/15/devirtualization/">devirtualization</a>, that is, replacing indirect calls with direct calls or inlined code when they detect that it is possible, but there are plenty of circumstances in which they won&rsquo;t be able to do this.</p>
+<p>In short, if we implement <code>InstructionHandler</code> in terms of an interface with virtual member functions, then in some circumstances there will be a small but measurable hit on performance.</p>
+<h2 id="notational-convenenience-vs-flexibility">Notational convenenience vs flexibility</h2>
+<p>The second trade-off is less obvious. If we use an interface then we can&rsquo;t change the return types of the member functions without changing the interface.</p>
+<p>Let&rsquo;s illustrate this by having another look at how <code>DisassembleRv32i()</code> invokes the <code>Disassembler</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">void</span> DisassembleRv32i(Disassembler&amp; d, <span style="color:#2b91af">uint32_t</span> code)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    DecodeRv32 rv(code);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">switch</span> (code) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00000073: <span style="color:#00f">return</span> d.Ecall();
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00100073: <span style="color:#00f">return</span> d.Ebreak();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">switch</span> (code &amp; 0xfe00707f) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00000033: <span style="color:#00f">return</span> d.Add(rv.Rd(), rv.Rs1(), rv.Rs2());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x40000033: <span style="color:#00f">return</span> d.Sub(rv.Rd(), rv.Rs1(), rv.Rs2());
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// ...
+</span></span></span></code></pre></div><p>Each member function of the <code>Disassembler</code> returns <code>void</code>. The assumption here is that the <code>Disassembler</code> has been pre-configured to write its output somewhere, or perhaps it is simply hard-coded to write to stdout.</p>
+<p>This is not flexible. What if we wanted to change the return type? For example, we might want our <code>Disassembler</code> to return a <code>std::string</code> rather than writing to stdout. Or we might want to separate disassembly from formatting, and have the <code>Disassembler</code> return a struct whose members consist of the opcode and its operands.</p>
+<p>If we wanted to change the return type of the <code>Disassembler</code> to <code>std::string</code>, then we might try writing something like the example below. The only thing that has changed from the code above is the return type, which has changed from <code>void</code> to <code>std::string</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>std::string DisassembleRv32i(Disassembler&amp; d, <span style="color:#2b91af">uint32_t</span> code)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    DecodeRv32 rv(code);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">switch</span> (code) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00000073: <span style="color:#00f">return</span> d.Ecall();
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00100073: <span style="color:#00f">return</span> d.Ebreak();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">switch</span> (code &amp; 0xfe00707f) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00000033: <span style="color:#00f">return</span> d.Add(rv.Rd(), rv.Rs1(), rv.Rs2());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x40000033: <span style="color:#00f">return</span> d.Sub(rv.Rd(), rv.Rs1(), rv.Rs2());
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// ...
+</span></span></span></code></pre></div><p>But if we do that, then the <code>Disassembler</code> would have to implement a different interface, because all the virtual member functions of the <code>InstructionHandler</code> interface return <code>void</code>, not <code>std::string</code>. This variation in return type is not something that we can express with a C++ interface.</p>
+<p>In other words, the second trade-off is that the syntactic convenenience of interfaces will prevent us from being able to change the return type. What we gain in convenience, we lose in flexibility.</p>
+<h2 id="why-an-interface-may-not-be-right">Why an interface may not be right</h2>
+<p>Now that we understand some of its trade-offs, choosing to use a C++ interface for the <code>InstructionHandler</code> is a decision in favour of notational convenience over both performance and flexibility.</p>
+<p>In many circumstances this would be a good choice. However, the small but significant run-time overhead of virtual dispatch when executing millions of Owl-2820 instructions per second may be acceptable when running it on a desktop CPU, but it makes it less likely that we can run an Owl-2820 VM in a compute-constrained environment such as a Raspberry Pi Pico.</p>
+<p>Let&rsquo;s look at a different approach which doesn&rsquo;t have this performance overhead.</p>
+<h1 id="instruction-handlers-as-c-concepts">Instruction handlers as C++ concepts</h1>
+<p>Specifying an <code>InstructionHandler</code> using an interface is an example of run-time polymorphism. But what if we could use compile-time polymorphism instead? In C++, that usually takes the form of <a href="https://en.cppreference.com/w/cpp/language/templates">templates</a>. But rather than going for simple, unconstrained templates, let&rsquo;s look at how we could use C++ concepts, which are <a href="https://en.cppreference.com/w/cpp/language/constraints">named constraints on template arguments</a>, that were introduced in C++ 20.</p>
+<p>Our idea of an instruction handler has two parts to it.</p>
+<ol>
+<li>We want to specify the member functions of an instruction handler, and the types of their parameters.</li>
+<li>We want to specify the return type of the member functions required by an instruction handler.</li>
+</ol>
+<p>We were able to specify (1) with an interface. But we were not able to specify (2) in this manner.</p>
+<p>However, we can specify both if we implement <code>InstructionHandler</code> as a C++ concept.</p>
+<h2 id="using-the-instructionhandler-concept-in-dispatcher-functions">Using the InstructionHandler concept in dispatcher functions</h2>
+<p>Using an <code>InstructionHandler</code> concept will enable us to write a function template for <code>DispatchRv32i()</code> that works with any type for which the requirements of the <code>InstructionHandler</code> concept are satisfied.</p>
+<p>In other words, we can write <code>DispatchRv32i()</code> as a function template like this.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#00f">template</span> &lt;<span style="color:#00f">typename</span> T&gt;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">requires</span> InstructionHandler&lt;T&gt;
+</span></span><span style="display:flex;"><span>T::Item DispatchRv32i(T&amp; handler, <span style="color:#2b91af">uint32_t</span> code)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    DecodeRv32 rv(code);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">switch</span> (code) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00000073: <span style="color:#00f">return</span> handler.Ecall();
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00100073: <span style="color:#00f">return</span> handler.Ebreak();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">switch</span> (code &amp; 0xfe00707f) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00000033: <span style="color:#00f">return</span> handler.Add(rv.Rd(), rv.Rs1(), rv.Rs2());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x40000033: <span style="color:#00f">return</span> handler.Sub(rv.Rd(), rv.Rs1(), rv.Rs2());
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// ...
+</span></span></span></code></pre></div><p>Or, more succinctly, like this.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#00f">auto</span> DispatchRv32i(InstructionHandler <span style="color:#00f">auto</span>&amp; handler, <span style="color:#2b91af">uint32_t</span> code) -&gt; <span style="color:#00f">auto</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    DecodeRv32 rv(code);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">switch</span> (code) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00000073: <span style="color:#00f">return</span> handler.Ecall();
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00100073: <span style="color:#00f">return</span> handler.Ebreak();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">switch</span> (code &amp; 0xfe00707f) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x00000033: <span style="color:#00f">return</span> handler.Add(rv.Rd(), rv.Rs1(), rv.Rs2());
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> 0x40000033: <span style="color:#00f">return</span> handler.Sub(rv.Rd(), rv.Rs1(), rv.Rs2());
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// ...
+</span></span></span></code></pre></div><p>What&rsquo;s more, we can do the same for <code>DispatchOwl()</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#00f">auto</span> DispatchOwl(InstructionHandler <span style="color:#00f">auto</span>&amp; handler, <span style="color:#2b91af">uint32_t</span> code) -&gt; <span style="color:#00f">auto</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">using</span> <span style="color:#00f">namespace</span> decode;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">const</span> Opcode opcode = Opcode(code &amp; 0x7f);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">switch</span> (opcode)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Ecall: <span style="color:#00f">return</span> handler.Ecall();
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Ebreak: <span style="color:#00f">return</span> handler.Ebreak();
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Add: <span style="color:#00f">return</span> handler.Add(r0(ins), r1(ins), r2(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> Opcode::Sub: <span style="color:#00f">return</span> handler.Sub(r0(ins), r1(ins), r2(ins));
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// ...
+</span></span></span></code></pre></div><h2 id="specifying-the-instructionhandler-concept">Specifying the InstructionHandler concept</h2>
+<p>Now that we&rsquo;ve seen how to use the <code>InstructionHandler</code> concept from dispatcher functions, let&rsquo;s look at how we can specify the concept itself in C++ using a <a href="https://en.cppreference.com/w/cpp/language/requires">requires-expression</a>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#00f">template</span>&lt;<span style="color:#00f">typename</span> T&gt;
+</span></span><span style="display:flex;"><span><span style="color:#00f">concept</span> InstructionHandler =
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">requires</span>(T t, <span style="color:#2b91af">uint32_t</span> r0, <span style="color:#2b91af">uint32_t</span> r1, <span style="color:#2b91af">uint32_t</span> r2, <span style="color:#2b91af">uint32_t</span> shift, <span style="color:#2b91af">int32_t</span> offs12,
+</span></span><span style="display:flex;"><span>                 <span style="color:#2b91af">int32_t</span> imm12, <span style="color:#2b91af">int32_t</span> offs20, <span style="color:#2b91af">uint32_t</span> uimm20, <span style="color:#2b91af">uint32_t</span> ins) {
+</span></span><span style="display:flex;"><span>            <span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>            <span style="color:#00f">typename</span> T::Item;
+</span></span><span style="display:flex;"><span>            <span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>            { t.Ecall() } -&gt; std::same_as&lt;<span style="color:#00f">typename</span> T::Item&gt;;
+</span></span><span style="display:flex;"><span>            { t.Ebreak() } -&gt; std::same_as&lt;<span style="color:#00f">typename</span> T::Item&gt;;
+</span></span><span style="display:flex;"><span>            <span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>            { t.Add(r0, r1, r2) } -&gt; std::same_as&lt;<span style="color:#00f">typename</span> T::Item&gt;;
+</span></span><span style="display:flex;"><span>            { t.Sub(r0, r1, r2) } -&gt; std::same_as&lt;<span style="color:#00f">typename</span> T::Item&gt;;
+</span></span><span style="display:flex;"><span>            { t.Sll(r0, r1, r2) } -&gt; std::same_as&lt;<span style="color:#00f">typename</span> T::Item&gt;;
+</span></span><span style="display:flex;"><span>            <span style="color:#008000">// ...
+</span></span></span></code></pre></div><p>You can read this as saying that for a class <code>T</code> to satisfy the requirements of the <code>InstructionHandler</code> concept, then it must be possible to compile the expressions in braces on the left, and that the return type of each expression should be the same as an associated type, <code>T::Item</code>.</p>
+<h2 id="enforcing-the-instructionhandler-concept">Enforcing the InstructionHandler concept</h2>
+<p>With the interface based approach there was an obvious, direct relationship between each derived class and the <code>InstructionHandler</code>. With that approach, we wrote classes by deriving them from <code>InstructionHandler</code> and overriding its virtual member functions. If we had tried to do this with a class that didn&rsquo;t override all of the pure virtual functions from <code>InstructionHandler</code> then we would have had a compilation error.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#00f">class</span> <span style="color:#2b91af">OwlCpu</span> : <span style="color:#00f">public</span> InstructionHandler
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span><span style="color:#00f">public</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> Ecall() <span style="color:#00f">override</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// ...
+</span></span></span></code></pre></div><p>Unfortunately, the relationship between a C++ concept and a class that meets that concept&rsquo;s requirements is less obvious.</p>
+<p>We can, however, make it clearer and enforce the relationship between a class and the <code>InstructionHandler</code> concept that it implements, by placing a <code>static_assert()</code> immediately after the class declaration, as shown below for <code>OwlCpu</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#00f">class</span> <span style="color:#2b91af">OwlCpu</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// ...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">static_assert</span>(InstructionHandler&lt;OwlCpu&gt;); <span style="color:#008000">// If OwlCpu doesn&#39;t meet the requirements of the concept
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>                                           <span style="color:#008000">// then compilation will fail _here_.
+</span></span></span></code></pre></div><p>This will cause compilation to fail if the class doesn&rsquo;t meet the requirements of the concept. And, perhaps more importantly, it will fail on the line containing the <code>static_assert()</code>, which is a huge aid to diagnosing problems because the line containing the error is very close to the code that caused it. Without the <code>static_assert()</code>, the errors would occur elsewhere in the code and the problem would be far less obvious.</p>
+<h1 id="modifying-instruction-handlers">Modifying instruction handlers</h1>
+<p>Finally, we get to implementation. We know how to specify the <code>InstructionHandler</code> concept and how to enforce it, so let&rsquo;s modify our convention-based instruction handlers, <code>Assembler</code>, <code>Disassembler</code>, and <code>OwlCpu</code> to work with it.</p>
+<p>We can express <code>Assembler</code>, <code>Disassembler</code> and <code>OwlCpu</code> as <code>InstructionHandler</code>s by giving each of them an associated <code>Item</code> type, and by implementing member functions that match the <code>InstructionHandler</code> concept&rsquo;s requirements. We can also use a <code>static_assert()</code> after the class to cause compilation to fail if the class doesn&rsquo;t meet the requirements of the concept.</p>
+<h2 id="modifying-assembler">Modifying Assembler</h2>
+<p>Here&rsquo;s how we can modify <code>Assembler</code> to work with the <code>InstructionHandler</code> concept.</p>
+<p>The associated <code>Item</code> type is aliased to <code>void</code>, so for the <code>Assembler</code> each member function required by the <code>InstructionHandler</code> concept must return <code>void</code>. The <code>static_assert()</code> after the class means that we&rsquo;ll get a compilation error if <code>Assembler</code> doesn&rsquo;t meet all the requirements of the <code>InstructionHandler</code> concept.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#00f">class</span> <span style="color:#2b91af">Assembler</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span><span style="color:#00f">public</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">using</span> Item = <span style="color:#2b91af">void</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> Ecall()
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        Emit(encode::opc(Opcode::Ecall));
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> Ebreak()
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        Emit(encode::opc(Opcode::Ebreak));
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> Add(<span style="color:#2b91af">uint32_t</span> r0, <span style="color:#2b91af">uint32_t</span> r1, <span style="color:#2b91af">uint32_t</span> r2)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        Emit(encode::opc(Opcode::Add) | encode::r0(r0) | encode::r1(r1) | encode::r2(r2));
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> Sub(<span style="color:#2b91af">uint32_t</span> r0, <span style="color:#2b91af">uint32_t</span> r1, <span style="color:#2b91af">uint32_t</span> r2)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        Emit(encode::opc(Opcode::Sub) | encode::r0(r0) | encode::r1(r1) | encode::r2(r2));
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// ...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">static_assert</span>(InstructionHandler&lt;Assembler&gt;);
+</span></span></code></pre></div><h2 id="modifying-owlcpu">Modifying OwlCpu</h2>
+<p>Here&rsquo;s how we can modify <code>OwlCpu</code>.</p>
+<p>As with <code>Assembler</code>, the associated <code>Item</code> type is aliased to <code>void</code>, so for <code>OwlCpu</code> each member function required by the <code>InstructionHandler</code> concept must return <code>void</code>. Again, the <code>static_assert()</code> after the class will cause a compilation error if <code>OwlCpu</code> doesn&rsquo;t meet the requirements of <code>InstructionHandler</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#00f">class</span> <span style="color:#2b91af">OwlCpu</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span><span style="color:#00f">public</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">using</span> Item = <span style="color:#2b91af">void</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> Ecall()
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> <span style="color:#00f">auto</span> syscall = Syscall(x[a7]);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">switch</span> (syscall)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#008000">// ...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> Ebreak()
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        done = true;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> Add(<span style="color:#2b91af">uint32_t</span> r0, <span style="color:#2b91af">uint32_t</span> r1, <span style="color:#2b91af">uint32_t</span> r2)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// r0 &lt;- r1 + r2
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        x[r0] = x[r1] + x[r2];
+</span></span><span style="display:flex;"><span>        x[0] = 0; <span style="color:#008000">// Ensure x0 is always zero.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">void</span> Sub(<span style="color:#2b91af">uint32_t</span> r0, <span style="color:#2b91af">uint32_t</span> r1, <span style="color:#2b91af">uint32_t</span> r2)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// r0 &lt;- r1 + r2
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        x[r0] = x[r1] - x[r2];
+</span></span><span style="display:flex;"><span>        x[0] = 0; <span style="color:#008000">// Ensure x0 is always zero.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// ...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">static_assert</span>(InstructionHandler&lt;Assembler&gt;);
+</span></span></code></pre></div><h2 id="modifying-disassembler">Modifying Disassembler</h2>
+<p>Finally, here&rsquo;s how we can modify <code>Disassembler</code>.</p>
+<p>In this case, the associated <code>Item</code> type is aliased to <code>std::string</code>, so each member function of <code>Disassembler</code> that is required by the <code>InstructionHandler</code> concept must also return <code>std::string</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#00f">class</span> <span style="color:#2b91af">Disassembler</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span><span style="color:#00f">public</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">using</span> Item = std::string;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    std::string Ecall()
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> <span style="color:#a31515">&#34;ecall&#34;</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    std::string Ebreak()
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> <span style="color:#a31515">&#34;ebreak&#34;</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    std::string Add(<span style="color:#2b91af">uint32_t</span> r0, <span style="color:#2b91af">uint32_t</span> r1, <span style="color:#2b91af">uint32_t</span> r2)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> std::format(<span style="color:#a31515">&#34;add {}, {}, {}&#34;</span>, regnames[r0], regnames[r1], regnames[r2]);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    std::string Sub(<span style="color:#2b91af">uint32_t</span> r0, <span style="color:#2b91af">uint32_t</span> r1, <span style="color:#2b91af">uint32_t</span> r2)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> std::format(<span style="color:#a31515">&#34;sub {}, {}, {}&#34;</span>, regnames[r0], regnames[r1], regnames[r2]);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// ...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">static_assert</span>(InstructionHandler&lt;Disassembler&gt;);
+</span></span></code></pre></div><h1 id="summary">Summary</h1>
+<p>This post has largely been an exploration of the trade-offs between C++ interfaces and concepts when representing <code>InstructionHandler</code> in C++.</p>
+<p>Given the choice between using run-time polymorphism in the form of C++ interfaces, and compile-time polymorphism in the form of C++ concepts, I&rsquo;ve chosen to take the compile-time route, knowing that the small performance hit of virtual dispatch in the interface-based approach would have been multiplied many times over when running thousands or millions of instructions in the Owl-2820 VM.</p>
+<p>I have plans for the Owl-2820 VM that may involve running it in compute-constrained environments, and I would like to get as much performance out of it as possible rather than prematurely pessimizing against performance by choosing virtual dispatch.</p>
+<h2 id="show-me-the-code">Show me the code</h2>
+<p>Until now, I&rsquo;ve provided the code as a single source file on <a href="https://godbolt.org/">Compiler Explorer</a>. However, for this post I&rsquo;ve broken it up into multiple files and made it build with <a href="https://cmake.org/">CMake</a>.</p>
+<p>You can find the code for this post, along with build instructions, in the <a href="https://github.com/badlydrawnrod/owl-cpu/tree/posts/lbavm-011">posts/lbavm-011</a> branch of the <a href="https://github.com/badlydrawnrod/owl-cpu">Owl CPU repo</a> on GitHub.</p>
+        </div>
+        
+    </article>
+</main>
+<aside class="wrapper">
+    <div>
+        <div>
+            <h3>Latest Posts</h3>
+        </div>
+        <div>
+            <ul>
+                
+                <li><a href="/posts/2024/10/05/lbavm-011/">Let&#39;s build a virtual machine: Part 11 - Revisiting the instruction handler</a></li>
+                
+                <li><a href="/posts/2024/09/08/lbavm-010/">Let&#39;s build a virtual machine: Part 10 - Running RISC-V directly</a></li>
+                
+                <li><a href="/posts/2024/09/01/lbavm-009/">Let&#39;s build a virtual machine: Part 9 - Running compiled C on the Owl-2820 CPU</a></li>
+                
+                <li><a href="/posts/2024/08/20/lbavm-008/">Let&#39;s build a virtual machine: Part 8 - Using a C compiler to target the Owl-2820 CPU</a></li>
+                
+                <li><a href="/posts/2024/07/30/lbavm-007/">Let&#39;s build a virtual machine: Part 7 - Draw the rest of the Owl</a></li>
+                
+            </ul>
+        </div>
+    </div>
+</aside> 
+	<footer class="wrapper">
+	<p>&copy; 2024 <a href="https://badlydrawnrod.github.io/">My Badly Drawn Self</a></p>
+</footer>
+
+</body>
+</html>
