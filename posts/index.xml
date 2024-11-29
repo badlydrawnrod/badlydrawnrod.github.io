@@ -2,227 +2,227 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Posts on My Badly Drawn Self</title>
-    <link>http://localhost:1313/posts/</link>
+    <link>https://badlydrawnrod.github.io/posts/</link>
     <description>Recent content in Posts on My Badly Drawn Self</description>
     <generator>Hugo</generator>
     <language>en</language>
     <lastBuildDate>Fri, 29 Nov 2024 13:37:00 +0000</lastBuildDate>
-    <atom:link href="http://localhost:1313/posts/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://badlydrawnrod.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Let&#39;s build a virtual machine: Part 12 - Dealing with data</title>
-      <link>http://localhost:1313/posts/2024/11/29/lbavm-012/</link>
+      <link>https://badlydrawnrod.github.io/posts/2024/11/29/lbavm-012/</link>
       <pubDate>Fri, 29 Nov 2024 13:37:00 +0000</pubDate>
-      <guid>http://localhost:1313/posts/2024/11/29/lbavm-012/</guid>
+      <guid>https://badlydrawnrod.github.io/posts/2024/11/29/lbavm-012/</guid>
       <description>&lt;p&gt;How is data represented in an ELF file? And what is this cryptically named &lt;code&gt;bss&lt;/code&gt; section?&lt;/p&gt;</description>
     </item>
     <item>
       <title>Let&#39;s build a virtual machine: Part 11 - Revisiting the instruction handler</title>
-      <link>http://localhost:1313/posts/2024/10/05/lbavm-011/</link>
+      <link>https://badlydrawnrod.github.io/posts/2024/10/05/lbavm-011/</link>
       <pubDate>Sat, 05 Oct 2024 14:45:00 +0100</pubDate>
-      <guid>http://localhost:1313/posts/2024/10/05/lbavm-011/</guid>
+      <guid>https://badlydrawnrod.github.io/posts/2024/10/05/lbavm-011/</guid>
       <description>&lt;p&gt;Expressing the idea of an instruction handler using C++ concepts.&lt;/p&gt;</description>
     </item>
     <item>
       <title>Let&#39;s build a virtual machine: Part 10 - Running RISC-V directly</title>
-      <link>http://localhost:1313/posts/2024/09/08/lbavm-010/</link>
+      <link>https://badlydrawnrod.github.io/posts/2024/09/08/lbavm-010/</link>
       <pubDate>Sun, 08 Sep 2024 14:30:00 +0100</pubDate>
-      <guid>http://localhost:1313/posts/2024/09/08/lbavm-010/</guid>
+      <guid>https://badlydrawnrod.github.io/posts/2024/09/08/lbavm-010/</guid>
       <description>&lt;p&gt;Modfiying the Owl-2820 VM to decode RISC-V instructions directly.&lt;/p&gt;</description>
     </item>
     <item>
       <title>Let&#39;s build a virtual machine: Part 9 - Running compiled C on the Owl-2820 CPU</title>
-      <link>http://localhost:1313/posts/2024/09/01/lbavm-009/</link>
+      <link>https://badlydrawnrod.github.io/posts/2024/09/01/lbavm-009/</link>
       <pubDate>Sat, 31 Aug 2024 14:40:00 +0100</pubDate>
-      <guid>http://localhost:1313/posts/2024/09/01/lbavm-009/</guid>
+      <guid>https://badlydrawnrod.github.io/posts/2024/09/01/lbavm-009/</guid>
       <description>&lt;p&gt;Loading and running a compiled image on an Owl-2820 VM.&lt;/p&gt;</description>
     </item>
     <item>
       <title>Let&#39;s build a virtual machine: Part 8 - Using a C compiler to target the Owl-2820 CPU</title>
-      <link>http://localhost:1313/posts/2024/08/20/lbavm-008/</link>
+      <link>https://badlydrawnrod.github.io/posts/2024/08/20/lbavm-008/</link>
       <pubDate>Tue, 20 Aug 2024 22:30:00 +0100</pubDate>
-      <guid>http://localhost:1313/posts/2024/08/20/lbavm-008/</guid>
+      <guid>https://badlydrawnrod.github.io/posts/2024/08/20/lbavm-008/</guid>
       <description>&lt;p&gt;Using a C compiler to create programs for an Owl-2820 VM.&lt;/p&gt;</description>
     </item>
     <item>
       <title>Let&#39;s build a virtual machine: Part 7 - Draw the rest of the Owl</title>
-      <link>http://localhost:1313/posts/2024/07/30/lbavm-007/</link>
+      <link>https://badlydrawnrod.github.io/posts/2024/07/30/lbavm-007/</link>
       <pubDate>Tue, 30 Jul 2024 20:15:00 +0100</pubDate>
-      <guid>http://localhost:1313/posts/2024/07/30/lbavm-007/</guid>
+      <guid>https://badlydrawnrod.github.io/posts/2024/07/30/lbavm-007/</guid>
       <description>&lt;p&gt;Implementing the remaining instructions in the Owl-2820 instruction set.&lt;/p&gt;</description>
     </item>
     <item>
       <title>Let&#39;s build a virtual machine: Part 6 - System calls</title>
-      <link>http://localhost:1313/posts/2024/07/21/lbavm-006/</link>
+      <link>https://badlydrawnrod.github.io/posts/2024/07/21/lbavm-006/</link>
       <pubDate>Sun, 21 Jul 2024 16:30:00 +0100</pubDate>
-      <guid>http://localhost:1313/posts/2024/07/21/lbavm-006/</guid>
+      <guid>https://badlydrawnrod.github.io/posts/2024/07/21/lbavm-006/</guid>
       <description>&lt;p&gt;Adding system calls.&lt;/p&gt;</description>
     </item>
     <item>
       <title>Let&#39;s build a virtual machine: Part 5 - Memory</title>
-      <link>http://localhost:1313/posts/2024/07/05/lbavm-005/</link>
+      <link>https://badlydrawnrod.github.io/posts/2024/07/05/lbavm-005/</link>
       <pubDate>Fri, 05 Jul 2024 17:30:00 +0100</pubDate>
-      <guid>http://localhost:1313/posts/2024/07/05/lbavm-005/</guid>
+      <guid>https://badlydrawnrod.github.io/posts/2024/07/05/lbavm-005/</guid>
       <description>&lt;p&gt;Implementing memory.&lt;/p&gt;</description>
     </item>
     <item>
       <title>Let&#39;s build a virtual machine: Part 4 - Call, return, and calling conventions</title>
-      <link>http://localhost:1313/posts/2024/06/11/lbavm-004/</link>
+      <link>https://badlydrawnrod.github.io/posts/2024/06/11/lbavm-004/</link>
       <pubDate>Tue, 11 Jun 2024 21:00:00 +0100</pubDate>
-      <guid>http://localhost:1313/posts/2024/06/11/lbavm-004/</guid>
+      <guid>https://badlydrawnrod.github.io/posts/2024/06/11/lbavm-004/</guid>
       <description>&lt;p&gt;In which we implement call and return, then discuss the need for calling conventions.&lt;/p&gt;</description>
     </item>
     <item>
       <title>Let&#39;s build a virtual machine: Part 3 - Adding labels to the assembler</title>
-      <link>http://localhost:1313/posts/2024/05/05/lbavm-003/</link>
+      <link>https://badlydrawnrod.github.io/posts/2024/05/05/lbavm-003/</link>
       <pubDate>Sun, 05 May 2024 22:00:00 +0100</pubDate>
-      <guid>http://localhost:1313/posts/2024/05/05/lbavm-003/</guid>
+      <guid>https://badlydrawnrod.github.io/posts/2024/05/05/lbavm-003/</guid>
       <description>&lt;p&gt;Adding labels to the assembler.&lt;/p&gt;</description>
     </item>
     <item>
       <title>Let&#39;s build a virtual machine: Part 2 - The main loop and assembler</title>
-      <link>http://localhost:1313/posts/2024/04/07/lbavm-002/</link>
+      <link>https://badlydrawnrod.github.io/posts/2024/04/07/lbavm-002/</link>
       <pubDate>Sun, 07 Apr 2024 16:00:00 +0100</pubDate>
-      <guid>http://localhost:1313/posts/2024/04/07/lbavm-002/</guid>
+      <guid>https://badlydrawnrod.github.io/posts/2024/04/07/lbavm-002/</guid>
       <description>&lt;p&gt;Implementing just enough of the Owl-2820 CPU to run Fibonacci.&lt;/p&gt;</description>
     </item>
     <item>
       <title>Let&#39;s build a virtual machine: Part 1 - Registers and instructions</title>
-      <link>http://localhost:1313/posts/2024/04/02/lbavm-001/</link>
+      <link>https://badlydrawnrod.github.io/posts/2024/04/02/lbavm-001/</link>
       <pubDate>Tue, 02 Apr 2024 19:00:00 +0100</pubDate>
-      <guid>http://localhost:1313/posts/2024/04/02/lbavm-001/</guid>
+      <guid>https://badlydrawnrod.github.io/posts/2024/04/02/lbavm-001/</guid>
       <description>&lt;p&gt;Implementing registers and instructions for the Owl-2820 CPU.&lt;/p&gt;</description>
     </item>
     <item>
       <title>Let&#39;s build a virtual machine: Part 0 - Introduction</title>
-      <link>http://localhost:1313/posts/2024/03/17/lbavm-000-intro/</link>
+      <link>https://badlydrawnrod.github.io/posts/2024/03/17/lbavm-000-intro/</link>
       <pubDate>Sun, 17 Mar 2024 00:00:00 +0000</pubDate>
-      <guid>http://localhost:1313/posts/2024/03/17/lbavm-000-intro/</guid>
+      <guid>https://badlydrawnrod.github.io/posts/2024/03/17/lbavm-000-intro/</guid>
       <description>&lt;p&gt;In this series we&amp;rsquo;re going to implement a virtual machine from scratch.&lt;/p&gt;</description>
     </item>
     <item>
       <title>It&#39;s time to learn Rust</title>
-      <link>http://localhost:1313/posts/2023/04/07/time-to-learn-rust/</link>
+      <link>https://badlydrawnrod.github.io/posts/2023/04/07/time-to-learn-rust/</link>
       <pubDate>Fri, 07 Apr 2023 18:28:49 +0100</pubDate>
-      <guid>http://localhost:1313/posts/2023/04/07/time-to-learn-rust/</guid>
+      <guid>https://badlydrawnrod.github.io/posts/2023/04/07/time-to-learn-rust/</guid>
       <description></description>
     </item>
     <item>
       <title>Mandatory Copy Elision in C&#43;&#43;</title>
-      <link>http://localhost:1313/posts/2022/02/27/mandatory-copy-elision/</link>
+      <link>https://badlydrawnrod.github.io/posts/2022/02/27/mandatory-copy-elision/</link>
       <pubDate>Sun, 27 Feb 2022 15:00:00 +0000</pubDate>
-      <guid>http://localhost:1313/posts/2022/02/27/mandatory-copy-elision/</guid>
+      <guid>https://badlydrawnrod.github.io/posts/2022/02/27/mandatory-copy-elision/</guid>
       <description>&lt;p&gt;A look behind the scenes of mandatory copy elision.&lt;/p&gt;</description>
     </item>
     <item>
       <title>CTAD and Deduction Guides in C&#43;&#43;</title>
-      <link>http://localhost:1313/posts/2022/01/23/ctad/</link>
+      <link>https://badlydrawnrod.github.io/posts/2022/01/23/ctad/</link>
       <pubDate>Sun, 23 Jan 2022 14:25:00 +0000</pubDate>
-      <guid>http://localhost:1313/posts/2022/01/23/ctad/</guid>
+      <guid>https://badlydrawnrod.github.io/posts/2022/01/23/ctad/</guid>
       <description>&lt;p&gt;A brief look at CTAD and deduction guides.&lt;/p&gt;</description>
     </item>
     <item>
       <title>Forgettable Git</title>
-      <link>http://localhost:1313/posts/2022/01/16/git/</link>
+      <link>https://badlydrawnrod.github.io/posts/2022/01/16/git/</link>
       <pubDate>Sun, 16 Jan 2022 16:07:39 +0000</pubDate>
-      <guid>http://localhost:1313/posts/2022/01/16/git/</guid>
+      <guid>https://badlydrawnrod.github.io/posts/2022/01/16/git/</guid>
       <description>&lt;p&gt;Git commands that I usually forget.&lt;/p&gt;</description>
     </item>
     <item>
       <title>Bump Allocators in C&#43;&#43;</title>
-      <link>http://localhost:1313/posts/2021/12/30/monotonic_buffer_resource/</link>
+      <link>https://badlydrawnrod.github.io/posts/2021/12/30/monotonic_buffer_resource/</link>
       <pubDate>Thu, 30 Dec 2021 16:30:00 +0000</pubDate>
-      <guid>http://localhost:1313/posts/2021/12/30/monotonic_buffer_resource/</guid>
+      <guid>https://badlydrawnrod.github.io/posts/2021/12/30/monotonic_buffer_resource/</guid>
       <description>&lt;p&gt;How do I implement a C++ bump allocator that works with standard library containers?&lt;/p&gt;</description>
     </item>
     <item>
       <title>Polymorphic Allocators in C&#43;&#43;</title>
-      <link>http://localhost:1313/posts/2021/12/28/allocators/</link>
+      <link>https://badlydrawnrod.github.io/posts/2021/12/28/allocators/</link>
       <pubDate>Tue, 28 Dec 2021 14:15:00 +0000</pubDate>
-      <guid>http://localhost:1313/posts/2021/12/28/allocators/</guid>
+      <guid>https://badlydrawnrod.github.io/posts/2021/12/28/allocators/</guid>
       <description>&lt;p&gt;C++17 introduced polymorphic allocators, but what problem do they solve?&lt;/p&gt;</description>
     </item>
     <item>
       <title>Exploring Module Linkage in C&#43;&#43;20</title>
-      <link>http://localhost:1313/posts/2021/12/19/cpp-modules-2/</link>
+      <link>https://badlydrawnrod.github.io/posts/2021/12/19/cpp-modules-2/</link>
       <pubDate>Sat, 18 Dec 2021 16:00:00 +0000</pubDate>
-      <guid>http://localhost:1313/posts/2021/12/19/cpp-modules-2/</guid>
+      <guid>https://badlydrawnrod.github.io/posts/2021/12/19/cpp-modules-2/</guid>
       <description>&lt;p&gt;C++20 introduced the idea of module linkage, but it seems to be somewhat inconsistently implemented.&lt;/p&gt;</description>
     </item>
     <item>
       <title>Compiling C&#43;&#43;20 Modules with clang and MSVC</title>
-      <link>http://localhost:1313/posts/2021/12/12/cpp-modules/</link>
+      <link>https://badlydrawnrod.github.io/posts/2021/12/12/cpp-modules/</link>
       <pubDate>Sun, 12 Dec 2021 11:47:42 +0000</pubDate>
-      <guid>http://localhost:1313/posts/2021/12/12/cpp-modules/</guid>
+      <guid>https://badlydrawnrod.github.io/posts/2021/12/12/cpp-modules/</guid>
       <description>&lt;p&gt;Command lines for compiling and using C++20 modules from both clang and MSVC.&lt;/p&gt;</description>
     </item>
     <item>
       <title>Why I wrote Arviss</title>
-      <link>http://localhost:1313/posts/2021/11/28/why_arviss/</link>
+      <link>https://badlydrawnrod.github.io/posts/2021/11/28/why_arviss/</link>
       <pubDate>Sun, 28 Nov 2021 16:02:20 +0000</pubDate>
-      <guid>http://localhost:1313/posts/2021/11/28/why_arviss/</guid>
+      <guid>https://badlydrawnrod.github.io/posts/2021/11/28/why_arviss/</guid>
       <description>&lt;p&gt;Why did I write &lt;a href=&#34;https://github.com/badlydrawnrod/arviss&#34;&gt;Arviss&lt;/a&gt;, a RISC-V instruction set simulator?&lt;/p&gt;</description>
     </item>
     <item>
       <title>How I went to C</title>
-      <link>http://localhost:1313/posts/2021/11/15/how-i-went-to-c/</link>
+      <link>https://badlydrawnrod.github.io/posts/2021/11/15/how-i-went-to-c/</link>
       <pubDate>Mon, 15 Nov 2021 23:01:38 +0000</pubDate>
-      <guid>http://localhost:1313/posts/2021/11/15/how-i-went-to-c/</guid>
+      <guid>https://badlydrawnrod.github.io/posts/2021/11/15/how-i-went-to-c/</guid>
       <description>&lt;p&gt;My Twitter name says that I&amp;rsquo;m the old C dog, so you may be surprised to hear that it took me quite a while to warm to C.&lt;/p&gt;</description>
     </item>
     <item>
       <title>In the beginning</title>
-      <link>http://localhost:1313/posts/2021/11/12/in-the-beginning/</link>
+      <link>https://badlydrawnrod.github.io/posts/2021/11/12/in-the-beginning/</link>
       <pubDate>Fri, 12 Nov 2021 22:45:31 +0000</pubDate>
-      <guid>http://localhost:1313/posts/2021/11/12/in-the-beginning/</guid>
+      <guid>https://badlydrawnrod.github.io/posts/2021/11/12/in-the-beginning/</guid>
       <description>&lt;p&gt;When my parents moved house they found an old story that I wrote for my sixth form college&amp;rsquo;s student magazine.&lt;/p&gt;</description>
     </item>
     <item>
       <title>How to expose typesafe handles in a C API</title>
-      <link>http://localhost:1313/posts/2020/08/23/handles/</link>
+      <link>https://badlydrawnrod.github.io/posts/2020/08/23/handles/</link>
       <pubDate>Sun, 23 Aug 2020 20:00:00 +0100</pubDate>
-      <guid>http://localhost:1313/posts/2020/08/23/handles/</guid>
+      <guid>https://badlydrawnrod.github.io/posts/2020/08/23/handles/</guid>
       <description>&lt;p&gt;If you have a C API, how do you pass handles to it in a typesafe manner?&lt;/p&gt;</description>
     </item>
     <item>
       <title>How to save and restore Windows console modes</title>
-      <link>http://localhost:1313/posts/2020/08/15/</link>
+      <link>https://badlydrawnrod.github.io/posts/2020/08/15/</link>
       <pubDate>Wed, 12 Aug 2020 12:30:00 +0100</pubDate>
-      <guid>http://localhost:1313/posts/2020/08/15/</guid>
+      <guid>https://badlydrawnrod.github.io/posts/2020/08/15/</guid>
       <description>&lt;p&gt;How do you save and restore console modes in Windows?&lt;/p&gt;</description>
     </item>
     <item>
       <title>How to detect Emscripten in CMake</title>
-      <link>http://localhost:1313/posts/2020/07/05/cmake-detect-emscripten/</link>
+      <link>https://badlydrawnrod.github.io/posts/2020/07/05/cmake-detect-emscripten/</link>
       <pubDate>Sun, 05 Jul 2020 15:43:00 +0100</pubDate>
-      <guid>http://localhost:1313/posts/2020/07/05/cmake-detect-emscripten/</guid>
+      <guid>https://badlydrawnrod.github.io/posts/2020/07/05/cmake-detect-emscripten/</guid>
       <description>&lt;h1 id=&#34;problem&#34;&gt;Problem&lt;/h1&gt;&#xA;&lt;p&gt;You&amp;rsquo;re using &lt;strong&gt;Emscripten&lt;/strong&gt; and would like to detect this in your &lt;strong&gt;CMakeLists.txt&lt;/strong&gt; so that you can something different for &lt;strong&gt;Emscripten&lt;/strong&gt; builds.&lt;/p&gt;</description>
     </item>
     <item>
       <title>How to save downloaded files to IndexedDB with Emscripten</title>
-      <link>http://localhost:1313/posts/2020/06/07/emscripten-indexeddb/</link>
+      <link>https://badlydrawnrod.github.io/posts/2020/06/07/emscripten-indexeddb/</link>
       <pubDate>Sun, 07 Jun 2020 12:00:00 +0100</pubDate>
-      <guid>http://localhost:1313/posts/2020/06/07/emscripten-indexeddb/</guid>
+      <guid>https://badlydrawnrod.github.io/posts/2020/06/07/emscripten-indexeddb/</guid>
       <description>&lt;h1 id=&#34;problem&#34;&gt;Problem&lt;/h1&gt;&#xA;&lt;p&gt;You&amp;rsquo;re using &lt;strong&gt;Emscripten&lt;/strong&gt; and would like to cache downloaded files to &lt;strong&gt;IndexedDb&lt;/strong&gt; so that they appear in the &lt;strong&gt;IDBFS&lt;/strong&gt; filesystem.&lt;/p&gt;</description>
     </item>
     <item>
       <title>How to build and run an Emscripten project from CLion on Windows</title>
-      <link>http://localhost:1313/posts/2020/05/30/emscripten-project-in-clion/</link>
+      <link>https://badlydrawnrod.github.io/posts/2020/05/30/emscripten-project-in-clion/</link>
       <pubDate>Sat, 30 May 2020 10:20:00 +0100</pubDate>
-      <guid>http://localhost:1313/posts/2020/05/30/emscripten-project-in-clion/</guid>
+      <guid>https://badlydrawnrod.github.io/posts/2020/05/30/emscripten-project-in-clion/</guid>
       <description>&lt;h1 id=&#34;problem&#34;&gt;Problem&lt;/h1&gt;&#xA;&lt;p&gt;You&amp;rsquo;re developing on Windows and have an existing &lt;strong&gt;Emscripten&lt;/strong&gt; project that builds and runs from the command line, but you&amp;rsquo;d like to do this from the &lt;strong&gt;CLion&lt;/strong&gt; IDE.&lt;/p&gt;</description>
     </item>
     <item>
       <title>How to use Emscripten with CMake on Windows</title>
-      <link>http://localhost:1313/posts/2020/05/19/emcmake-with-emscripten/</link>
+      <link>https://badlydrawnrod.github.io/posts/2020/05/19/emcmake-with-emscripten/</link>
       <pubDate>Tue, 19 May 2020 21:57:44 +0100</pubDate>
-      <guid>http://localhost:1313/posts/2020/05/19/emcmake-with-emscripten/</guid>
+      <guid>https://badlydrawnrod.github.io/posts/2020/05/19/emcmake-with-emscripten/</guid>
       <description>&lt;h1 id=&#34;problem&#34;&gt;Problem&lt;/h1&gt;&#xA;&lt;p&gt;You&amp;rsquo;ve installed &lt;strong&gt;Emscripten&lt;/strong&gt; on Windows, but you can&amp;rsquo;t get it to work with &lt;strong&gt;CMake&lt;/strong&gt;.&lt;/p&gt;</description>
     </item>
     <item>
       <title>How to find the CMake targets for a vcpkg package</title>
-      <link>http://localhost:1313/posts/2020/05/18/cmake-target-packages-from-vcpkg/</link>
+      <link>https://badlydrawnrod.github.io/posts/2020/05/18/cmake-target-packages-from-vcpkg/</link>
       <pubDate>Mon, 18 May 2020 21:27:46 +0100</pubDate>
-      <guid>http://localhost:1313/posts/2020/05/18/cmake-target-packages-from-vcpkg/</guid>
+      <guid>https://badlydrawnrod.github.io/posts/2020/05/18/cmake-target-packages-from-vcpkg/</guid>
       <description>&lt;h1 id=&#34;problem&#34;&gt;Problem&lt;/h1&gt;&#xA;&lt;p&gt;When you install a package with &lt;code&gt;vcpkg&lt;/code&gt; it tells you the &lt;strong&gt;CMake&lt;/strong&gt; targets. But if you didn&amp;rsquo;t make a note of them at the time, how do you find out what they are?&lt;/p&gt;&#xA;&lt;p&gt;And what if you want the &lt;strong&gt;CMake&lt;/strong&gt; targets for a package&amp;rsquo;s dependencies?&lt;/p&gt;</description>
     </item>
   </channel>

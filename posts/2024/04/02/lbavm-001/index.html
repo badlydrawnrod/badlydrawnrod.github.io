@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+<head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -14,7 +14,7 @@
 <body>
 	<header class="wrapper">
     <nav>
-        <a href="http://localhost:1313/">Home</a>
+        <a href="https://badlydrawnrod.github.io/">Home</a>
         <ul>
 			
             
@@ -36,11 +36,11 @@
         <div>
             <p>Implementing registers and instructions for the Owl-2820 CPU.</p>
 <h1 id="part-1---registers-and-instructions">Part 1 - Registers and instructions</h1>
-<p>In the <a href="http://localhost:1313/posts/2024/03/17/lbavm-000-intro/">previous post</a> in this series, we looked at a C implementation of the Fibonacci sequence, then examined what it looked like when compiled to RISC-V assembly language on an <a href="https://five-embeddev.com/riscv-user-isa-manual/Priv-v1.12/rv32.html">RV32I</a> CPU. We discovered that a CPU capable of running that code would need implementations for a mere handful of opcodes.</p>
+<p>In the <a href="https://badlydrawnrod.github.io/posts/2024/03/17/lbavm-000-intro/">previous post</a> in this series, we looked at a C implementation of the Fibonacci sequence, then examined what it looked like when compiled to RISC-V assembly language on an <a href="https://five-embeddev.com/riscv-user-isa-manual/Priv-v1.12/rv32.html">RV32I</a> CPU. We discovered that a CPU capable of running that code would need implementations for a mere handful of opcodes.</p>
 <p>In this post we&rsquo;ll get into some details and look at how we can implement that CPU. First, we&rsquo;ll see how we can implement registers. Next, we&rsquo;ll take a look at how the Owl CPU represents instructions in memory. And finally, we&rsquo;ll see what each instruction does when it is executed.</p>
 <h2 id="the-owl-2820-cpu">The Owl-2820 CPU</h2>
 <p>We&rsquo;ll base the Owl-2820 CPU on RV32I, as it&rsquo;s a good example of a simple RISC CPU. In other words, the Owl CPU will have the same thirty two integer registers as RV32I, and it will eventually support the same instructions as RV32I.</p>
-<p>However, to start, we&rsquo;ll implement only the instructions necessary for implementing the Fibonacci sequence that we saw in the <a href="http://localhost:1313/posts/2024/03/17/lbavm-000-intro/">previous post</a>.</p>
+<p>However, to start, we&rsquo;ll implement only the instructions necessary for implementing the Fibonacci sequence that we saw in the <a href="https://badlydrawnrod.github.io/posts/2024/03/17/lbavm-000-intro/">previous post</a>.</p>
 <h1 id="implementing-registers">Implementing registers</h1>
 <h2 id="the-integer-registers">The integer registers</h2>
 <p>In the last post we learned that an RV32I CPU has thirty two integer registers, <em>x0</em> - <em>x31</em>, and that they also have symbolic names such as <em>sp</em> for the stack pointer, and <em>ra</em> for the return address.</p>
@@ -463,7 +463,7 @@
 <p>Decoding this is a single AND operation.</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    uimm20 = ins &amp; 0xfffff000;
 </span></span></code></pre></div><h1 id="implementing-instructions">Implementing instructions</h1>
-<p>In the <a href="http://localhost:1313/posts/2024/03/17/lbavm-000-intro/">previous post</a> I said that we&rsquo;d only need to implement nine opcodes to be able to run the program that outputs the Fibonacci sequence. As a reminder, here they are.</p>
+<p>In the <a href="https://badlydrawnrod.github.io/posts/2024/03/17/lbavm-000-intro/">previous post</a> I said that we&rsquo;d only need to implement nine opcodes to be able to run the program that outputs the Fibonacci sequence. As a reminder, here they are.</p>
 <table>
   <thead>
       <tr>
@@ -811,7 +811,7 @@
 <p>We learned that the Owl-2820 CPU is based on RV32I and that it has the same integer registers, with the same uses.</p>
 <p>We learned how Owl represents instructions in memory, and that Owl instructions have a different encoding than RV32I instructions, because Owl&rsquo;s encoding is easier to deal with in software.</p>
 <p>And finally, we learned some possible implementations for each instruction.</p>
-<p>This puts us in a good position for the <a href="http://localhost:1313/posts/2024/04/07/lbavm-002/">next post</a> in which we&rsquo;ll apply what we&rsquo;ve learned to implementing a main loop for the Owl-2820 CPU.</p>
+<p>This puts us in a good position for the <a href="https://badlydrawnrod.github.io/posts/2024/04/07/lbavm-002/">next post</a> in which we&rsquo;ll apply what we&rsquo;ve learned to implementing a main loop for the Owl-2820 CPU.</p>
         </div>
         
         <div>
@@ -849,7 +849,7 @@
     </div>
 </aside> 
 	<footer class="wrapper">
-	<p>&copy; 2024 <a href="http://localhost:1313/">My Badly Drawn Self</a></p>
+	<p>&copy; 2024 <a href="https://badlydrawnrod.github.io/">My Badly Drawn Self</a></p>
 </footer>
 
 </body>

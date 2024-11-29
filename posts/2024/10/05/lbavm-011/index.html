@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+<head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -14,7 +14,7 @@
 <body>
 	<header class="wrapper">
     <nav>
-        <a href="http://localhost:1313/">Home</a>
+        <a href="https://badlydrawnrod.github.io/">Home</a>
         <ul>
 			
             
@@ -36,7 +36,7 @@
         <div>
             <p>Expressing the idea of an instruction handler using C++ concepts.</p>
 <h1 id="part-11-revisiting-the-instruction-handler">Part 11 Revisiting the instruction handler</h1>
-<p>In <a href="http://localhost:1313/posts/2024/09/08/lbavm-010/">part 10 - running RISC-V instructions directly</a>, we were able to run RISC-V code directly on the Owl VM, and ran benchmarks to show that the VM is quicker when it uses the Owl-2820 instruction encoding than it is when it decodes RISC-V instructions directly.</p>
+<p>In <a href="https://badlydrawnrod.github.io/posts/2024/09/08/lbavm-010/">part 10 - running RISC-V instructions directly</a>, we were able to run RISC-V code directly on the Owl VM, and ran benchmarks to show that the VM is quicker when it uses the Owl-2820 instruction encoding than it is when it decodes RISC-V instructions directly.</p>
 <p>To do that, we used three different dispatcher functions.</p>
 <ol>
 <li><code>Transcode()</code> dispatches RISC-V encoded instructions to the Owl-2820 <code>Assembler</code>.</li>
@@ -44,7 +44,7 @@
 <li><code>DispatchOwl()</code> dispatches Owl-2820 encoded instructions to the <code>OwlCpu</code>.</li>
 </ol>
 <p>Each dispatcher function decodes instructions into opcodes and operands, then dispatches them to a class that fulfils the role of an <em>instruction handler</em>.</p>
-<p>In <a href="http://localhost:1313/posts/2024/09/08/lbavm-010/">part 10</a>, I described instruction handlers as a protocol implemented in terms of handler functions for Owl-2820 instructions. In this post, we&rsquo;ll see how we can take the representation of an instruction handler from mere convention, to a representation in C++ that can be enforced by the compiler.</p>
+<p>In <a href="https://badlydrawnrod.github.io/posts/2024/09/08/lbavm-010/">part 10</a>, I described instruction handlers as a protocol implemented in terms of handler functions for Owl-2820 instructions. In this post, we&rsquo;ll see how we can take the representation of an instruction handler from mere convention, to a representation in C++ that can be enforced by the compiler.</p>
 <h1 id="instruction-handlers-by-convention">Instruction handlers by convention</h1>
 <p>Let&rsquo;s review how instruction handlers are used by the dispatcher functions.</p>
 <p><code>Transcode()</code> dispatches RISC-V encoded instructions to the Owl-2820 <code>Assembler</code>. Here, the <code>Assembler</code> fulfils the role of the instruction handler by assembling instructions in Owl-2820 encoding.</p>
@@ -418,7 +418,7 @@
     </div>
 </aside> 
 	<footer class="wrapper">
-	<p>&copy; 2024 <a href="http://localhost:1313/">My Badly Drawn Self</a></p>
+	<p>&copy; 2024 <a href="https://badlydrawnrod.github.io/">My Badly Drawn Self</a></p>
 </footer>
 
 </body>

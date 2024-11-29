@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+<head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -14,7 +14,7 @@
 <body>
 	<header class="wrapper">
     <nav>
-        <a href="http://localhost:1313/">Home</a>
+        <a href="https://badlydrawnrod.github.io/">Home</a>
         <ul>
 			
             
@@ -36,7 +36,7 @@
         <div>
             <p>How is data represented in an ELF file? And what is this cryptically named <code>bss</code> section?</p>
 <h1 id="part-12-dealing-with-data">Part 12 Dealing with data</h1>
-<p>In the last couple of posts we looked at <a href="http://localhost:1313/posts/2024/09/08/lbavm-010/">running RISC-V instructions directly</a> and then we <a href="http://localhost:1313/posts/2024/10/05/lbavm-011/">improved the instruction handler by using C++ concepts</a>.</p>
+<p>In the last couple of posts we looked at <a href="https://badlydrawnrod.github.io/posts/2024/09/08/lbavm-010/">running RISC-V instructions directly</a> and then we <a href="https://badlydrawnrod.github.io/posts/2024/10/05/lbavm-011/">improved the instruction handler by using C++ concepts</a>.</p>
 <p>Until now, the only C programs that we&rsquo;ve compiled for the Owl-2820 VM have been various incarnations of <code>fib.c</code> that generated the first few results in the Fibonacci sequence. It is time to move on from Fibonacci and compile and run other programs, but to do so, we need to find a way to deal with data.</p>
 <p>It may not be immediately obvious, but <code>fib.c</code> doesn&rsquo;t use data so we&rsquo;ve been able to get away with creating an image from its text sections only. In other words, we&rsquo;ve been loading and running an image that contains only code, not data.</p>
 <p>In the next few posts we&rsquo;re going to look at how we can load and run programs that contain both code and data. In this post, we&rsquo;re going to look at different types of data, then focus on read-only data.</p>
@@ -714,7 +714,7 @@
     </div>
 </aside> 
 	<footer class="wrapper">
-	<p>&copy; 2024 <a href="http://localhost:1313/">My Badly Drawn Self</a></p>
+	<p>&copy; 2024 <a href="https://badlydrawnrod.github.io/">My Badly Drawn Self</a></p>
 </footer>
 
 </body>

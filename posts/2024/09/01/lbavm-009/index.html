@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+<head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -14,7 +14,7 @@
 <body>
 	<header class="wrapper">
     <nav>
-        <a href="http://localhost:1313/">Home</a>
+        <a href="https://badlydrawnrod.github.io/">Home</a>
         <ul>
 			
             
@@ -36,7 +36,7 @@
         <div>
             <p>Loading and running a compiled image on an Owl-2820 VM.</p>
 <h1 id="part-9-running-a-compiled-image-on-an-owl-2820-vm">Part 9 Running a compiled image on an Owl-2820 VM</h1>
-<p>At the end of <a href="http://localhost:1313/posts/2024/08/20/lbavm-008/">the previous post</a> we got as far as being able to compile a C program into an image that contains <a href="https://en.wikipedia.org/wiki/RISC-V">RISC-V</a> instructions. Now let&rsquo;s see what it takes to load that image and run it on the Owl-2820 VM.</p>
+<p>At the end of <a href="https://badlydrawnrod.github.io/posts/2024/08/20/lbavm-008/">the previous post</a> we got as far as being able to compile a C program into an image that contains <a href="https://en.wikipedia.org/wiki/RISC-V">RISC-V</a> instructions. Now let&rsquo;s see what it takes to load that image and run it on the Owl-2820 VM.</p>
 <p>Here are a couple of options:</p>
 <ol>
 <li>
@@ -46,7 +46,7 @@
 <p>Modify the Owl-2820 VM to decode RISC-V instruction encoding and run the image directly.</p>
 </li>
 </ol>
-<p>Let&rsquo;s start with option 1 as we already have one piece of the puzzle. We know how to encode instructions for the Owl-2820 by using its <a href="http://localhost:1313/posts/2024/04/07/lbavm-002/#an-assembler">assembler</a>. For example, if we want to encode an <code>Add</code> instruction then we can do so like this:</p>
+<p>Let&rsquo;s start with option 1 as we already have one piece of the puzzle. We know how to encode instructions for the Owl-2820 by using its <a href="https://badlydrawnrod.github.io/posts/2024/04/07/lbavm-002/#an-assembler">assembler</a>. For example, if we want to encode an <code>Add</code> instruction then we can do so like this:</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    Assembler a;
 </span></span><span style="display:flex;"><span>    <span style="color:#008000">//...
 </span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    a.Add(r0, r1, r1);
@@ -202,7 +202,7 @@
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><p>There&rsquo;s very little to explain here. The various <code>switch</code> statements are used to determine the instruction&rsquo;s opcode. When a match is found, then the instruction&rsquo;s operands are decoded by member functions of the <code>DecodeRv32</code> helper class and passed as arguments to the assembler which re-encodes the instruction for Owl-2820.</p>
 <h2 id="decoding-operands">Decoding operands</h2>
-<p><code>DecodeRv32</code> is a helper class for decoding operands from bitfields in a RISC-V instruction. It&rsquo;s akin to <a href="http://localhost:1313/posts/2024/04/07/lbavm-002/#decoding-operands">the decoder functions in the Owl-2820 VM&rsquo;s <code>decode</code> namespace</a>, but for RISC-V rather than Owl.</p>
+<p><code>DecodeRv32</code> is a helper class for decoding operands from bitfields in a RISC-V instruction. It&rsquo;s akin to <a href="https://badlydrawnrod.github.io/posts/2024/04/07/lbavm-002/#decoding-operands">the decoder functions in the Owl-2820 VM&rsquo;s <code>decode</code> namespace</a>, but for RISC-V rather than Owl.</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#00f">class</span> <span style="color:#2b91af">DecodeRv32</span>
 </span></span><span style="display:flex;"><span>{
 </span></span><span style="display:flex;"><span>    <span style="color:#2b91af">uint32_t</span> ins_{};
@@ -262,7 +262,7 @@
 <p>These operands are decoded by the <code>Rd()</code>, <code>Rs1()</code>, and <code>Rs2()</code> member functions, and are approximately equivalent in usage to Owl-2820&rsquo;s <code>r0</code>, <code>r1</code> and <code>r2</code> fields. They are very easy to decode, as they consist of a single shift operation and a single mask operation.</p>
 <h3 id="decoding-immediate-values">Decoding immediate values</h3>
 <p>Things become more complicated when decoding immediate values. For Owl-2820, immediate values are always encoded as a sequence of contiguous bits starting from the top-most bit of the instruction. This makes decoding and sign-extension easy to implement in software.</p>
-<p>However, RISC-V instructions are designed to be decoded in hardware, where there is no need to keep bits consecutive. <a href="http://localhost:1313/posts/2024/04/02/lbavm-001/#comparing-risc-v-encoding-with-owl-encoding">As we&rsquo;ve seen before</a>, the RISC-V encoding requires more work to decode in software. To illustrate this, compare the implementation of <code>Jimmediate()</code> in the example above with its Owl-2820 equivalent, <code>offs20()</code>, below.</p>
+<p>However, RISC-V instructions are designed to be decoded in hardware, where there is no need to keep bits consecutive. <a href="https://badlydrawnrod.github.io/posts/2024/04/02/lbavm-001/#comparing-risc-v-encoding-with-owl-encoding">As we&rsquo;ve seen before</a>, the RISC-V encoding requires more work to decode in software. To illustrate this, compare the implementation of <code>Jimmediate()</code> in the example above with its Owl-2820 equivalent, <code>offs20()</code>, below.</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#2b91af">uint32_t</span> offs20(<span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> ins)
 </span></span><span style="display:flex;"><span>    {
 </span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> <span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">uint32_t</span>&gt;(<span style="color:#00f">static_cast</span>&lt;<span style="color:#2b91af">int32_t</span>&gt;(ins &amp; 0xfffff000) &gt;&gt; 11);
@@ -275,7 +275,7 @@
 <li>Run the image on the Owl VM.</li>
 </ul>
 <h2 id="loading-the-rv32i-image">Loading the RV32I image</h2>
-<p>Firstly, we load <a href="http://localhost:1313/posts/2024/08/20/lbavm-008/#viewing-the-image">the RV32I image from part 8</a>. This is done by <code>LoadRv32i()</code> which represents the image as an array of bytes.</p>
+<p>Firstly, we load <a href="https://badlydrawnrod.github.io/posts/2024/08/20/lbavm-008/#viewing-the-image">the RV32I image from part 8</a>. This is done by <code>LoadRv32i()</code> which represents the image as an array of bytes.</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>std::span&lt;<span style="color:#2b91af">uint32_t</span>&gt; LoadRv32iImage()
 </span></span><span style="display:flex;"><span>{
 </span></span><span style="display:flex;"><span>    <span style="color:#008000">// The RISC-V binary image from: https://badlydrawnrod.github.io/posts/2024/08/20/lbavm-008/
@@ -370,7 +370,7 @@
     </div>
 </aside> 
 	<footer class="wrapper">
-	<p>&copy; 2024 <a href="http://localhost:1313/">My Badly Drawn Self</a></p>
+	<p>&copy; 2024 <a href="https://badlydrawnrod.github.io/">My Badly Drawn Self</a></p>
 </footer>
 
 </body>

@@ -2,17 +2,17 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Rust on My Badly Drawn Self</title>
-    <link>http://localhost:1313/tags/rust/</link>
+    <link>https://badlydrawnrod.github.io/tags/rust/</link>
     <description>Recent content in Rust on My Badly Drawn Self</description>
     <generator>Hugo</generator>
     <language>en</language>
     <lastBuildDate>Fri, 07 Apr 2023 18:28:49 +0100</lastBuildDate>
-    <atom:link href="http://localhost:1313/tags/rust/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://badlydrawnrod.github.io/tags/rust/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>It&#39;s time to learn Rust</title>
-      <link>http://localhost:1313/posts/2023/04/07/time-to-learn-rust/</link>
+      <link>https://badlydrawnrod.github.io/posts/2023/04/07/time-to-learn-rust/</link>
       <pubDate>Fri, 07 Apr 2023 18:28:49 +0100</pubDate>
-      <guid>http://localhost:1313/posts/2023/04/07/time-to-learn-rust/</guid>
+      <guid>https://badlydrawnrod.github.io/posts/2023/04/07/time-to-learn-rust/</guid>
       <description></description>
     </item>
   </channel>

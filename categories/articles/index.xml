@@ -2,31 +2,31 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Articles on My Badly Drawn Self</title>
-    <link>http://localhost:1313/categories/articles/</link>
+    <link>https://badlydrawnrod.github.io/categories/articles/</link>
     <description>Recent content in Articles on My Badly Drawn Self</description>
     <generator>Hugo</generator>
     <language>en</language>
     <lastBuildDate>Sun, 28 Nov 2021 16:02:20 +0000</lastBuildDate>
-    <atom:link href="http://localhost:1313/categories/articles/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://badlydrawnrod.github.io/categories/articles/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Why I wrote Arviss</title>
-      <link>http://localhost:1313/posts/2021/11/28/why_arviss/</link>
+      <link>https://badlydrawnrod.github.io/posts/2021/11/28/why_arviss/</link>
       <pubDate>Sun, 28 Nov 2021 16:02:20 +0000</pubDate>
-      <guid>http://localhost:1313/posts/2021/11/28/why_arviss/</guid>
+      <guid>https://badlydrawnrod.github.io/posts/2021/11/28/why_arviss/</guid>
       <description>&lt;p&gt;Why did I write &lt;a href=&#34;https://github.com/badlydrawnrod/arviss&#34;&gt;Arviss&lt;/a&gt;, a RISC-V instruction set simulator?&lt;/p&gt;</description>
     </item>
     <item>
       <title>How I went to C</title>
-      <link>http://localhost:1313/posts/2021/11/15/how-i-went-to-c/</link>
+      <link>https://badlydrawnrod.github.io/posts/2021/11/15/how-i-went-to-c/</link>
       <pubDate>Mon, 15 Nov 2021 23:01:38 +0000</pubDate>
-      <guid>http://localhost:1313/posts/2021/11/15/how-i-went-to-c/</guid>
+      <guid>https://badlydrawnrod.github.io/posts/2021/11/15/how-i-went-to-c/</guid>
       <description>&lt;p&gt;My Twitter name says that I&amp;rsquo;m the old C dog, so you may be surprised to hear that it took me quite a while to warm to C.&lt;/p&gt;</description>
     </item>
     <item>
       <title>In the beginning</title>
-      <link>http://localhost:1313/posts/2021/11/12/in-the-beginning/</link>
+      <link>https://badlydrawnrod.github.io/posts/2021/11/12/in-the-beginning/</link>
       <pubDate>Fri, 12 Nov 2021 22:45:31 +0000</pubDate>
-      <guid>http://localhost:1313/posts/2021/11/12/in-the-beginning/</guid>
+      <guid>https://badlydrawnrod.github.io/posts/2021/11/12/in-the-beginning/</guid>
       <description>&lt;p&gt;When my parents moved house they found an old story that I wrote for my sixth form college&amp;rsquo;s student magazine.&lt;/p&gt;</description>
     </item>
   </channel>

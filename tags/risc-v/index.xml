@@ -2,17 +2,17 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Risc-V on My Badly Drawn Self</title>
-    <link>http://localhost:1313/tags/risc-v/</link>
+    <link>https://badlydrawnrod.github.io/tags/risc-v/</link>
     <description>Recent content in Risc-V on My Badly Drawn Self</description>
     <generator>Hugo</generator>
     <language>en</language>
     <lastBuildDate>Sun, 28 Nov 2021 16:02:20 +0000</lastBuildDate>
-    <atom:link href="http://localhost:1313/tags/risc-v/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://badlydrawnrod.github.io/tags/risc-v/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Why I wrote Arviss</title>
-      <link>http://localhost:1313/posts/2021/11/28/why_arviss/</link>
+      <link>https://badlydrawnrod.github.io/posts/2021/11/28/why_arviss/</link>
       <pubDate>Sun, 28 Nov 2021 16:02:20 +0000</pubDate>
-      <guid>http://localhost:1313/posts/2021/11/28/why_arviss/</guid>
+      <guid>https://badlydrawnrod.github.io/posts/2021/11/28/why_arviss/</guid>
       <description>&lt;p&gt;Why did I write &lt;a href=&#34;https://github.com/badlydrawnrod/arviss&#34;&gt;Arviss&lt;/a&gt;, a RISC-V instruction set simulator?&lt;/p&gt;</description>
     </item>
   </channel>

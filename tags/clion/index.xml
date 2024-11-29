@@ -2,17 +2,17 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Clion on My Badly Drawn Self</title>
-    <link>http://localhost:1313/tags/clion/</link>
+    <link>https://badlydrawnrod.github.io/tags/clion/</link>
     <description>Recent content in Clion on My Badly Drawn Self</description>
     <generator>Hugo</generator>
     <language>en</language>
     <lastBuildDate>Sat, 30 May 2020 10:20:00 +0100</lastBuildDate>
-    <atom:link href="http://localhost:1313/tags/clion/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://badlydrawnrod.github.io/tags/clion/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>How to build and run an Emscripten project from CLion on Windows</title>
-      <link>http://localhost:1313/posts/2020/05/30/emscripten-project-in-clion/</link>
+      <link>https://badlydrawnrod.github.io/posts/2020/05/30/emscripten-project-in-clion/</link>
       <pubDate>Sat, 30 May 2020 10:20:00 +0100</pubDate>
-      <guid>http://localhost:1313/posts/2020/05/30/emscripten-project-in-clion/</guid>
+      <guid>https://badlydrawnrod.github.io/posts/2020/05/30/emscripten-project-in-clion/</guid>
       <description>&lt;h1 id=&#34;problem&#34;&gt;Problem&lt;/h1&gt;&#xA;&lt;p&gt;You&amp;rsquo;re developing on Windows and have an existing &lt;strong&gt;Emscripten&lt;/strong&gt; project that builds and runs from the command line, but you&amp;rsquo;d like to do this from the &lt;strong&gt;CLion&lt;/strong&gt; IDE.&lt;/p&gt;</description>
     </item>
   </channel>

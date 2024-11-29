@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+<head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -14,7 +14,7 @@
 <body>
 	<header class="wrapper">
     <nav>
-        <a href="http://localhost:1313/">Home</a>
+        <a href="https://badlydrawnrod.github.io/">Home</a>
         <ul>
 			
             
@@ -36,7 +36,7 @@
         <div>
             <p>Using a C compiler to create programs for an Owl-2820 VM.</p>
 <h1 id="part-8-using-a-c-compiler-to-create-owl-2820-programs">Part 8 Using a C compiler to create Owl-2820 programs</h1>
-<p>In the <a href="http://localhost:1313/posts/2024/07/30/lbavm-007/">previous post</a>, we completed the implementation of the Owl-2820 instruction set.</p>
+<p>In the <a href="https://badlydrawnrod.github.io/posts/2024/07/30/lbavm-007/">previous post</a>, we completed the implementation of the Owl-2820 instruction set.</p>
 <p>I finished the post with a suggestion that we could write programs for our Owl-2820 VM in a language such as C, C++, Rust or Swift, and that we could do this by first compiling them for a RISC-V RV32I target, then somehow running the result on our Owl VM.</p>
 <p>From our point of view, it would be ideal if a compiler such as <code>clang</code> or <code>gcc</code> could build for an Owl-2820 target. But, given that the Owl-2820 is a virtual CPU that exists for the purpose of this series of blog posts, it would be somewhat presumptuous to ask compiler authors to add an Owl-2820 back end to their compilers.</p>
 <p>How, then, are we going to compile C programs for the Owl-2820 CPU? The answer is that we aren&rsquo;t - at least not directly. Instead, we&rsquo;re going to do this in a two stage process.</p>
@@ -49,7 +49,7 @@
 <p>For a simple project like this it is very easy to use <code>clang</code> as a cross-compiler. At the time of writing I&rsquo;ve successfully compiled C programs for a RISC-V target using <code>clang</code> on Windows, on Linux, on a Raspberry Pi, and on <code>termux</code> on an Android tablet. The command line was almost identical in each case.</p>
 <p>But where do we start? What C program can we compile that will run on our Owl-2820 VM?</p>
 <h2 id="fibonacci-in-c">Fibonacci in C</h2>
-<p>It will probably be of no surprise to you that we&rsquo;re going to compile our <a href="http://localhost:1313/posts/2024/03/17/lbavm-000-intro/#fibonacci-in-c">original Fibonacci implementation from part 0</a>. However, as we don&rsquo;t yet have an implementation for <code>printf()</code>, we will lean on the <code>PrintFib</code> system call from <a href="http://localhost:1313/posts/2024/07/21/lbavm-006/">part 6</a> to help us out, and call it from a <code>print_fib()</code> function implemented in C. For the time being we&rsquo;ll skip over its implementation, but we will return to it later in this post.</p>
+<p>It will probably be of no surprise to you that we&rsquo;re going to compile our <a href="https://badlydrawnrod.github.io/posts/2024/03/17/lbavm-000-intro/#fibonacci-in-c">original Fibonacci implementation from part 0</a>. However, as we don&rsquo;t yet have an implementation for <code>printf()</code>, we will lean on the <code>PrintFib</code> system call from <a href="https://badlydrawnrod.github.io/posts/2024/07/21/lbavm-006/">part 6</a> to help us out, and call it from a <code>print_fib()</code> function implemented in C. For the time being we&rsquo;ll skip over its implementation, but we will return to it later in this post.</p>
 <p>Here&rsquo;s the code.</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#00f">#include</span> <span style="color:#00f">&lt;stdint.h&gt;</span><span style="color:#00f">
 </span></span></span><span style="display:flex;"><span><span style="color:#00f"></span>
@@ -286,7 +286,7 @@
 </span></span><span style="display:flex;"><span>&gt;&gt;&gt;               C:\Users\myname\AppData\Local\Temp\fib-751f97.o:(main)
 </span></span><span style="display:flex;"><span>clang: error: ld.lld command failed with exit code 1 (use -v to see invocation)
 </span></span></code></pre></div><h2 id="implementing-print_fib">Implementing print_fib()</h2>
-<p>We need an implementation of <code>print_fib()</code>. In <a href="http://localhost:1313/posts/2024/07/21/lbavm-006/">part 6</a>, we added a <code>PrintFib</code> system call which we called from a <code>print_fib</code> subroutine.</p>
+<p>We need an implementation of <code>print_fib()</code>. In <a href="https://badlydrawnrod.github.io/posts/2024/07/21/lbavm-006/">part 6</a>, we added a <code>PrintFib</code> system call which we called from a <code>print_fib</code> subroutine.</p>
 <p>System calls are implemented in the Owl-2820 VM by putting the syscall number in the <em>a7</em> register, placing up to seven arguments in the <em>a0</em> to <em>a6</em> registers, then invoking the <code>ecall</code> instruction.</p>
 <p>For <code>PrintFib</code>, we have two arguments, passed in the <em>a0</em> and <em>a1</em> registers. Here&rsquo;s a reminder of its implementation.</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#00f">while</span> (!done)
@@ -307,7 +307,7 @@
 </span></span><span style="display:flex;"><span>            }
 </span></span><span style="display:flex;"><span>            <span style="color:#00f">break</span>;
 </span></span><span style="display:flex;"><span>        }
-</span></span></code></pre></div><p>And here&rsquo;s how we implemented the <code>print_fib</code> subroutine in Owl-2820 assembly language. The <a href="http://localhost:1313/posts/2024/06/11/lbavm-004/#calling-conventions">calling convention from part 4</a> means that we can pass the arguments to <code>print_fib</code> in registers <em>a0</em> and <em>a1</em> and it doesn&rsquo;t have to do anything more beyond putting the syscall number into register <em>a7</em>.</p>
+</span></span></code></pre></div><p>And here&rsquo;s how we implemented the <code>print_fib</code> subroutine in Owl-2820 assembly language. The <a href="https://badlydrawnrod.github.io/posts/2024/06/11/lbavm-004/#calling-conventions">calling convention from part 4</a> means that we can pass the arguments to <code>print_fib</code> in registers <em>a0</em> and <em>a1</em> and it doesn&rsquo;t have to do anything more beyond putting the syscall number into register <em>a7</em>.</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span>print_fib:
 </span></span><span style="display:flex;"><span>        li      a7, 1                   <span style="color:#008000"># set a7 to 1, i.e., PrintFib
 </span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        ecall                           <span style="color:#008000"># invoke the syscall
@@ -593,7 +593,7 @@
 </span></span></code></pre></div><p>And there we have it. One binary image, ready to load into our Owl-2820 VM&rsquo;s memory. Or is it?</p>
 <h2 id="translating-the-result-for-the-owl-2820-cpu">Translating the result for the Owl-2820 CPU</h2>
 <p>Well, there is the small matter of instruction encoding.</p>
-<p>Owl-2820 shares the same instruction set as RV32I, but it encodes the instructions differently so that they are <a href="http://localhost:1313/posts/2024/04/02/lbavm-001/#comparing-risc-v-encoding-with-owl-encoding">easy to decode and dispatch in software</a>.</p>
+<p>Owl-2820 shares the same instruction set as RV32I, but it encodes the instructions differently so that they are <a href="https://badlydrawnrod.github.io/posts/2024/04/02/lbavm-001/#comparing-risc-v-encoding-with-owl-encoding">easy to decode and dispatch in software</a>.</p>
 <p>We either need to re-encode the instructions from RISC-V instruction encoding into Owl-2820 instruction encoding, or we need to modify our Owl-2820 VM to understand the RISC-V instruction encoding.</p>
 <p>That will be the topic for the next post.</p>
         </div>
@@ -633,7 +633,7 @@
     </div>
 </aside> 
 	<footer class="wrapper">
-	<p>&copy; 2024 <a href="http://localhost:1313/">My Badly Drawn Self</a></p>
+	<p>&copy; 2024 <a href="https://badlydrawnrod.github.io/">My Badly Drawn Self</a></p>
 </footer>
 
 </body>

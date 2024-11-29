@@ -2,17 +2,17 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Ninja on My Badly Drawn Self</title>
-    <link>http://localhost:1313/tags/ninja/</link>
+    <link>https://badlydrawnrod.github.io/tags/ninja/</link>
     <description>Recent content in Ninja on My Badly Drawn Self</description>
     <generator>Hugo</generator>
     <language>en</language>
     <lastBuildDate>Tue, 19 May 2020 21:57:44 +0100</lastBuildDate>
-    <atom:link href="http://localhost:1313/tags/ninja/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://badlydrawnrod.github.io/tags/ninja/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>How to use Emscripten with CMake on Windows</title>
-      <link>http://localhost:1313/posts/2020/05/19/emcmake-with-emscripten/</link>
+      <link>https://badlydrawnrod.github.io/posts/2020/05/19/emcmake-with-emscripten/</link>
       <pubDate>Tue, 19 May 2020 21:57:44 +0100</pubDate>
-      <guid>http://localhost:1313/posts/2020/05/19/emcmake-with-emscripten/</guid>
+      <guid>https://badlydrawnrod.github.io/posts/2020/05/19/emcmake-with-emscripten/</guid>
       <description>&lt;h1 id=&#34;problem&#34;&gt;Problem&lt;/h1&gt;&#xA;&lt;p&gt;You&amp;rsquo;ve installed &lt;strong&gt;Emscripten&lt;/strong&gt; on Windows, but you can&amp;rsquo;t get it to work with &lt;strong&gt;CMake&lt;/strong&gt;.&lt;/p&gt;</description>
     </item>
   </channel>

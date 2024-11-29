@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+<head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -14,7 +14,7 @@
 <body>
 	<header class="wrapper">
     <nav>
-        <a href="http://localhost:1313/">Home</a>
+        <a href="https://badlydrawnrod.github.io/">Home</a>
         <ul>
 			
             
@@ -36,10 +36,10 @@
         <div>
             <p>Modfiying the Owl-2820 VM to decode RISC-V instructions directly.</p>
 <h1 id="part-10-running-risc-v-instructions-directly">Part 10 Running RISC-V instructions directly</h1>
-<p>In the <a href="http://localhost:1313/posts/2024/09/01/lbavm-009/">last post</a> we were finally able to run a compiled C program on the Owl-2820 VM. We did this by converting an image from <a href="https://five-embeddev.com/riscv-user-isa-manual/Priv-v1.12/rv32.html">RISC-V</a> instruction encoding to Owl-2820 instruction encoding so that the Owl could run it.</p>
+<p>In the <a href="https://badlydrawnrod.github.io/posts/2024/09/01/lbavm-009/">last post</a> we were finally able to run a compiled C program on the Owl-2820 VM. We did this by converting an image from <a href="https://five-embeddev.com/riscv-user-isa-manual/Priv-v1.12/rv32.html">RISC-V</a> instruction encoding to Owl-2820 instruction encoding so that the Owl could run it.</p>
 <p>In this post, we&rsquo;re going to modify the Owl-2820 VM so that it can decode RISC-V instruction encoding and run the image directly.</p>
 <h1 id="dispatchers-and-instruction-handlers">Dispatchers and instruction handlers</h1>
-<p>We&rsquo;re already quite close to being able to do that. Take a look at this snippet from <a href="http://localhost:1313/posts/2024/09/01/lbavm-009/#dispatching-risc-v-instructions-to-the-owl-2820-assembler"><code>Transcode()</code></a> which converts from RISC-V instruction encoding to Owl-2820 instruction encoding.</p>
+<p>We&rsquo;re already quite close to being able to do that. Take a look at this snippet from <a href="https://badlydrawnrod.github.io/posts/2024/09/01/lbavm-009/#dispatching-risc-v-instructions-to-the-owl-2820-assembler"><code>Transcode()</code></a> which converts from RISC-V instruction encoding to Owl-2820 instruction encoding.</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">void</span> Transcode(Assembler&amp; a, <span style="color:#2b91af">uint32_t</span> code)
 </span></span><span style="display:flex;"><span>{
 </span></span><span style="display:flex;"><span>    DecodeRv32 rv(code);
@@ -404,7 +404,7 @@
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><h1 id="benchmarking">Benchmarking</h1>
 <p>If we can run RISC-V encoded instructions directly, why wouldn&rsquo;t we do that by default? Why go to the effort of transcoding an image to the Owl-2820 instruction encoding? It&rsquo;s a good question.</p>
-<p>I&rsquo;ve stated previously that <a href="http://localhost:1313/posts/2024/04/02/lbavm-001/#comparing-risc-v-encoding-with-owl-encoding">it takes more work to decode the RISC-V instruction encoding in software than it does to decode the Owl-2820 instruction encoding</a>. Until now, you&rsquo;ve had to take my word for it.</p>
+<p>I&rsquo;ve stated previously that <a href="https://badlydrawnrod.github.io/posts/2024/04/02/lbavm-001/#comparing-risc-v-encoding-with-owl-encoding">it takes more work to decode the RISC-V instruction encoding in software than it does to decode the Owl-2820 instruction encoding</a>. Until now, you&rsquo;ve had to take my word for it.</p>
 <p>Let&rsquo;s modify the program slightly so that we can benchmark it. This will show how the difference in encoding translates to a difference in timing.</p>
 <h2 id="disabling-output">Disabling output</h2>
 <p>We have to disable the output from <code>Exit</code> and <code>PrintFib</code>. If we don&rsquo;t do this, then the timings will be dominated by how quickly the terminal can scroll.</p>
@@ -484,7 +484,7 @@
 </span></span><span style="display:flex;"><span>RV32I timing as percentage of Owl: 174.058
 </span></span><span style="display:flex;"><span>Owl timing as percentage of RV32I: 57.452
 </span></span></code></pre></div><p>This may be a crude microbenchmark, but it is very clear that running Owl-2820 encoded instructions is quicker than running RISC-V encoded instructions directly.</p>
-<p>We saw in <a href="http://localhost:1313/posts/2024/04/02/lbavm-001/#comparing-risc-v-encoding-with-owl-encoding">Part 1</a> that decoding RISC-V encoded instructions in software is more complicated than decoding Owl-2820 instructions, but now we have numbers to back that up.</p>
+<p>We saw in <a href="https://badlydrawnrod.github.io/posts/2024/04/02/lbavm-001/#comparing-risc-v-encoding-with-owl-encoding">Part 1</a> that decoding RISC-V encoded instructions in software is more complicated than decoding Owl-2820 instructions, but now we have numbers to back that up.</p>
 <h1 id="summary">Summary</h1>
 <p>In this post we finally managed to run a RISC-V image directly on the Owl-2820 VM.</p>
 <p>We did so by identifying the roles of dispatchers and instruction handlers. We wrote an <code>OwlCpu</code> instruction handler that executes instructions on an Owl-2820 CPU, and we wrote dispatchers for both RISC-V encoded instructions and Owl-2820 encoded instructions. We also saw that we could use the same approach to write other instructions handlers, such as a disassembler.</p>
@@ -529,7 +529,7 @@
     </div>
 </aside> 
 	<footer class="wrapper">
-	<p>&copy; 2024 <a href="http://localhost:1313/">My Badly Drawn Self</a></p>
+	<p>&copy; 2024 <a href="https://badlydrawnrod.github.io/">My Badly Drawn Self</a></p>
 </footer>
 
 </body>
