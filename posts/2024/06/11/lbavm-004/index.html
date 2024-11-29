@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -14,7 +14,7 @@
 <body>
 	<header class="wrapper">
     <nav>
-        <a href="https://badlydrawnrod.github.io/">Home</a>
+        <a href="http://localhost:1313/">Home</a>
         <ul>
 			
             
@@ -59,7 +59,7 @@
 </span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">break</span>;
 </span></span><span style="display:flex;"><span>    }
 </span></span></code></pre></div><h2 id="rewriting-printf-as-a-subroutine">Rewriting printf() as a subroutine</h2>
-<p>In <a href="https://badlydrawnrod.github.io/posts/2024/04/07/lbavm-002/">Part 2</a> of this series, I took a liberty with the fact that there was only one <code>call</code> instruction in the entire assembly language program and hard-coded the <code>Call</code> opcode to the rather specific <code>printf()</code> implementation shown below.</p>
+<p>In <a href="http://localhost:1313/posts/2024/04/07/lbavm-002/">Part 2</a> of this series, I took a liberty with the fact that there was only one <code>call</code> instruction in the entire assembly language program and hard-coded the <code>Call</code> opcode to the rather specific <code>printf()</code> implementation shown below.</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>    <span style="color:#00f">case</span> Opcode::Call: {
 </span></span><span style="display:flex;"><span>        <span style="color:#008000">// Do a hard-coded printf().
 </span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        std::cout &lt;&lt; std::format(<span style="color:#a31515">&#34;fib({}) = {}</span><span style="color:#a31515">\n</span><span style="color:#a31515">&#34;</span>, x[a1], x[a2]);
@@ -134,7 +134,7 @@
 </span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> a.Code();
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><p>You can view and run this intermediate version of the code on <a href="https://godbolt.org/z/86E14a1xh">Compiler Explorer</a>.</p>
-<p>At this point, I&rsquo;m somewhat grateful that we added labels to the assembler in <a href="https://badlydrawnrod.github.io/posts/2024/05/05/lbavm-003/">Part 3</a>, as changing the offsets manually would have been painful. As it happens, the labels took care of everything and we didn&rsquo;t even have to think about it.</p>
+<p>At this point, I&rsquo;m somewhat grateful that we added labels to the assembler in <a href="http://localhost:1313/posts/2024/05/05/lbavm-003/">Part 3</a>, as changing the offsets manually would have been painful. As it happens, the labels took care of everything and we didn&rsquo;t even have to think about it.</p>
 <p>However, there&rsquo;s still something that needs to be explained, namely, how did we decide on how to pass arguments to <code>print_fib()</code>? The answer is that we used a calling convention, and that&rsquo;s the topic of the next section.</p>
 <h1 id="calling-conventions">Calling conventions</h1>
 <p>If the call to <code>print_fib()</code> was written in C++, then it might look something like this. It&rsquo;s a function that takes three arguments.</p>
@@ -163,7 +163,7 @@
 <li>how the caller passes the return address to the callee</li>
 </ul>
 <h2 id="the-owl-2820-calling-convention">The Owl-2820 calling convention</h2>
-<p>In <a href="https://badlydrawnrod.github.io/posts/2024/04/02/lbavm-001/">Part 1</a> of this series I introduced the Owl-2820 registers, and stated that they&rsquo;d have the same names and usages as RV32I.</p>
+<p>In <a href="http://localhost:1313/posts/2024/04/02/lbavm-001/">Part 1</a> of this series I introduced the Owl-2820 registers, and stated that they&rsquo;d have the same names and usages as RV32I.</p>
 <table>
   <thead>
       <tr>
@@ -345,6 +345,8 @@
         <div>
             <ul>
                 
+                <li><a href="/posts/2024/11/29/lbavm-012/">Let&#39;s build a virtual machine: Part 12 - Dealing with data</a></li>
+                
                 <li><a href="/posts/2024/10/05/lbavm-011/">Let&#39;s build a virtual machine: Part 11 - Revisiting the instruction handler</a></li>
                 
                 <li><a href="/posts/2024/09/08/lbavm-010/">Let&#39;s build a virtual machine: Part 10 - Running RISC-V directly</a></li>
@@ -353,14 +355,12 @@
                 
                 <li><a href="/posts/2024/08/20/lbavm-008/">Let&#39;s build a virtual machine: Part 8 - Using a C compiler to target the Owl-2820 CPU</a></li>
                 
-                <li><a href="/posts/2024/07/30/lbavm-007/">Let&#39;s build a virtual machine: Part 7 - Draw the rest of the Owl</a></li>
-                
             </ul>
         </div>
     </div>
 </aside> 
 	<footer class="wrapper">
-	<p>&copy; 2024 <a href="https://badlydrawnrod.github.io/">My Badly Drawn Self</a></p>
+	<p>&copy; 2024 <a href="http://localhost:1313/">My Badly Drawn Self</a></p>
 </footer>
 
 </body>

@@ -2,206 +2,206 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Tags on My Badly Drawn Self</title>
-    <link>https://badlydrawnrod.github.io/tags/</link>
+    <link>http://localhost:1313/tags/</link>
     <description>Recent content in Tags on My Badly Drawn Self</description>
     <generator>Hugo</generator>
     <language>en</language>
-    <lastBuildDate>Sat, 05 Oct 2024 14:45:00 +0100</lastBuildDate>
-    <atom:link href="https://badlydrawnrod.github.io/tags/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 29 Nov 2024 13:37:00 +0000</lastBuildDate>
+    <atom:link href="http://localhost:1313/tags/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Owl</title>
-      <link>https://badlydrawnrod.github.io/tags/owl/</link>
-      <pubDate>Sat, 05 Oct 2024 14:45:00 +0100</pubDate>
-      <guid>https://badlydrawnrod.github.io/tags/owl/</guid>
+      <link>http://localhost:1313/tags/owl/</link>
+      <pubDate>Fri, 29 Nov 2024 13:37:00 +0000</pubDate>
+      <guid>http://localhost:1313/tags/owl/</guid>
       <description></description>
     </item>
     <item>
       <title>Vm</title>
-      <link>https://badlydrawnrod.github.io/tags/vm/</link>
-      <pubDate>Sat, 05 Oct 2024 14:45:00 +0100</pubDate>
-      <guid>https://badlydrawnrod.github.io/tags/vm/</guid>
+      <link>http://localhost:1313/tags/vm/</link>
+      <pubDate>Fri, 29 Nov 2024 13:37:00 +0000</pubDate>
+      <guid>http://localhost:1313/tags/vm/</guid>
       <description></description>
     </item>
     <item>
       <title>C&#43;&#43;</title>
-      <link>https://badlydrawnrod.github.io/tags/c&#43;&#43;/</link>
+      <link>http://localhost:1313/tags/c&#43;&#43;/</link>
       <pubDate>Fri, 07 Apr 2023 18:28:49 +0100</pubDate>
-      <guid>https://badlydrawnrod.github.io/tags/c&#43;&#43;/</guid>
+      <guid>http://localhost:1313/tags/c&#43;&#43;/</guid>
       <description></description>
     </item>
     <item>
       <title>Rust</title>
-      <link>https://badlydrawnrod.github.io/tags/rust/</link>
+      <link>http://localhost:1313/tags/rust/</link>
       <pubDate>Fri, 07 Apr 2023 18:28:49 +0100</pubDate>
-      <guid>https://badlydrawnrod.github.io/tags/rust/</guid>
+      <guid>http://localhost:1313/tags/rust/</guid>
       <description></description>
     </item>
     <item>
       <title>Copy Elision</title>
-      <link>https://badlydrawnrod.github.io/tags/copy-elision/</link>
+      <link>http://localhost:1313/tags/copy-elision/</link>
       <pubDate>Sun, 27 Feb 2022 15:00:00 +0000</pubDate>
-      <guid>https://badlydrawnrod.github.io/tags/copy-elision/</guid>
+      <guid>http://localhost:1313/tags/copy-elision/</guid>
       <description></description>
     </item>
     <item>
       <title>Ctad</title>
-      <link>https://badlydrawnrod.github.io/tags/ctad/</link>
+      <link>http://localhost:1313/tags/ctad/</link>
       <pubDate>Sun, 23 Jan 2022 14:25:00 +0000</pubDate>
-      <guid>https://badlydrawnrod.github.io/tags/ctad/</guid>
+      <guid>http://localhost:1313/tags/ctad/</guid>
       <description></description>
     </item>
     <item>
       <title>Git</title>
-      <link>https://badlydrawnrod.github.io/tags/git/</link>
+      <link>http://localhost:1313/tags/git/</link>
       <pubDate>Sun, 16 Jan 2022 16:07:39 +0000</pubDate>
-      <guid>https://badlydrawnrod.github.io/tags/git/</guid>
+      <guid>http://localhost:1313/tags/git/</guid>
       <description></description>
     </item>
     <item>
       <title>Allocators</title>
-      <link>https://badlydrawnrod.github.io/tags/allocators/</link>
+      <link>http://localhost:1313/tags/allocators/</link>
       <pubDate>Thu, 30 Dec 2021 16:30:00 +0000</pubDate>
-      <guid>https://badlydrawnrod.github.io/tags/allocators/</guid>
+      <guid>http://localhost:1313/tags/allocators/</guid>
       <description></description>
     </item>
     <item>
       <title>C&#43;&#43;20</title>
-      <link>https://badlydrawnrod.github.io/tags/c&#43;&#43;20/</link>
+      <link>http://localhost:1313/tags/c&#43;&#43;20/</link>
       <pubDate>Sat, 18 Dec 2021 16:00:00 +0000</pubDate>
-      <guid>https://badlydrawnrod.github.io/tags/c&#43;&#43;20/</guid>
+      <guid>http://localhost:1313/tags/c&#43;&#43;20/</guid>
       <description></description>
     </item>
     <item>
       <title>Modules</title>
-      <link>https://badlydrawnrod.github.io/tags/modules/</link>
+      <link>http://localhost:1313/tags/modules/</link>
       <pubDate>Sat, 18 Dec 2021 16:00:00 +0000</pubDate>
-      <guid>https://badlydrawnrod.github.io/tags/modules/</guid>
+      <guid>http://localhost:1313/tags/modules/</guid>
       <description></description>
     </item>
     <item>
       <title>Arviss</title>
-      <link>https://badlydrawnrod.github.io/tags/arviss/</link>
+      <link>http://localhost:1313/tags/arviss/</link>
       <pubDate>Sun, 28 Nov 2021 16:02:20 +0000</pubDate>
-      <guid>https://badlydrawnrod.github.io/tags/arviss/</guid>
+      <guid>http://localhost:1313/tags/arviss/</guid>
       <description></description>
     </item>
     <item>
       <title>C</title>
-      <link>https://badlydrawnrod.github.io/tags/c/</link>
+      <link>http://localhost:1313/tags/c/</link>
       <pubDate>Sun, 28 Nov 2021 16:02:20 +0000</pubDate>
-      <guid>https://badlydrawnrod.github.io/tags/c/</guid>
+      <guid>http://localhost:1313/tags/c/</guid>
       <description></description>
     </item>
     <item>
       <title>Emulators</title>
-      <link>https://badlydrawnrod.github.io/tags/emulators/</link>
+      <link>http://localhost:1313/tags/emulators/</link>
       <pubDate>Sun, 28 Nov 2021 16:02:20 +0000</pubDate>
-      <guid>https://badlydrawnrod.github.io/tags/emulators/</guid>
+      <guid>http://localhost:1313/tags/emulators/</guid>
       <description></description>
     </item>
     <item>
       <title>Risc-V</title>
-      <link>https://badlydrawnrod.github.io/tags/risc-v/</link>
+      <link>http://localhost:1313/tags/risc-v/</link>
       <pubDate>Sun, 28 Nov 2021 16:02:20 +0000</pubDate>
-      <guid>https://badlydrawnrod.github.io/tags/risc-v/</guid>
+      <guid>http://localhost:1313/tags/risc-v/</guid>
       <description></description>
     </item>
     <item>
       <title>Humour</title>
-      <link>https://badlydrawnrod.github.io/tags/humour/</link>
+      <link>http://localhost:1313/tags/humour/</link>
       <pubDate>Fri, 12 Nov 2021 22:45:31 +0000</pubDate>
-      <guid>https://badlydrawnrod.github.io/tags/humour/</guid>
+      <guid>http://localhost:1313/tags/humour/</guid>
       <description></description>
     </item>
     <item>
       <title>Handles</title>
-      <link>https://badlydrawnrod.github.io/tags/handles/</link>
+      <link>http://localhost:1313/tags/handles/</link>
       <pubDate>Sun, 23 Aug 2020 20:00:00 +0100</pubDate>
-      <guid>https://badlydrawnrod.github.io/tags/handles/</guid>
+      <guid>http://localhost:1313/tags/handles/</guid>
       <description></description>
     </item>
     <item>
       <title>Typesafe</title>
-      <link>https://badlydrawnrod.github.io/tags/typesafe/</link>
+      <link>http://localhost:1313/tags/typesafe/</link>
       <pubDate>Sun, 23 Aug 2020 20:00:00 +0100</pubDate>
-      <guid>https://badlydrawnrod.github.io/tags/typesafe/</guid>
+      <guid>http://localhost:1313/tags/typesafe/</guid>
       <description></description>
     </item>
     <item>
       <title>Console</title>
-      <link>https://badlydrawnrod.github.io/tags/console/</link>
+      <link>http://localhost:1313/tags/console/</link>
       <pubDate>Wed, 12 Aug 2020 12:30:00 +0100</pubDate>
-      <guid>https://badlydrawnrod.github.io/tags/console/</guid>
+      <guid>http://localhost:1313/tags/console/</guid>
       <description></description>
     </item>
     <item>
       <title>Howto</title>
-      <link>https://badlydrawnrod.github.io/tags/howto/</link>
+      <link>http://localhost:1313/tags/howto/</link>
       <pubDate>Wed, 12 Aug 2020 12:30:00 +0100</pubDate>
-      <guid>https://badlydrawnrod.github.io/tags/howto/</guid>
+      <guid>http://localhost:1313/tags/howto/</guid>
       <description></description>
     </item>
     <item>
       <title>Windows</title>
-      <link>https://badlydrawnrod.github.io/tags/windows/</link>
+      <link>http://localhost:1313/tags/windows/</link>
       <pubDate>Wed, 12 Aug 2020 12:30:00 +0100</pubDate>
-      <guid>https://badlydrawnrod.github.io/tags/windows/</guid>
+      <guid>http://localhost:1313/tags/windows/</guid>
       <description></description>
     </item>
     <item>
       <title>Cmake</title>
-      <link>https://badlydrawnrod.github.io/tags/cmake/</link>
+      <link>http://localhost:1313/tags/cmake/</link>
       <pubDate>Sun, 05 Jul 2020 15:43:00 +0100</pubDate>
-      <guid>https://badlydrawnrod.github.io/tags/cmake/</guid>
+      <guid>http://localhost:1313/tags/cmake/</guid>
       <description></description>
     </item>
     <item>
       <title>Emscripten</title>
-      <link>https://badlydrawnrod.github.io/tags/emscripten/</link>
+      <link>http://localhost:1313/tags/emscripten/</link>
       <pubDate>Sun, 05 Jul 2020 15:43:00 +0100</pubDate>
-      <guid>https://badlydrawnrod.github.io/tags/emscripten/</guid>
+      <guid>http://localhost:1313/tags/emscripten/</guid>
       <description></description>
     </item>
     <item>
       <title>Idbfs</title>
-      <link>https://badlydrawnrod.github.io/tags/idbfs/</link>
+      <link>http://localhost:1313/tags/idbfs/</link>
       <pubDate>Sun, 07 Jun 2020 12:00:00 +0100</pubDate>
-      <guid>https://badlydrawnrod.github.io/tags/idbfs/</guid>
+      <guid>http://localhost:1313/tags/idbfs/</guid>
       <description></description>
     </item>
     <item>
       <title>Indexeddb</title>
-      <link>https://badlydrawnrod.github.io/tags/indexeddb/</link>
+      <link>http://localhost:1313/tags/indexeddb/</link>
       <pubDate>Sun, 07 Jun 2020 12:00:00 +0100</pubDate>
-      <guid>https://badlydrawnrod.github.io/tags/indexeddb/</guid>
+      <guid>http://localhost:1313/tags/indexeddb/</guid>
       <description></description>
     </item>
     <item>
       <title>Clion</title>
-      <link>https://badlydrawnrod.github.io/tags/clion/</link>
+      <link>http://localhost:1313/tags/clion/</link>
       <pubDate>Sat, 30 May 2020 10:20:00 +0100</pubDate>
-      <guid>https://badlydrawnrod.github.io/tags/clion/</guid>
+      <guid>http://localhost:1313/tags/clion/</guid>
       <description></description>
     </item>
     <item>
       <title>Mingw</title>
-      <link>https://badlydrawnrod.github.io/tags/mingw/</link>
+      <link>http://localhost:1313/tags/mingw/</link>
       <pubDate>Tue, 19 May 2020 21:57:44 +0100</pubDate>
-      <guid>https://badlydrawnrod.github.io/tags/mingw/</guid>
+      <guid>http://localhost:1313/tags/mingw/</guid>
       <description></description>
     </item>
     <item>
       <title>Ninja</title>
-      <link>https://badlydrawnrod.github.io/tags/ninja/</link>
+      <link>http://localhost:1313/tags/ninja/</link>
       <pubDate>Tue, 19 May 2020 21:57:44 +0100</pubDate>
-      <guid>https://badlydrawnrod.github.io/tags/ninja/</guid>
+      <guid>http://localhost:1313/tags/ninja/</guid>
       <description></description>
     </item>
     <item>
       <title>Vcpkg</title>
-      <link>https://badlydrawnrod.github.io/tags/vcpkg/</link>
+      <link>http://localhost:1313/tags/vcpkg/</link>
       <pubDate>Mon, 18 May 2020 21:27:46 +0100</pubDate>
-      <guid>https://badlydrawnrod.github.io/tags/vcpkg/</guid>
+      <guid>http://localhost:1313/tags/vcpkg/</guid>
       <description></description>
     </item>
   </channel>

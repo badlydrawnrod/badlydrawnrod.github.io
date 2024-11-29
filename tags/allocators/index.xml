@@ -2,24 +2,24 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Allocators on My Badly Drawn Self</title>
-    <link>https://badlydrawnrod.github.io/tags/allocators/</link>
+    <link>http://localhost:1313/tags/allocators/</link>
     <description>Recent content in Allocators on My Badly Drawn Self</description>
     <generator>Hugo</generator>
     <language>en</language>
     <lastBuildDate>Thu, 30 Dec 2021 16:30:00 +0000</lastBuildDate>
-    <atom:link href="https://badlydrawnrod.github.io/tags/allocators/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="http://localhost:1313/tags/allocators/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Bump Allocators in C&#43;&#43;</title>
-      <link>https://badlydrawnrod.github.io/posts/2021/12/30/monotonic_buffer_resource/</link>
+      <link>http://localhost:1313/posts/2021/12/30/monotonic_buffer_resource/</link>
       <pubDate>Thu, 30 Dec 2021 16:30:00 +0000</pubDate>
-      <guid>https://badlydrawnrod.github.io/posts/2021/12/30/monotonic_buffer_resource/</guid>
+      <guid>http://localhost:1313/posts/2021/12/30/monotonic_buffer_resource/</guid>
       <description>&lt;p&gt;How do I implement a C++ bump allocator that works with standard library containers?&lt;/p&gt;</description>
     </item>
     <item>
       <title>Polymorphic Allocators in C&#43;&#43;</title>
-      <link>https://badlydrawnrod.github.io/posts/2021/12/28/allocators/</link>
+      <link>http://localhost:1313/posts/2021/12/28/allocators/</link>
       <pubDate>Tue, 28 Dec 2021 14:15:00 +0000</pubDate>
-      <guid>https://badlydrawnrod.github.io/posts/2021/12/28/allocators/</guid>
+      <guid>http://localhost:1313/posts/2021/12/28/allocators/</guid>
       <description>&lt;p&gt;C++17 introduced polymorphic allocators, but what problem do they solve?&lt;/p&gt;</description>
     </item>
   </channel>

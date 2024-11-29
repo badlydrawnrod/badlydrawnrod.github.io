@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Let&#39;s build a virtual machine: Part 12 - Dealing with data</title>
+	
+	
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu|Lora">
+	<link rel="stylesheet" href="/css/style.css">
+	
+</head>
+<body>
+	<header class="wrapper">
+    <nav>
+        <a href="http://localhost:1313/">Home</a>
+        <ul>
+			
+            
+            <li><a href="/page/about/">About</a></li>
+            
+            <li><a href="/posts/">All posts</a></li>
+            
+        </ul>
+    </nav>
+    
+</header>
+	
+<main class="wrapper">
+    <article>
+        <p></p>
+        
+        <div class="date">29 November, 2024</div>
+        
+        <div>
+            <p>How data is represented in an ELF file, including &ldquo;What does <code>bss</code> mean?&rdquo;</p>
+<h1 id="part-12-dealing-with-data">Part 12 Dealing with data</h1>
+<p>In the last couple of posts we looked at <a href="http://localhost:1313/posts/2024/09/08/lbavm-010/">running RISC-V instructions directly</a> and then we <a href="http://localhost:1313/posts/2024/10/05/lbavm-011/">improved the instruction handler by using C++ concepts</a>.</p>
+<p>Until now, the only C programs that we&rsquo;ve compiled for the Owl-2820 VM have been various incarnations of <code>fib.c</code> that generated the first few results in the Fibonacci sequence. It is time to move on from Fibonacci and compile and run other programs, but to do so, we need to find a way to deal with data.</p>
+<p>It may not be immediately obvious, but <code>fib.c</code> doesn&rsquo;t use data so we&rsquo;ve been able to get away with creating an image from its text sections only. In other words, we&rsquo;ve been loading and running an image that contains only code, not data.</p>
+<p>In the next few posts we&rsquo;re going to look at how we can load and run programs that contain both code and data. In this post, we&rsquo;re going to look at different types of data, then focus on read-only data.</p>
+<p>Let&rsquo;s start this journey with a reminder of how we build and run programs.</p>
+<h1 id="recap---building-and-running-fibc">Recap - building and running fib.c</h1>
+<p>To recap, we&rsquo;ve built and run programs as follows:</p>
+<ul>
+<li>use <code>clang</code> to compile and link the code into an RV32I <a href="https://en.wikipedia.org/wiki/Executable_and_Linkable_Format">ELF</a> binary</li>
+<li>extract the <code>.init</code> and <code>.text</code> sections into a binary image using <code>llvm-objcopy</code></li>
+<li>create a hex dump of the binary image and embed it in the source code of the VM so that it can be run without having to load anything</li>
+<li>transcode the image from RISC-V encoded instructions to Owl-2820 encoded instructions</li>
+</ul>
+<p>Let&rsquo;s go through each stage and take a closer look at what is going on.</p>
+<h2 id="compiling-with-clang">Compiling with clang</h2>
+<p>This command line tells <a href="https://clang.llvm.org/docs/UsersManual.html"><code>clang</code></a> to compile the startup code in <code>crt0.S</code> and the main program in <code>fib.c</code>, and link them into an 32-bit RISC-V ELF binary named <code>a.out</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>clang -Os --target=riscv32 -march=rv32i -mabi=ilp32 -ffreestanding -ffunction-sections \
+</span></span><span style="display:flex;"><span>      -fdata-sections ./source/crt0.S ./source/fib.c -nostdlib -nodefaultlibs \
+</span></span><span style="display:flex;"><span>      &#34;-Wl,--section-start=.init=0&#34; &#34;-Wl,--section-start=.text=100&#34;
+</span></span></code></pre></div><p>It uses the <code>--section-start</code> linker option to place the <code>.init</code> section, which contains the instructions for the startup code, at address <code>0x00000000</code>, and the <code>.text</code> section, which contains the instructions for the main program, at address <code>0x00000100</code>.</p>
+<h3 id="the-init-and-text-sections">The .init and .text sections</h3>
+<p>Here we use <a href="https://llvm.org/docs/CommandGuide/llvm-objdump.html"><code>llvm-objdump</code></a> with the <code>-h</code> flag to view the <a href="https://en.wikipedia.org/wiki/Executable_and_Linkable_Format#Section_header">section headers</a> in the resulting ELF binary, <code>a.out</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>llvm-objdump -h a.out
+</span></span></code></pre></div><p>In the output below, the <code>.init</code> and <code>.text</code> sections are both of type <code>TEXT</code>, meaning that they contain executable instructions.</p>
+<p>The <code>.eh_frame</code> section is of type <code>DATA</code>, meaning that it contains data. However, as <code>.eh_frame</code> describes call frames to be unwound during C++ exception handling, the data that it contains is not very interesting to us at this point.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>a.out:  file format elf32-littleriscv
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Sections:
+</span></span><span style="display:flex;"><span>Idx Name              Size     VMA      Type
+</span></span><span style="display:flex;"><span>  0                   00000000 00000000
+</span></span><span style="display:flex;"><span>  1 .init             0000001c 00000000 TEXT
+</span></span><span style="display:flex;"><span>  2 .text             00000054 00000100 TEXT
+</span></span><span style="display:flex;"><span>  3 .eh_frame         0000002c 00001154 DATA
+</span></span><span style="display:flex;"><span>  4 .riscv.attributes 0000001c 00000000
+</span></span><span style="display:flex;"><span>  5 .comment          00000029 00000000
+</span></span><span style="display:flex;"><span>  6 .symtab           000000c0 00000000
+</span></span><span style="display:flex;"><span>  7 .shstrtab         0000004c 00000000
+</span></span><span style="display:flex;"><span>  8 .strtab           00000031 00000000
+</span></span></code></pre></div><p>The <code>.init</code> section is shockingly small as it contains just 28 bytes (<code>0000001c</code> in the <code>Size</code> column), and the <code>.text</code> section isn&rsquo;t much bigger, at 84 bytes (<code>00000054</code>). The total size of the combined executable sections is only 112 bytes. Given the size of most programs these days, you&rsquo;d be forgiven for thinking that 112 bytes could be a typo or a miscalculation, but it is correct as <code>fib.c</code> contains no data, uses no libraries, and relies on syscalls to do the heavy lifting.</p>
+<p>The sections in the file are described in this table.</p>
+<table>
+  <thead>
+      <tr>
+          <th style="text-align: left">Section Name</th>
+          <th style="text-align: left">Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td style="text-align: left"><code>.init</code></td>
+          <td style="text-align: left">the executable instructions for the startup code</td>
+      </tr>
+      <tr>
+          <td style="text-align: left"><code>.text</code></td>
+          <td style="text-align: left">the executable instructions for the program</td>
+      </tr>
+      <tr>
+          <td style="text-align: left"><code>.eh_frame</code></td>
+          <td style="text-align: left">call frames to be unwound in C++ exception processing</td>
+      </tr>
+      <tr>
+          <td style="text-align: left"><code>.riscv.attributes</code></td>
+          <td style="text-align: left"><a href="https://github.com/riscv-non-isa/riscv-elf-psabi-doc/blob/master/riscv-elf.adoc#attributes">RISC-V specific attributes</a></td>
+      </tr>
+      <tr>
+          <td style="text-align: left"><code>.comment</code></td>
+          <td style="text-align: left">version control information</td>
+      </tr>
+      <tr>
+          <td style="text-align: left"><code>.symtab</code></td>
+          <td style="text-align: left">a symbol table</td>
+      </tr>
+      <tr>
+          <td style="text-align: left"><code>.shstrtab</code></td>
+          <td style="text-align: left">a blob of zero-terminated section names, indexed by the section header</td>
+      </tr>
+      <tr>
+          <td style="text-align: left"><code>.strtab</code></td>
+          <td style="text-align: left">strings, usually associated with symbol table entries</td>
+      </tr>
+  </tbody>
+</table>
+<p>An ELF file can have many different types of section. For a more comprehensive list take a look at the <a href="https://refspecs.linuxbase.org/LSB_5.0.0/LSB-Core-generic/LSB-Core-generic/specialsections.html">Linux Standard Base Core Specification</a>.</p>
+<h3 id="disassembling-the-elf-binary">Disassembling the ELF binary</h3>
+<p>The next command line uses <code>llvm-objdump</code> with the <code>-f</code> flag to display the file header, and the <code>-d</code> flag to disassemble the instructions in the ELF binary, <code>a.out</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>llvm-objump -f -d a.out
+</span></span></code></pre></div><p>By default <code>llvm-objdump</code> will only disassemble sections that contain executable instructions, i.e., those whose type is <code>TEXT</code>. As the only <code>TEXT</code> sections in <code>a.out</code> are <code>.init</code> and <code>.text</code>, these are the only sections that are disassembled.</p>
+<p>The disassembly output confirms that the startup code in the <code>.init</code> section is at address <code>0x00000000</code> and that <code>main</code>, in the <code>.text</code> section, is at address <code>0x00000100</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>a.out:  file format elf32-littleriscv
+</span></span><span style="display:flex;"><span>architecture: riscv32
+</span></span><span style="display:flex;"><span>start address: 0x00000000
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Disassembly of section .init:
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>00000000 &lt;_start&gt;:
+</span></span><span style="display:flex;"><span>       0: 13 05 00 00   li      a0, 0x0
+</span></span><span style="display:flex;"><span>       4: 93 05 00 00   li      a1, 0x0
+</span></span><span style="display:flex;"><span>       8: 13 06 00 00   li      a2, 0x0
+</span></span><span style="display:flex;"><span>       c: ef 00 40 0f   jal     0x100 &lt;main&gt;
+</span></span><span style="display:flex;"><span>      10: 13 05 00 00   li      a0, 0x0
+</span></span><span style="display:flex;"><span>      14: 93 08 00 00   li      a7, 0x0
+</span></span><span style="display:flex;"><span>      18: 73 00 00 00   ecall
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Disassembly of section .text:
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>00000100 &lt;main&gt;:
+</span></span><span style="display:flex;"><span>     100: 13 06 00 00   li      a2, 0x0
+</span></span><span style="display:flex;"><span>     104: 93 06 20 00   li      a3, 0x2
+</span></span><span style="display:flex;"><span>     108: 13 07 10 00   li      a4, 0x1
+</span></span><span style="display:flex;"><span>     10c: 93 07 00 03   li      a5, 0x30
+</span></span><span style="display:flex;"><span>     110: 93 05 06 00   mv      a1, a2
+</span></span><span style="display:flex;"><span>     114: 63 62 d6 02   bltu    a2, a3, 0x138 &lt;main+0x38&gt;
+</span></span><span style="display:flex;"><span>     118: 13 05 00 00   li      a0, 0x0
+</span></span><span style="display:flex;"><span>     11c: 93 05 10 00   li      a1, 0x1
+</span></span><span style="display:flex;"><span>     120: 13 08 06 00   mv      a6, a2
+</span></span><span style="display:flex;"><span>     124: 93 88 05 00   mv      a7, a1
+</span></span><span style="display:flex;"><span>     128: 13 08 f8 ff   addi    a6, a6, -0x1
+</span></span><span style="display:flex;"><span>     12c: b3 05 b5 00   add     a1, a0, a1
+</span></span><span style="display:flex;"><span>     130: 13 85 08 00   mv      a0, a7
+</span></span><span style="display:flex;"><span>     134: e3 68 07 ff   bltu    a4, a6, 0x124 &lt;main+0x24&gt;
+</span></span><span style="display:flex;"><span>     138: 93 08 10 00   li      a7, 0x1
+</span></span><span style="display:flex;"><span>     13c: 13 05 06 00   mv      a0, a2
+</span></span><span style="display:flex;"><span>     140: 73 00 00 00   ecall
+</span></span><span style="display:flex;"><span>     144: 13 06 16 00   addi    a2, a2, 0x1
+</span></span><span style="display:flex;"><span>     148: e3 14 f6 fc   bne     a2, a5, 0x110 &lt;main+0x10&gt;
+</span></span><span style="display:flex;"><span>     14c: 13 05 00 00   li      a0, 0x0
+</span></span><span style="display:flex;"><span>     150: 67 80 00 00   ret
+</span></span></code></pre></div><h2 id="extracting-the-code-with-llvm-objcopy">Extracting the code with llvm-objcopy</h2>
+<p>The <a href="https://llvm.org/docs/CommandGuide/llvm-objcopy.html"><code>llvm-objcopy</code></a> is used to create a binary image named <code>a.bin</code> by extracting the <code>.init</code> section and <code>.text</code> section from the ELF binary, <code>a.out</code>. As <code>fib.c</code> doesn&rsquo;t contain any data, there is no need to extract any other sections.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>llvm-objcopy a.out -O binary a.bin -j .init -j .text
+</span></span></code></pre></div><p>When <code>llvm-objcopy</code> extracts the image, it fills gaps between sections with zeroes. There&rsquo;s a gap between the end of the 28 byte <code>.init</code> section and the start of the 84 byte <code>.text</code> section, so the size of the extracted file, <code>a.bin</code>, is 340 bytes rather than 112 bytes.</p>
+<h2 id="loading-the-binary-image">Loading the binary image</h2>
+<p>We&rsquo;ve been loading the image by taking a hex dump of <code>a.bin</code> then pasting the output into the VM&rsquo;s source code where it can be treated as array of bytes.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>std::span&lt;<span style="color:#2b91af">uint32_t</span>&gt; LoadRv32iImage()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// The RISC-V binary image from: https://badlydrawnrod.github.io/posts/2024/08/20/lbavm-008/
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">alignas</span>(<span style="color:#00f">alignof</span>(<span style="color:#2b91af">uint32_t</span>)) <span style="color:#00f">static</span> <span style="color:#2b91af">uint8_t</span> image[] = {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Address 0x0000 (from the .init section)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        0x13, 0x05, 0x00, 0x00, 0x93, 0x05, 0x00, 0x00, 0x13, 0x06, 0x00, 0x00, 0xEF, 0x00, 0x40, 0x0F,
+</span></span><span style="display:flex;"><span>        0x13, 0x05, 0x00, 0x00, 0x93, 0x08, 0x00, 0x00, 0x73, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// --- snip - lots of zeroes inserted by `llvm-obcopy` ---
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Address 0x0100 (from the .text section)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        0x13, 0x06, 0x00, 0x00, 0x93, 0x06, 0x20, 0x00, 0x13, 0x07, 0x10, 0x00, 0x93, 0x07, 0x00, 0x03,
+</span></span><span style="display:flex;"><span>        0x93, 0x05, 0x06, 0x00, 0x63, 0x62, 0xD6, 0x02, 0x13, 0x05, 0x00, 0x00, 0x93, 0x05, 0x10, 0x00,
+</span></span><span style="display:flex;"><span>        0x13, 0x08, 0x06, 0x00, 0x93, 0x88, 0x05, 0x00, 0x13, 0x08, 0xF8, 0xFF, 0xB3, 0x05, 0xB5, 0x00,
+</span></span><span style="display:flex;"><span>        0x13, 0x85, 0x08, 0x00, 0xE3, 0x68, 0x07, 0xFF, 0x93, 0x08, 0x10, 0x00, 0x13, 0x05, 0x06, 0x00,
+</span></span><span style="display:flex;"><span>        0x73, 0x00, 0x00, 0x00, 0x13, 0x06, 0x16, 0x00, 0xE3, 0x14, 0xF6, 0xFC, 0x13, 0x05, 0x00, 0x00,
+</span></span><span style="display:flex;"><span>        0x67, 0x80, 0x00, 0x00
+</span></span><span style="display:flex;"><span>    };
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">uint32_t</span>* imageBegin = <span style="color:#00f">reinterpret_cast</span>&lt;<span style="color:#2b91af">uint32_t</span>*&gt;(image);
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">uint32_t</span>* imageEnd = imageBegin + <span style="color:#00f">sizeof</span>(image) / <span style="color:#00f">sizeof</span>(<span style="color:#2b91af">uint32_t</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> std::span&lt;<span style="color:#2b91af">uint32_t</span>&gt;(imageBegin, imageEnd);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>This approach was just about workable for compiling and running a program as small as <code>fib.c</code>, but having to recompile the VM to accommodate different programs is not a long term solution.</p>
+<h2 id="running-the-binary-image">Running the binary image</h2>
+<p>To run the program in the binary image as RISC-V encoded instructions, the program copies the loaded image into VM memory then runs it using <code>RunRv32i()</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>        <span style="color:#008000">// Create a 4K memory image.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">constexpr</span> size_t memorySize = 4096;
+</span></span><span style="display:flex;"><span>        std::vector&lt;<span style="color:#2b91af">uint32_t</span>&gt; image(memorySize / <span style="color:#00f">sizeof</span>(<span style="color:#2b91af">uint32_t</span>));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">auto</span> rv32iImage = LoadRv32iImage();
+</span></span><span style="display:flex;"><span>        std::ranges::copy(rv32iImage, image.begin());
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        std::cout &lt;&lt; <span style="color:#a31515">&#34;Running RISC-V encoded instructions...</span><span style="color:#a31515">\n</span><span style="color:#a31515">&#34;</span>;
+</span></span><span style="display:flex;"><span>        RunRv32i(image);
+</span></span></code></pre></div><p>To run the program in the binary image as Owl-2820 encoded instructions, the program transcodes the entire image from RISC-V encoding to Owl-2820 encoding, then copies the result into VM memory before running it with <code>Run()</code>.</p>
+<p>This is possible only because the image consists of instructions only. If the image also contained data then we&rsquo;d need a way to tell the VM which parts of the image are code and which are data.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>        <span style="color:#008000">// Transcode it to Owl-2820.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">auto</span> owlImage = Rv32iToOwl(rv32iImage);
+</span></span><span style="display:flex;"><span>        DisassembleOwl(owlImage);
+</span></span><span style="display:flex;"><span>        std::ranges::copy(owlImage, image.begin());
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        std::cout &lt;&lt; <span style="color:#a31515">&#34;</span><span style="color:#a31515">\n</span><span style="color:#a31515">Running Owl-2820 encoded instructions...</span><span style="color:#a31515">\n</span><span style="color:#a31515">&#34;</span>;
+</span></span><span style="display:flex;"><span>        Run(image);
+</span></span></code></pre></div><h2 id="summary">Summary</h2>
+<p>That was an overview of what it takes to be able to compile and load an image so that it can be run on the Owl VM. There are several shortcomings to this approach.</p>
+<p>In particular:</p>
+<ul>
+<li>It doesn&rsquo;t handle data.</li>
+<li>Section addresses have to be specified manually during compilation.</li>
+<li>The image has to be hard-coded into the VM in order to run it.</li>
+<li>Transcoding only works because it can assume that the entire image is code.</li>
+</ul>
+<h1 id="programs-with-data">Programs with data</h1>
+<p>For the Owl-2820 VM to be of any use, it needs to be able to run programs that contain data.</p>
+<p>To explore this further, we&rsquo;ll move away from <code>fib.c</code> to some simple programs that contain different types of data. We&rsquo;ll also add more syscalls so that the Owl-2820 VM can do more than just printing Fibonacci numbers and exiting.</p>
+<p>Before going into details, let&rsquo;s have a brief introduction to the different types of data.</p>
+<h2 id="types-of-data">Types of data</h2>
+<p>There are essentially 3 types of data can appear in a RISC-V ELF binary that has been compiled from C source code.</p>
+<ol>
+<li><strong>read-only data</strong> such as string literals</li>
+<li><strong>initialized data</strong>, i.e., variables, both global and static, that have a value when the program starts</li>
+<li><strong>uninitialized data</strong>, uninitialized variables, typically zeroed when the program starts</li>
+</ol>
+<p>Data of each type is placed in its own section in the ELF binary.</p>
+<table>
+  <thead>
+      <tr>
+          <th style="text-align: left">Section Name</th>
+          <th style="text-align: left">Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td style="text-align: left"><code>.rodata</code></td>
+          <td style="text-align: left">read-only data, such as string literals</td>
+      </tr>
+      <tr>
+          <td style="text-align: left"><code>.data</code> and <code>.sdata</code></td>
+          <td style="text-align: left">initialized data</td>
+      </tr>
+      <tr>
+          <td style="text-align: left"><code>.bss</code> and <code>.sbss</code></td>
+          <td style="text-align: left">uninitialized data</td>
+      </tr>
+  </tbody>
+</table>
+<h3 id="what-is-bss">What is bss?</h3>
+<p>The names <code>.rodata</code> and <code>.data</code> are self-explanatory, but what is <code>.bss</code>? How does that mean uninitialized data?</p>
+<p>For the uninitiated, <code>bss</code> stands for &ldquo;Block Started by Symbol&rdquo;. That&rsquo;s almost as cryptic as <code>bss</code>, so the reality is that it is nothing more than a historical convention that means uninitialized data.</p>
+<h3 id="a-historical-note-on-bss">A historical note on bss</h3>
+<p>While researching for this post, I found my old copy of <a href="https://www.amazon.co.uk/Magic-Garden-Explained-Berny-Goodheart/dp/0130981389"><em>The Magic Garden Explained</em></a>, by Berny Goodheart and James Cox. This book, first published in 1994, explains the internal workings of <a href="https://en.wikipedia.org/wiki/UNIX_System_V#SVR4">UNIX System V Release 4</a>. The book says that &ldquo;bss came from the IBM 7090 assembly language and stood for &lsquo;block started by symbol&rsquo;&rdquo;.</p>
+<p>This clue led to a manual for the <a href="https://archive.computerhistory.org/resources/text/Fortran/102663110.05.01.acc.pdf">Fortran Assembly Program for the IBM 709/7090</a>, first published in 1960, which describes the &ldquo;storage-allocating pseudo-operation&rdquo; <code>BSS</code> as a way &ldquo;to reserve blocks of memory for data storage or working space&rdquo;.</p>
+<p>In other words, the original <code>BSS</code> was just an <a href="https://ftp.gnu.org/old-gnu/Manuals/gas/html_chapter/as_7.html">assembler directive</a> that reserved a block of space. It even had a counterpart, <code>BES</code>, which stood for &ldquo;Block Ended by Symbol&rdquo;.</p>
+<p>If you&rsquo;re curious to learn more then follow the <a href="https://archive.computerhistory.org/resources/text/Fortran/102663110.05.01.acc.pdf">link to the manual</a> and look at the pages numbered 29-30. The entire manual is fascinating. If you thought that computers have always worked with bytes, or that ASCII was ubiquitous in the days before Unicode, then think again. You might even change your mind about the meaning of &ldquo;operating system&rdquo;.</p>
+<h2 id="adding-syscalls">Adding syscalls</h2>
+<p>To make it easier to demonstrate the different types of data, we&rsquo;re going to add 3 new syscalls: <code>randomize</code>, <code>random</code> and <code>puts</code>. Here&rsquo;s how they&rsquo;re implemented in the Owl-2820 VM.</p>
+<h3 id="random">random</h3>
+<p>The <code>randomize</code> syscall sets the seed of the random number generator.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>        <span style="color:#00f">case</span> Syscall::randomize:
+</span></span><span style="display:flex;"><span>            std::srand(time(<span style="color:#00f">nullptr</span>));
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">break</span>;
+</span></span></code></pre></div><h3 id="random-1">random</h3>
+<p>The <code>random</code> syscall returns a random number between 0 and the value passed to it in register <em>a0</em>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>        <span style="color:#00f">case</span> Syscall::random:
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">if</span> (x[a0] != 0)
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                x[a0] = std::rand() % x[a0];
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">break</span>;
+</span></span></code></pre></div><h3 id="puts">puts</h3>
+<p>The <code>puts</code> syscall prints a zero-terminated string, whose address is passed in register <em>a0</em>, to the host&rsquo;s stdout.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>        <span style="color:#00f">case</span> Syscall::puts:
+</span></span><span style="display:flex;"><span>            <span style="color:#008000">// We really shouldn&#39;t do this without at least a bounds check. Who knows what horrors
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>            <span style="color:#008000">// the caller is giving us.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>            std::puts(<span style="color:#00f">reinterpret_cast</span>&lt;<span style="color:#00f">const</span> <span style="color:#2b91af">char</span>*&gt;(memory.data()) + x[a0]);
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">break</span>;
+</span></span></code></pre></div><h1 id="read-only-data">Read-only data</h1>
+<h2 id="a-fortune-program">A fortune program</h2>
+<p>We&rsquo;ll demonstrate the use of read-only data by looking at a simple <code>fortune</code> program that displays a random aphorism when it runs. To do this, it uses the newly added <code>randomize</code>, <code>random</code> and <code>puts</code> syscalls.</p>
+<p>In <code>fib.c</code>, the syscall interfaces were part of <code>fib.c</code> itself, but for <code>fortune.c</code> I&rsquo;ve moved them into a new header, <code>syscalls.h</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#00f">#include</span> <span style="color:#00f">&#34;syscalls.h&#34;</span><span style="color:#00f">
+</span></span></span><span style="display:flex;"><span><span style="color:#00f"></span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">#include</span> <span style="color:#00f">&lt;stddef.h&gt;</span><span style="color:#00f">
+</span></span></span><span style="display:flex;"><span><span style="color:#00f">#include</span> <span style="color:#00f">&lt;stdint.h&gt;</span><span style="color:#00f">
+</span></span></span><span style="display:flex;"><span><span style="color:#00f"></span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">static</span> <span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* aphorisms[] = {
+</span></span><span style="display:flex;"><span>        <span style="color:#a31515">&#34;Absence makes the heart grow fonder.&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a31515">&#34;A chain is only as strong as its weakest link.&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a31515">&#34;Actions speak louder than words.&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a31515">&#34;Better late than never.&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a31515">&#34;Experience is the name everyone gives to their mistakes.&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a31515">&#34;If it ain&#39;t broke, don&#39;t fix it.&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a31515">&#34;If you lie down with dogs, you get up with fleas.&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a31515">&#34;Ignorance is bliss.&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a31515">&#34;Measure twice. Cut once.&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a31515">&#34;The road to hell is paved with good intentions.&#34;</span>,
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#2b91af">int</span> main()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    randomize();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">const</span> <span style="color:#2b91af">size_t</span> numAphorisms = <span style="color:#00f">sizeof</span>(aphorisms) / <span style="color:#00f">sizeof</span>(<span style="color:#2b91af">char</span>*);
+</span></span><span style="display:flex;"><span>    puts(aphorisms[random(numAphorisms)]);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> 0;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The <code>fortune.c</code> program contains read-only data, in the form of the <code>aphorisms</code> array and the strings that it points to. As we saw earlier, read-only data is placed in the <code>.rodata</code> section of the ELF binary.</p>
+<table>
+  <thead>
+      <tr>
+          <th style="text-align: left">Section Name</th>
+          <th style="text-align: left">Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td style="text-align: left"><code>.rodata</code></td>
+          <td style="text-align: left">read-only data</td>
+      </tr>
+  </tbody>
+</table>
+<h2 id="compiling-fortune">Compiling fortune</h2>
+<p>Let&rsquo;s compile the program, then examine the resulting ELF file.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>clang -Os --target=riscv32 -march=rv32i -mabi=ilp32 -ffreestanding -ffunction-sections \
+</span></span><span style="display:flex;"><span>      -fdata-sections ./source/crt0.S ./source/fortune.c -nostdlib -nodefaultlibs \
+</span></span><span style="display:flex;"><span>      &#34;-Wl,--section-start=.init=0&#34; \
+</span></span><span style="display:flex;"><span>      &#34;-Wl,--section-start=.text=100&#34; \
+</span></span><span style="display:flex;"><span>      &#34;-Wl,--section-start=.rodata=800&#34; \
+</span></span><span style="display:flex;"><span>      &#34;-g&#34;
+</span></span></code></pre></div><p>As before, the <code>--section-start</code> linker option is used to place the <code>.init</code> section at address <code>0x0000</code>, and the <code>.text</code> section at address <code>0x0100</code>.</p>
+<p>There&rsquo;s an additional section, <code>.rodata</code>, which I&rsquo;ve placed at address <code>0x0800</code> to leave a gap between the end of the <code>.text</code> section and the start of <code>.rodata</code> so that we can add more code later without having to change the command line.</p>
+<p>The <code>-g</code> flag generates debug information in the ELF file. This will be useful when disassembling.</p>
+<h2 id="viewing-fortunes-section-headers">Viewing fortune&rsquo;s section headers</h2>
+<p>We can run <code>llvm-objdump -h</code> to view the section headers.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>llvm-objdump -h a.out
+</span></span></code></pre></div><p>The section headers show that the read-only data has indeed gone into the <code>.rodata</code> section, and that its type is <code>DATA</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>a.out:  file format elf32-littleriscv
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Sections:
+</span></span><span style="display:flex;"><span>Idx Name              Size     VMA      Type
+</span></span><span style="display:flex;"><span>  0                   00000000 00000000
+</span></span><span style="display:flex;"><span>  1 .init             0000001c 00000000 TEXT
+</span></span><span style="display:flex;"><span>  2 .text             00000038 00000100 TEXT
+</span></span><span style="display:flex;"><span>  3 .rodata           0000019e 00000800 DATA
+</span></span><span style="display:flex;"><span>  4 .eh_frame         0000002c 000009a0 DATA
+</span></span><span style="display:flex;"><span>  5 .riscv.attributes 0000001c 00000000
+</span></span><span style="display:flex;"><span>  6 .comment          00000029 00000000
+</span></span><span style="display:flex;"><span>  7 .symtab           00000100 00000000
+</span></span><span style="display:flex;"><span>  8 .shstrtab         00000054 00000000
+</span></span><span style="display:flex;"><span>  9 .strtab           00000052 00000000
+</span></span></code></pre></div><h2 id="finding-the-data">Finding the data</h2>
+<p>We can run <code>llvm-objcopy</code> to extract the sections of interest into a single binary image, <code>a.bin</code>, this time including the <code>.rodata</code> section.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>llvm-objcopy a.out -O binary a.bin -j .init -j .text -j .rodata
+</span></span></code></pre></div><p>Then we can use <code>format-hex</code> or <code>hd</code> to view the output as a hex dump.</p>
+<h3 id="the-image">The image</h3>
+<p>The startup code in the <code>.init</code> section has been written to the image at offset <code>0x0000</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>00000000   37 81 00 00 13 05 00 00 93 05 00 00 13 06 00 00  7.............
+</span></span><span style="display:flex;"><span>00000010   EF 00 00 0F 93 08 00 00 73 00 00 00 00 00 00 00  ï......s.......
+</span></span></code></pre></div><p>The program in the <code>.text</code> section has been written to the image at offset <code>0x0100</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>00000100   93 08 30 00 73 00 00 00 93 08 40 00 13 05 A0 00  .0.s....@... .
+</span></span><span style="display:flex;"><span>00000110   73 00 00 00 13 15 25 00 B7 15 00 00 93 85 05 80  s.....%.·....
+</span></span><span style="display:flex;"><span>00000120   33 85 A5 00 03 25 05 00 93 08 20 00 73 00 00 00  3¥..%... .s...
+</span></span><span style="display:flex;"><span>00000130   13 05 00 00 67 80 00 00 00 00 00 00 00 00 00 00  ....g..........
+</span></span></code></pre></div><p>The read-only data in the <code>.rodata</code> section has been written to the image at offset <code>0x0800</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>00000800   D5 08 00 00 28 08 00 00 33 09 00 00 86 09 00 00  Õ...(...3......
+</span></span><span style="display:flex;"><span>00000810   FA 08 00 00 B4 08 00 00 54 09 00 00 57 08 00 00  ú...´...T...W...
+</span></span><span style="display:flex;"><span>00000820   6B 08 00 00 84 08 00 00 41 20 63 68 61 69 6E 20  k......A chain
+</span></span><span style="display:flex;"><span>00000830   69 73 20 6F 6E 6C 79 20 61 73 20 73 74 72 6F 6E  is only as stron
+</span></span><span style="display:flex;"><span>00000840   67 20 61 73 20 69 74 73 20 77 65 61 6B 65 73 74  g as its weakest
+</span></span><span style="display:flex;"><span>00000850   20 6C 69 6E 6B 2E 00 49 67 6E 6F 72 61 6E 63 65   link..Ignorance
+</span></span><span style="display:flex;"><span>00000860   20 69 73 20 62 6C 69 73 73 2E 00 4D 65 61 73 75   is bliss..Measu
+</span></span><span style="display:flex;"><span>00000870   72 65 20 74 77 69 63 65 2E 20 43 75 74 20 6F 6E  re twice. Cut on
+</span></span><span style="display:flex;"><span>00000880   63 65 2E 00 54 68 65 20 72 6F 61 64 20 74 6F 20  ce..The road to
+</span></span><span style="display:flex;"><span>00000890   68 65 6C 6C 20 69 73 20 70 61 76 65 64 20 77 69  hell is paved wi
+</span></span><span style="display:flex;"><span>000008A0   74 68 20 67 6F 6F 64 20 69 6E 74 65 6E 74 69 6F  th good intentio
+</span></span><span style="display:flex;"><span>000008B0   6E 73 2E 00 49 66 20 69 74 20 61 69 6E 27 74 20  ns..If it ain&#39;t
+</span></span><span style="display:flex;"><span>000008C0   62 72 6F 6B 65 2C 20 64 6F 6E 27 74 20 66 69 78  broke, don&#39;t fix
+</span></span><span style="display:flex;"><span>000008D0   20 69 74 2E 00 41 62 73 65 6E 63 65 20 6D 61 6B   it..Absence mak
+</span></span><span style="display:flex;"><span>000008E0   65 73 20 74 68 65 20 68 65 61 72 74 20 67 72 6F  es the heart gro
+</span></span><span style="display:flex;"><span>000008F0   77 20 66 6F 6E 64 65 72 2E 00 45 78 70 65 72 69  w fonder..Experi
+</span></span><span style="display:flex;"><span>00000900   65 6E 63 65 20 69 73 20 74 68 65 20 6E 61 6D 65  ence is the name
+</span></span><span style="display:flex;"><span>00000910   20 65 76 65 72 79 6F 6E 65 20 67 69 76 65 73 20   everyone gives
+</span></span><span style="display:flex;"><span>00000920   74 6F 20 74 68 65 69 72 20 6D 69 73 74 61 6B 65  to their mistake
+</span></span><span style="display:flex;"><span>00000930   73 2E 00 41 63 74 69 6F 6E 73 20 73 70 65 61 6B  s..Actions speak
+</span></span><span style="display:flex;"><span>00000940   20 6C 6F 75 64 65 72 20 74 68 61 6E 20 77 6F 72   louder than wor
+</span></span><span style="display:flex;"><span>00000950   64 73 2E 00 49 66 20 79 6F 75 20 6C 69 65 20 64  ds..If you lie d
+</span></span><span style="display:flex;"><span>00000960   6F 77 6E 20 77 69 74 68 20 64 6F 67 73 2C 20 79  own with dogs, y
+</span></span><span style="display:flex;"><span>00000970   6F 75 20 67 65 74 20 75 70 20 77 69 74 68 20 66  ou get up with f
+</span></span><span style="display:flex;"><span>00000980   6C 65 61 73 2E 00 42 65 74 74 65 72 20 6C 61 74  leas..Better lat
+</span></span><span style="display:flex;"><span>00000990   65 20 74 68 61 6E 20 6E 65 76 65 72 2E 00        e than never..
+</span></span></code></pre></div><h3 id="string-literals">String literals</h3>
+<p>The strings start at offset <code>0x0828</code> and continue to the end of the output.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>00000820                           41 20 63 68 61 69 6E 20          A chain
+</span></span><span style="display:flex;"><span>00000830   69 73 20 6F 6E 6C 79 20 61 73 20 73 74 72 6F 6E  is only as stron
+</span></span><span style="display:flex;"><span>00000840   67 20 61 73 20 69 74 73 20 77 65 61 6B 65 73 74  g as its weakest
+</span></span><span style="display:flex;"><span>00000850   20 6C 69 6E 6B 2E 00 49 67 6E 6F 72 61 6E 63 65   link..Ignorance
+</span></span></code></pre></div><h3 id="the-aphorisms-array">The aphorisms array</h3>
+<p>The 40 bytes that precede the first string are the contents of the <code>aphorisms</code> array, which is an array of pointers to strings.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#00f">static</span> <span style="color:#00f">const</span> <span style="color:#2b91af">char</span>* aphorisms[] = {
+</span></span><span style="display:flex;"><span>        <span style="color:#a31515">&#34;Absence makes the heart grow fonder.&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// ...
+</span></span></span></code></pre></div><p>There are 10 pointers in the <code>aphorisms</code> array, each of which is 4 bytes in size as we&rsquo;re compiling for a 32-bit target. Here&rsquo;s how it looks in the image.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span><span style="">00000800</span>   D5 08 00 00 28 08 00 00 33 09 00 00 86 09 00 00  <span style="">Õ</span>...(...3......
+</span></span><span style="display:flex;"><span><span style="">00000810</span>   FA 08 00 00 B4 08 00 00 54 09 00 00 57 08 00 00  <span style="">ú</span>...<span style="">´</span>...T...W...
+</span></span><span style="display:flex;"><span><span style="">00000820</span>   <span style="">6</span>B 08 00 00 84 08 00 00                          k.......
+</span></span></code></pre></div><p>If you squint closely at this, then you&rsquo;ll see a bunch of little-endian addresses. For example, the first entry, at offset <code>0x800</code> contains <code>D5 08 00 00</code>. When this is interpreted as a 32-bit little-endian number, it is <code>000008d5</code>, which is the offset in the image, <code>a.bin</code>, of the string &ldquo;<code>Absence makes the heart grow fonder.</code>&rdquo;</p>
+<h1 id="another-use-for-rodata">Another use for .rodata</h1>
+<p>There&rsquo;s another use for <code>.rodata</code> that may not be immediately apparent. Let&rsquo;s change <code>main()</code> to look like the following code, then recompile it.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C" data-lang="C"><span style="display:flex;"><span><span style="color:#2b91af">int</span> main()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    randomize();
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">const</span> <span style="color:#2b91af">size_t</span> numAphorisms = <span style="color:#00f">sizeof</span>(aphorisms) / <span style="color:#00f">sizeof</span>(<span style="color:#2b91af">char</span>*);
+</span></span><span style="display:flex;"><span>    puts(aphorisms[random(numAphorisms)]);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">switch</span> (random(100))
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">case</span> 0:
+</span></span><span style="display:flex;"><span>        puts(aphorisms[0]);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">case</span> 1:
+</span></span><span style="display:flex;"><span>        puts(aphorisms[1]);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">case</span> 2:
+</span></span><span style="display:flex;"><span>        puts(aphorisms[2]);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">case</span> 3:
+</span></span><span style="display:flex;"><span>        puts(aphorisms[3]);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">case</span> 4:
+</span></span><span style="display:flex;"><span>        puts(aphorisms[4]);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">case</span> 5:
+</span></span><span style="display:flex;"><span>        puts(aphorisms[5]);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">case</span> 6:
+</span></span><span style="display:flex;"><span>        puts(aphorisms[6]);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">case</span> 7:
+</span></span><span style="display:flex;"><span>        puts(aphorisms[7]);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">case</span> 8:
+</span></span><span style="display:flex;"><span>        puts(aphorisms[8]);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">case</span> 9:
+</span></span><span style="display:flex;"><span>        puts(aphorisms[9]);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">default</span>:
+</span></span><span style="display:flex;"><span>        puts(<span style="color:#a31515">&#34;Never trust your inputs.&#34;</span>);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> 0;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h2 id="viewing-the-section-headers">Viewing the section headers</h2>
+<p>This time, when we view the section headers with <code>llvm-objdump</code>, we can see that the <code>.rodata</code> section has grown by 65 bytes, to <code>0x1df</code> bytes.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>Sections:
+</span></span><span style="display:flex;"><span>Idx Name              Size     VMA      Type
+</span></span><span style="display:flex;"><span>  0                   00000000 00000000
+</span></span><span style="display:flex;"><span>  1 .init             0000001c 00000000 TEXT
+</span></span><span style="display:flex;"><span>  2 .text             0000013c 00000100 TEXT
+</span></span><span style="display:flex;"><span>  3 .rodata           000001df 00000800 DATA
+</span></span><span style="display:flex;"><span>  4 .eh_frame         0000002c 000009e0 DATA
+</span></span><span style="display:flex;"><span>  5 .riscv.attributes 0000001c 00000000
+</span></span><span style="display:flex;"><span>  6 .comment          00000029 00000000
+</span></span><span style="display:flex;"><span>  7 .symtab           00000110 00000000
+</span></span><span style="display:flex;"><span>  8 .shstrtab         00000054 00000000
+</span></span><span style="display:flex;"><span>  9 .strtab           00000057 00000000
+</span></span></code></pre></div><p>Some of that growth can be accounted for by the string literal used by the <code>switch</code> statement&rsquo;s <code>default</code> case, &ldquo;<code>Never trust your inputs.</code>&rdquo;, which occupies 25 bytes including its terminator.</p>
+<p>But what are the remaining 40 bytes? And where do they come from?</p>
+<h2 id="why-did-rodata-grow">Why did .rodata grow?</h2>
+<p>We can begin to find the answer by extracting a binary image with <code>llvm-objcopy</code>, then looking at its hex dump starting from the contents of the <code>.rodata</code> section at offset <code>0x0800</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>00000800   5C 01 00 00 D4 01 00 00 98 01 00 00 AC 01 00 00  \...Ô......¬...
+</span></span><span style="display:flex;"><span>00000810   70 01 00 00 E8 01 00 00 FC 01 00 00 C0 01 00 00  p...è...ü...À...
+</span></span><span style="display:flex;"><span>00000820   24 02 00 00 84 01 00 00 16 09 00 00 50 08 00 00  $..........P...
+</span></span><span style="display:flex;"><span>00000830   74 09 00 00 C7 09 00 00 3B 09 00 00 F5 08 00 00  t...Ç...;...õ...
+</span></span><span style="display:flex;"><span>00000840   95 09 00 00 7F 08 00 00 93 08 00 00 AC 08 00 00  .........¬...
+</span></span><span style="display:flex;"><span>00000850   41 20 63 68 61 69 6E 20 69 73 20 6F 6E 6C 79 20  A chain is only
+</span></span><span style="display:flex;"><span>00000860   61 73 20 73 74 72 6F 6E 67 20 61 73 20 69 74 73  as strong as its
+</span></span><span style="display:flex;"><span>00000870   20 77 65 61 6B 65 73 74 20 6C 69 6E 6B 2E 00 49   weakest link..I
+</span></span><span style="display:flex;"><span>00000880   67 6E 6F 72 61 6E 63 65 20 69 73 20 62 6C 69 73  gnorance is blis
+</span></span><span style="display:flex;"><span>00000890   73 2E 00 4D 65 61 73 75 72 65 20 74 77 69 63 65  s..Measure twice
+</span></span><span style="display:flex;"><span>000008A0   2E 20 43 75 74 20 6F 6E 63 65 2E 00 54 68 65 20  . Cut once..The
+</span></span><span style="display:flex;"><span>000008B0   72 6F 61 64 20 74 6F 20 68 65 6C 6C 20 69 73 20  road to hell is
+</span></span><span style="display:flex;"><span>000008C0   70 61 76 65 64 20 77 69 74 68 20 67 6F 6F 64 20  paved with good
+</span></span><span style="display:flex;"><span>000008D0   69 6E 74 65 6E 74 69 6F 6E 73 2E 00 4E 65 76 65  intentions..Neve
+</span></span><span style="display:flex;"><span>000008E0   72 20 74 72 75 73 74 20 79 6F 75 72 20 69 6E 70  r trust your inp
+</span></span><span style="display:flex;"><span>000008F0   75 74 73 2E 00 49 66 20 69 74 20 61 69 6E 27 74  uts..If it ain&#39;t
+</span></span><span style="display:flex;"><span>00000900   20 62 72 6F 6B 65 2C 20 64 6F 6E 27 74 20 66 69   broke, don&#39;t fi
+</span></span><span style="display:flex;"><span>00000910   78 20 69 74 2E 00 41 62 73 65 6E 63 65 20 6D 61  x it..Absence ma
+</span></span><span style="display:flex;"><span>00000920   6B 65 73 20 74 68 65 20 68 65 61 72 74 20 67 72  kes the heart gr
+</span></span><span style="display:flex;"><span>00000930   6F 77 20 66 6F 6E 64 65 72 2E 00 45 78 70 65 72  ow fonder..Exper
+</span></span><span style="display:flex;"><span>00000940   69 65 6E 63 65 20 69 73 20 74 68 65 20 6E 61 6D  ience is the nam
+</span></span><span style="display:flex;"><span>00000950   65 20 65 76 65 72 79 6F 6E 65 20 67 69 76 65 73  e everyone gives
+</span></span><span style="display:flex;"><span>00000960   20 74 6F 20 74 68 65 69 72 20 6D 69 73 74 61 6B   to their mistak
+</span></span><span style="display:flex;"><span>00000970   65 73 2E 00 41 63 74 69 6F 6E 73 20 73 70 65 61  es..Actions spea
+</span></span><span style="display:flex;"><span>00000980   6B 20 6C 6F 75 64 65 72 20 74 68 61 6E 20 77 6F  k louder than wo
+</span></span><span style="display:flex;"><span>00000990   72 64 73 2E 00 49 66 20 79 6F 75 20 6C 69 65 20  rds..If you lie
+</span></span><span style="display:flex;"><span>000009A0   64 6F 77 6E 20 77 69 74 68 20 64 6F 67 73 2C 20  down with dogs,
+</span></span><span style="display:flex;"><span>000009B0   79 6F 75 20 67 65 74 20 75 70 20 77 69 74 68 20  you get up with
+</span></span><span style="display:flex;"><span>000009C0   66 6C 65 61 73 2E 00 42 65 74 74 65 72 20 6C 61  fleas..Better la
+</span></span><span style="display:flex;"><span>000009D0   74 65 20 74 68 61 6E 20 6E 65 76 65 72 2E 00     te than never..
+</span></span></code></pre></div><h3 id="the-strings">The strings</h3>
+<p>The strings now start at offset <code>0x0850</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>00000850   41 20 63 68 61 69 6E 20 69 73 20 6F 6E 6C 79 20  A chain is only
+</span></span><span style="display:flex;"><span>00000860   61 73 20 73 74 72 6F 6E 67 20 61 73 20 69 74 73  as strong as its
+</span></span><span style="display:flex;"><span>00000870   20 77 65 61 6B 65 73 74 20 6C 69 6E 6B 2E 00 49   weakest link..I
+</span></span></code></pre></div><h3 id="the-aphorisms-array-1">The aphorisms array</h3>
+<p>The string are still preceded by contents of the <code>aphorisms</code> array which is now at offset <code>0x0828</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>00000820                           16 09 00 00 50 08 00 00          ...P...
+</span></span><span style="display:flex;"><span>00000830   74 09 00 00 C7 09 00 00 3B 09 00 00 F5 08 00 00  t...Ç...;...õ...
+</span></span><span style="display:flex;"><span>00000840   95 09 00 00 7F 08 00 00 93 08 00 00 AC 08 00 00  .........¬...
+</span></span></code></pre></div><h3 id="some-mystery-data">Some mystery data</h3>
+<p>We&rsquo;ve accounted for the strings, and the <code>aphorisms</code> array, but we still don&rsquo;t know what the remaining read-only data is, namely, the 40 bytes which start at offset <code>0x0800</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>00000800   5C 01 00 00 D4 01 00 00 98 01 00 00 AC 01 00 00  \...Ô......¬...
+</span></span><span style="display:flex;"><span>00000810   70 01 00 00 E8 01 00 00 FC 01 00 00 C0 01 00 00  p...è...ü...À...
+</span></span><span style="display:flex;"><span>00000820   24 02 00 00 84 01 00 00                          $.......
+</span></span></code></pre></div><h2 id="decoding-the-mystery-data">Decoding the mystery data</h2>
+<p>If we interpret the mystery data as 32-bit little-endian values, then we get 10 values, starting with <code>0x015c</code>, <code>0x01d4</code>, <code>0x0198</code>, and so on. These are clearly not values in the <code>.rodata</code> section as that starts at <code>0x0800</code>.</p>
+<p>However, when we compiled the program, we told the linker to put the <code>.text</code> section at address <code>0x0100</code>. We just saw from the section headers that the <code>.text</code> section&rsquo;s size is <code>0x013c</code> bytes, so that means that the <code>.text</code> section extends from <code>0x0100</code> up to <code>0x023c</code>.</p>
+<p>The values in the mystery data are all in that range. Could they correspond to addresses in the <code>.text</code> section? If so, code will we find at those addresses?</p>
+<h3 id="could-it-be-code">Could it be code?</h3>
+<p>Let&rsquo;s disassemble the <code>.text</code> section with <code>llvm-objdump</code> using the <code>-S</code> flag to show the source line, and the <code>-l</code> flag to show the line numbers.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>llvm-objdump -Sl --section=.text a.out
+</span></span></code></pre></div><p>I&rsquo;ve removed some of the output, as there was a lot of it. But here&rsquo;s enough to get a flavour. You can see how the compiler has inlined the syscalls, and the comments helpfully tell us which syscalls are being invoked.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span><span style="">00000100</span> <span style="">&lt;</span>main<span style="">&gt;</span>:
+</span></span><span style="display:flex;"><span><span style="color:#008000">; main():
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">; C:\projects\c++\owl-cpu\target\./source\syscalls.h:50
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">;     __asm__ __volatile__(
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>     <span style="">100:</span> <span style="">93</span> <span style="">08</span> <span style="">30</span> <span style="">00</span>   li      a7, 0x3
+</span></span><span style="display:flex;"><span>     <span style="">104:</span> <span style="">73</span> <span style="">00</span> <span style="">00</span> <span style="">00</span>   ecall
+</span></span><span style="display:flex;"><span><span style="color:#008000">; C:\projects\c++\owl-cpu\target\./source\syscalls.h:64
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">;     __asm__ __volatile__(&#34;ecall /* syscall(random) */&#34; // assembler template: ecall (with a comment)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>     <span style="">108:</span> <span style="">93</span> <span style="">08</span> <span style="">40</span> <span style="">00</span>   li      a7, 0x4
+</span></span><span style="display:flex;"><span>     <span style="">10</span>c: <span style="">13</span> <span style="">05</span> a0 00   li      a0, 0xa
+</span></span><span style="display:flex;"><span>     <span style="">110:</span> <span style="">73</span> <span style="">00</span> <span style="">00</span> <span style="">00</span>   ecall
+</span></span><span style="display:flex;"><span><span style="color:#008000">; C:\projects\c++\owl-cpu\target\./source\fortune.c:23
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">;     puts(aphorisms[random(numAphorisms)]);
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>     <span style="">114:</span> <span style="">13</span> <span style="">15</span> <span style="">25</span> <span style="">00</span>   slli    a0, a0, 0x2
+</span></span><span style="display:flex;"><span>     <span style="">118:</span> b7 15 00 00   lui     a1, 0x1
+</span></span><span style="display:flex;"><span>     <span style="">11</span>c: <span style="">93</span> <span style="">85</span> <span style="">85</span> <span style="">82</span>   addi    a1, a1, -0x7d8
+</span></span><span style="display:flex;"><span>     <span style="">120:</span> <span style="">33</span> <span style="">85</span> a5 00   add     a0, a1, a0
+</span></span><span style="display:flex;"><span>     <span style="">124:</span> <span style="">03</span> <span style="">25</span> <span style="">05</span> <span style="">00</span>   lw      a0, 0x0(a0)
+</span></span><span style="display:flex;"><span>     <span style="">128:</span> <span style="">93</span> <span style="">05</span> a0 00   li      a1, 0xa
+</span></span><span style="display:flex;"><span><span style="color:#008000">; C:\projects\c++\owl-cpu\target\./source\syscalls.h:38
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">;     __asm__ __volatile__(&#34;ecall /* syscall(puts) */&#34; // assembler template: ecall (with a comment)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>     <span style="">12</span>c: <span style="">93</span> <span style="">08</span> <span style="">20</span> <span style="">00</span>   li      a7, 0x2
+</span></span><span style="display:flex;"><span>     <span style="">130:</span> <span style="">73</span> <span style="">00</span> <span style="">00</span> <span style="">00</span>   ecall
+</span></span><span style="display:flex;"><span><span style="color:#008000">; C:\projects\c++\owl-cpu\target\./source\syscalls.h:64
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">;     __asm__ __volatile__(&#34;ecall /* syscall(random) */&#34; // assembler template: ecall (with a comment)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>     <span style="">134:</span> <span style="">93</span> <span style="">08</span> <span style="">40</span> <span style="">00</span>   li      a7, 0x4
+</span></span><span style="display:flex;"><span>     <span style="">138:</span> <span style="">13</span> <span style="">05</span> <span style="">40</span> <span style="">06</span>   li      a0, 0x64
+</span></span><span style="display:flex;"><span>     <span style="">13</span>c: <span style="">73</span> <span style="">00</span> <span style="">00</span> <span style="">00</span>   ecall
+</span></span><span style="display:flex;"><span><span style="color:#008000">; C:\projects\c++\owl-cpu\target\./source\fortune.c:25
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">;     switch (random(100))
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>     <span style="">140:</span> <span style="">63</span> <span style="">78</span> b5 0c   bgeu    a0, a1, 0x210 &lt;main+0x110&gt;
+</span></span><span style="display:flex;"><span>     <span style="">144:</span> <span style="">13</span> <span style="">15</span> <span style="">25</span> <span style="">00</span>   slli    a0, a0, 0x2
+</span></span><span style="display:flex;"><span>     <span style="">148:</span> b7 15 00 00   lui     a1, 0x1
+</span></span><span style="display:flex;"><span>     <span style="">14</span>c: <span style="">93</span> <span style="">85</span> <span style="">05</span> <span style="">80</span>   addi    a1, a1, -0x800
+</span></span><span style="display:flex;"><span>     <span style="">150:</span> <span style="">33</span> <span style="">05</span> b5 00   add     a0, a0, a1
+</span></span><span style="display:flex;"><span>     <span style="">154:</span> <span style="">03</span> <span style="">25</span> <span style="">05</span> <span style="">00</span>   lw      a0, 0x0(a0)
+</span></span><span style="display:flex;"><span>     <span style="">158:</span> <span style="">67</span> <span style="">00</span> <span style="">05</span> <span style="">00</span>   jr      a0
+</span></span><span style="display:flex;"><span><span style="color:#008000">; C:\projects\c++\owl-cpu\target\./source\syscalls.h:38
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">;     __asm__ __volatile__(&#34;ecall /* syscall(puts) */&#34; // assembler template: ecall (with a comment)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>     <span style="">15</span>c: <span style="">37</span> <span style="">15</span> <span style="">00</span> <span style="">00</span>   lui     a0, 0x1
+</span></span><span style="display:flex;"><span>     <span style="">160:</span> <span style="">13</span> <span style="">05</span> <span style="">65</span> <span style="">91</span>   addi    a0, a0, -0x6ea
+</span></span><span style="display:flex;"><span>     <span style="">164:</span> <span style="">93</span> <span style="">08</span> <span style="">20</span> <span style="">00</span>   li      a7, 0x2
+</span></span><span style="display:flex;"><span>     <span style="">168:</span> <span style="">73</span> <span style="">00</span> <span style="">00</span> <span style="">00</span>   ecall
+</span></span><span style="display:flex;"><span>     <span style="">16</span>c: <span style="">6</span>f 00 80 0c   j       0x234 &lt;main+0x134&gt;
+</span></span><span style="display:flex;"><span><span style="color:#008000">; C:\projects\c++\owl-cpu\target\./source\syscalls.h:38
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">;     __asm__ __volatile__(&#34;ecall /* syscall(puts) */&#34; // assembler template: ecall (with a comment)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>     <span style="">170:</span> <span style="">37</span> <span style="">15</span> <span style="">00</span> <span style="">00</span>   lui     a0, 0x1
+</span></span><span style="display:flex;"><span>     <span style="">174:</span> <span style="">13</span> <span style="">05</span> b5 93   addi    a0, a0, -0x6c5
+</span></span><span style="display:flex;"><span>     <span style="">178:</span> <span style="">93</span> <span style="">08</span> <span style="">20</span> <span style="">00</span>   li      a7, 0x2
+</span></span><span style="display:flex;"><span>     <span style="">17</span>c: <span style="">73</span> <span style="">00</span> <span style="">00</span> <span style="">00</span>   ecall
+</span></span><span style="display:flex;"><span>     <span style="">180:</span> <span style="">6</span>f 00 40 0b   j       0x234 &lt;main+0x134&gt;
+</span></span><span style="display:flex;"><span>     <span style="color:#008000">;
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>     <span style="color:#008000">; --- snip ---
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>     <span style="color:#008000">;
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">; C:\projects\c++\owl-cpu\target\./source\syscalls.h:38
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">;     __asm__ __volatile__(&#34;ecall /* syscall(puts) */&#34; // assembler template: ecall (with a comment)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>     <span style="">224:</span> <span style="">37</span> <span style="">15</span> <span style="">00</span> <span style="">00</span>   lui     a0, 0x1
+</span></span><span style="display:flex;"><span>     <span style="">228:</span> <span style="">13</span> <span style="">05</span> <span style="">35</span> <span style="">89</span>   addi    a0, a0, -0x76d
+</span></span><span style="display:flex;"><span>     <span style="">22</span>c: <span style="">93</span> <span style="">08</span> <span style="">20</span> <span style="">00</span>   li      a7, 0x2
+</span></span><span style="display:flex;"><span>     <span style="">230:</span> <span style="">73</span> <span style="">00</span> <span style="">00</span> <span style="">00</span>   ecall
+</span></span><span style="display:flex;"><span><span style="color:#008000">; C:\projects\c++\owl-cpu\target\./source\fortune.c:62
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">;     return 0;
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>     <span style="">234:</span> <span style="">13</span> <span style="">05</span> <span style="">00</span> <span style="">00</span>   li      a0, 0x0
+</span></span><span style="display:flex;"><span>     <span style="">238:</span> <span style="">67</span> <span style="">80</span> <span style="">00</span> <span style="">00</span>   ret
+</span></span></code></pre></div><p>If you look carefully then you&rsquo;ll see some of the assembly language is preceded by comments that correspond with lines of source code, such as&hellip;</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span><span style="color:#008000">;     puts(aphorisms[random(numAphorisms)]);
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>     <span style="">114:</span> <span style="">13</span> <span style="">15</span> <span style="">25</span> <span style="">00</span>   slli    a0, a0, 0x2
+</span></span><span style="display:flex;"><span>     <span style="">118:</span> b7 15 00 00   lui     a1, 0x1
+</span></span><span style="display:flex;"><span>     <span style="color:#008000">; --- snip ---
+</span></span></span></code></pre></div><p>And&hellip;</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span><span style="color:#008000">;     switch (random(100))
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>     <span style="">140:</span> <span style="">63</span> <span style="">78</span> b5 0c   bgeu    a0, a1, 0x210 &lt;main+0x110&gt;
+</span></span><span style="display:flex;"><span>     <span style="">144:</span> <span style="">13</span> <span style="">15</span> <span style="">25</span> <span style="">00</span>   slli    a0, a0, 0x2
+</span></span><span style="display:flex;"><span>     <span style="color:#008000">; --- snip ---
+</span></span></span></code></pre></div><p>You might find yourself wondering what happened to the <code>case</code> statements, as there&rsquo;s no obvious evidence of them in the output. However, they&rsquo;re definitely present. Cast your mind back to those offsets that we found in the mystery data; <code>0x015c</code>, <code>0x01d4</code>, <code>0x0198</code> and so on.</p>
+<p>Here&rsquo;s the code corresponding to offset <code>0x015c</code>. It&rsquo;s an invocation of the <code>puts</code> syscall, using a combination of <code>lui</code> and <code>addi</code> to load the value <code>0x0916</code> into register <em>a0</em>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span><span style="color:#008000">; C:\projects\c++\owl-cpu\target\./source\syscalls.h:38
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">;     __asm__ __volatile__(&#34;ecall /* syscall(puts) */&#34; // assembler template: ecall (with a comment)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>     <span style="">15</span>c: <span style="">37</span> <span style="">15</span> <span style="">00</span> <span style="">00</span>   lui     a0, 0x1
+</span></span><span style="display:flex;"><span>     <span style="">160:</span> <span style="">13</span> <span style="">05</span> <span style="">65</span> <span style="">91</span>   addi    a0, a0, -0x6ea
+</span></span><span style="display:flex;"><span>     <span style="">164:</span> <span style="">93</span> <span style="">08</span> <span style="">20</span> <span style="">00</span>   li      a7, 0x2
+</span></span><span style="display:flex;"><span>     <span style="">168:</span> <span style="">73</span> <span style="">00</span> <span style="">00</span> <span style="">00</span>   ecall
+</span></span><span style="display:flex;"><span>     <span style="">16</span>c: <span style="">6</span>f 00 80 0c   j       0x234 &lt;main+0x134&gt;
+</span></span></code></pre></div><p>Offset <code>0x0916</code> in <code>a.bin</code> is a value in the <code>.rodata</code> section. What do we find there? The string, &ldquo;<code>Absence makes the heart grow fonder.</code>&rdquo;</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>00000910   78 20 69 74 2E 00 41 62 73 65 6E 63 65 20 6D 61  x it..Absence ma
+</span></span><span style="display:flex;"><span>00000920   6B 65 73 20 74 68 65 20 68 65 61 72 74 20 67 72  kes the heart gr
+</span></span><span style="display:flex;"><span>00000930   6F 77 20 66 6F 6E 64 65 72 2E 00 45 78 70 65 72  ow fonder..Exper
+</span></span></code></pre></div><p>The instructions at offset <code>0x015c</code> correspond to the first <code>case</code> statement.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C" data-lang="C"><span style="display:flex;"><span>    <span style="color:#00f">case</span> 0:
+</span></span><span style="display:flex;"><span>        puts(aphorisms[0]);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">break</span>;
+</span></span></code></pre></div><p>Similarly, here&rsquo;s the code corresponding to offset <code>0x1d4</code>. It&rsquo;s another <code>puts</code>, this time loading the value <code>0x850</code> into register <em>a0</em>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span><span style="color:#008000">; C:\projects\c++\owl-cpu\target\./source\syscalls.h:38
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">;     __asm__ __volatile__(&#34;ecall /* syscall(puts) */&#34; // assembler template: ecall (with a comment)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>     <span style="">1</span>d4: <span style="">37</span> <span style="">15</span> <span style="">00</span> <span style="">00</span>   lui     a0, 0x1
+</span></span><span style="display:flex;"><span>     <span style="">1</span>d8: <span style="">13</span> <span style="">05</span> <span style="">05</span> <span style="">85</span>   addi    a0, a0, -0x7b0
+</span></span><span style="display:flex;"><span>     <span style="">1</span>dc: <span style="">93</span> <span style="">08</span> <span style="">20</span> <span style="">00</span>   li      a7, 0x2
+</span></span><span style="display:flex;"><span>     <span style="">1</span>e0: <span style="">73</span> <span style="">00</span> <span style="">00</span> <span style="">00</span>   ecall
+</span></span><span style="display:flex;"><span>     <span style="">1</span>e4: <span style="">6</span>f 00 00 05   j       0x234 &lt;main+0x134&gt;
+</span></span></code></pre></div><p>The value <code>0x0850</code> is an offset in the image to the string, &ldquo;<code>A chain is only as strong as its weakest link.</code>&rdquo;</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>00000850   41 20 63 68 61 69 6E 20 69 73 20 6F 6E 6C 79 20  A chain is only
+</span></span><span style="display:flex;"><span>00000860   61 73 20 73 74 72 6F 6E 67 20 61 73 20 69 74 73  as strong as its
+</span></span><span style="display:flex;"><span>00000870   20 77 65 61 6B 65 73 74 20 6C 69 6E 6B 2E 00 49   weakest link..I
+</span></span></code></pre></div><p>The instructions at offset <code>0x1d4</code> correspond to the second <code>case</code> statement.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C" data-lang="C"><span style="display:flex;"><span>    <span style="color:#00f">case</span> 1:
+</span></span><span style="display:flex;"><span>        puts(aphorisms[1]);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">break</span>;
+</span></span></code></pre></div><p>If we were to disassemble the image at each of the offsets in the mystery data, then we&rsquo;d find that each one corresponds to a different <code>case</code> in the <code>switch</code> statement. The mystery data is nothing more than a jump table for the <code>switch</code> statement.</p>
+<h3 id="how-the-switch-statement-selects-each-case">How the switch statement selects each case</h3>
+<p>The code for the <code>switch</code> statement itself starts at <code>0x134</code>. At the start of this block, register <em>a1</em> has already been set to the number 10, which is the number of cases in the <code>switch</code> statement.</p>
+<p>The code starting at address <code>0x134</code> calls the <code>random(100)</code> from <code>switch (random(100))</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span><span style="color:#008000">; C:\projects\c++\owl-cpu\target\./source\syscalls.h:64
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">;     __asm__ __volatile__(&#34;ecall /* syscall(random) */&#34; // assembler template: ecall (with a comment)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>     <span style="">134:</span> <span style="">93</span> <span style="">08</span> <span style="">40</span> <span style="">00</span>   li      a7, 0x4                     <span style="color:#008000">; random is syscall 4
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>     <span style="">138:</span> <span style="">13</span> <span style="">05</span> <span style="">40</span> <span style="">06</span>   li      a0, 0x64                    <span style="color:#008000">; random(100)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>     <span style="">13</span>c: <span style="">73</span> <span style="">00</span> <span style="">00</span> <span style="">00</span>   ecall                               <span style="color:#008000">; a0 = random(100)
+</span></span></span></code></pre></div><p>The code at address <code>0x140</code> compares the value returned from <code>random(100)</code> to the value in register <em>a1</em>. This was set to 10, so what we&rsquo;re seeing here is a bounds check that jumps to the <code>default</code> case for values that are 10 or greater.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span><span style="color:#008000">; C:\projects\c++\owl-cpu\target\./source\fortune.c:25
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">;     switch (random(100))
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>     <span style="">140:</span> <span style="">63</span> <span style="">78</span> b5 0c   bgeu    a0, a1, 0x210 &lt;main+0x110&gt;  <span style="color:#008000">; branch to the default case if a0 &gt;= 10
+</span></span></span></code></pre></div><p>Having performed the bounds check, determining which case to invoke based on the value in <em>a0</em>  returned from <code>random(100)</code> is simply a matter of using it to compute an index into the jump table starting at address <code>0x800</code> in <code>.rodata</code>, then performing an indirect jump to the address stored at that index.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span>     <span style="">144:</span> <span style="">13</span> <span style="">15</span> <span style="">25</span> <span style="">00</span>   slli    a0, a0, 0x2                 <span style="color:#008000">; multiply by 4 to get an index into
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>                                                            <span style="color:#008000">; the jump table
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>     <span style="">148:</span> b7 15 00 00   lui     a1, 0x1                     <span style="color:#008000">; a1 = address of jump table
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>     <span style="">14</span>c: <span style="">93</span> <span style="">85</span> <span style="">05</span> <span style="">80</span>   addi    a1, a1, -0x800
+</span></span><span style="display:flex;"><span>     <span style="">150:</span> <span style="">33</span> <span style="">05</span> b5 00   add     a0, a0, a1                  <span style="color:#008000">; a0 = index + address of jump table
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>     <span style="">154:</span> <span style="">03</span> <span style="">25</span> <span style="">05</span> <span style="">00</span>   lw      a0, 0x0(a0)                 <span style="color:#008000">; a0 = *a0
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>     <span style="">158:</span> <span style="">67</span> <span style="">00</span> <span style="">05</span> <span style="">00</span>   jr      a0                          <span style="color:#008000">; jump to the value in a0
+</span></span></span></code></pre></div><p>In short, what has happened here is that the compiler has determined that the cases in the <code>switch</code> statement are contiguous, and has output a jump table in the <code>.rodata</code> section, where each address in the table corresponds to the compiled code for one of the cases in the <code>switch</code> statement.</p>
+<p>If you&rsquo;re familiar with C++, then this jump table in the <code>.rodata</code> section is similar to a vtable, but in this case the CPU is performing an indirect jump rather than an indirect call.</p>
+<h1 id="summary-1">Summary</h1>
+<p>In this post we reviewed how to compile <code>fib.c</code> and load it as an image to run on the Owl-2820 VM, and identified several shortcomings with the approach.</p>
+<p>One of the more obvious problems was that the approach didn&rsquo;t cater for data. When we looked into this, we discovered that an ELF binary caters for data by placing it into different sections according to how it is used:</p>
+<ol>
+<li>read-only data, such as string literals goes into the <code>.rodata</code> section</li>
+<li>initialized data, i.e., variables that have a value when the program starts, goes into the <code>.data</code> section</li>
+<li>uninitialized data, goes into the enigmatically named <code>.bss</code> section</li>
+</ol>
+<p>We introduced some new system calls, and used them to write a new program, <code>fortune.c</code>, which we used as a basis for examining read-only data. We learned that the read-only data section <code>.rodata</code>, is used both for program data such as string literals, and for data inserted by the compiler, such as a jump table used for dispatching a <code>switch</code> statement.</p>
+<h2 id="loading-elf-binaries">Loading ELF binaries</h2>
+<p>In the next post, we&rsquo;ll look at initialized data in <code>.data</code> and at uninitialized data in <code>.bss</code> . Following that, over the course of the next few posts, we&rsquo;ll gradually build things up so that our Owl-2820 VM can load and run ELF binaries.</p>
+        </div>
+        
+        <div>
+            <ul id="tags">
+                
+                <li><a href="/tags/vm">vm</a></li>
+                
+                <li><a href="/tags/owl">owl</a></li>
+                
+            </ul>
+        </div>
+        
+    </article>
+</main>
+<aside class="wrapper">
+    <div>
+        <div>
+            <h3>Latest Posts</h3>
+        </div>
+        <div>
+            <ul>
+                
+                <li><a href="/posts/2024/11/24/lbavm-012/">Let&#39;s build a virtual machine: Part 12 - Dealing with data</a></li>
+                
+                <li><a href="/posts/2024/10/05/lbavm-011/">Let&#39;s build a virtual machine: Part 11 - Revisiting the instruction handler</a></li>
+                
+                <li><a href="/posts/2024/09/08/lbavm-010/">Let&#39;s build a virtual machine: Part 10 - Running RISC-V directly</a></li>
+                
+                <li><a href="/posts/2024/09/01/lbavm-009/">Let&#39;s build a virtual machine: Part 9 - Running compiled C on the Owl-2820 CPU</a></li>
+                
+                <li><a href="/posts/2024/08/20/lbavm-008/">Let&#39;s build a virtual machine: Part 8 - Using a C compiler to target the Owl-2820 CPU</a></li>
+                
+            </ul>
+        </div>
+    </div>
+</aside> 
+	<footer class="wrapper">
+	<p>&copy; 2024 <a href="http://localhost:1313/">My Badly Drawn Self</a></p>
+</footer>
+
+</body>
+</html>

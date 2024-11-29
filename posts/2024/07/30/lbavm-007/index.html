@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -14,7 +14,7 @@
 <body>
 	<header class="wrapper">
     <nav>
-        <a href="https://badlydrawnrod.github.io/">Home</a>
+        <a href="http://localhost:1313/">Home</a>
         <ul>
 			
             
@@ -36,10 +36,10 @@
         <div>
             <p>Implementing the remaining instructions in the Owl-2820 instruction set.</p>
 <h1 id="part-7-implementing-the-owl-2820-instruction-set">Part 7 Implementing the Owl-2820 instruction set</h1>
-<p>Over the last couple of posts we&rsquo;ve <a href="https://badlydrawnrod.github.io/posts/2024/07/05/lbavm-005/">added memory to the Owl-2820 VM</a> and we&rsquo;ve seen how we can <a href="https://badlydrawnrod.github.io/posts/2024/07/21/lbavm-006/">implement system calls</a>.</p>
+<p>Over the last couple of posts we&rsquo;ve <a href="http://localhost:1313/posts/2024/07/05/lbavm-005/">added memory to the Owl-2820 VM</a> and we&rsquo;ve seen how we can <a href="http://localhost:1313/posts/2024/07/21/lbavm-006/">implement system calls</a>.</p>
 <p>However, we haven&rsquo;t implemented all of the instructions in the Owl-2820 instruction set, as we&rsquo;ve limited ourselves to just enough instructions to be able to run programs that implement Fibonacci. The Owl-2820 VM needs to be able to do more than run Fibonacci, so in this post we&rsquo;re going to implement the remaining instructions in the Owl-2820 instruction set.</p>
 <h1 id="recap">Recap</h1>
-<p>We implemented these instructions in <a href="https://badlydrawnrod.github.io/posts/2024/04/02/lbavm-001/">part 1</a>.</p>
+<p>We implemented these instructions in <a href="http://localhost:1313/posts/2024/04/02/lbavm-001/">part 1</a>.</p>
 <table>
   <thead>
       <tr>
@@ -82,7 +82,7 @@
       </tr>
   </tbody>
 </table>
-<p>We implemented <code>call</code>, <code>ret</code> and <code>ecall</code> in <a href="https://badlydrawnrod.github.io/posts/2024/06/11/lbavm-004/">part 4</a>.</p>
+<p>We implemented <code>call</code>, <code>ret</code> and <code>ecall</code> in <a href="http://localhost:1313/posts/2024/06/11/lbavm-004/">part 4</a>.</p>
 <table>
   <thead>
       <tr>
@@ -105,7 +105,7 @@
       </tr>
   </tbody>
 </table>
-<p>We added memory access instructions in <a href="https://badlydrawnrod.github.io/posts/2024/07/05/lbavm-005/">part 5</a>.</p>
+<p>We added memory access instructions in <a href="http://localhost:1313/posts/2024/07/05/lbavm-005/">part 5</a>.</p>
 <table>
   <thead>
       <tr>
@@ -149,7 +149,7 @@
   </tbody>
 </table>
 <h1 id="the-rest-of-the-owl">The rest of the Owl</h1>
-<p>We learned in <a href="https://badlydrawnrod.github.io/posts/2024/04/02/lbavm-001/">part 1</a> that the Owl-2820 CPU is based on <a href="https://en.wikipedia.org/wiki/RISC-V">RISC-V</a>, specifically the <a href="https://five-embeddev.com/riscv-user-isa-manual/Priv-v1.12/rv32.html">RV32I</a> base integer instruction set which has forty unique instructions. We&rsquo;ve implemented nineteen - less than half that number. In fact, some of what we&rsquo;ve implemented doesn&rsquo;t actually have an RV32I equivalent. For example, you may be surprised to learn that <code>j</code>, <code>li</code>, <code>mv</code>, <code>call</code> and <code>ret</code> are not really RISC-V instructions, but are instructions that I&rsquo;ve added to the Owl-2820 instruction set to enhance decoding performance.</p>
+<p>We learned in <a href="http://localhost:1313/posts/2024/04/02/lbavm-001/">part 1</a> that the Owl-2820 CPU is based on <a href="https://en.wikipedia.org/wiki/RISC-V">RISC-V</a>, specifically the <a href="https://five-embeddev.com/riscv-user-isa-manual/Priv-v1.12/rv32.html">RV32I</a> base integer instruction set which has forty unique instructions. We&rsquo;ve implemented nineteen - less than half that number. In fact, some of what we&rsquo;ve implemented doesn&rsquo;t actually have an RV32I equivalent. For example, you may be surprised to learn that <code>j</code>, <code>li</code>, <code>mv</code>, <code>call</code> and <code>ret</code> are not really RISC-V instructions, but are instructions that I&rsquo;ve added to the Owl-2820 instruction set to enhance decoding performance.</p>
 <p>Unlike previously, I am not going to go into the implementation of each and every instruction otherwise this post would become very long. In most cases, we&rsquo;ve already seen how at least one instruction in each group is implemented, and the remainder of the instructions in the group tend to be fairly similar to each other.</p>
 <p>For example, instructions in the <a href="#branch-instructions">Branch instructions</a> group differ only in the branch condition, such as less-than or greater-than. Similarly, arithmetic instructions in the <a href="#register-register-instructions">Register-register instructions</a> group differ only in the operator, such as plus or minus.</p>
 <h2 id="the-full-owl-2820-instruction-set">The full Owl-2820 instruction set</h2>
@@ -652,9 +652,9 @@ value, <em>imm12</em>, storing the result into register <em>r0</em>.</p>
 </table>
 <h3 id="owl-2820-only-instructions">Owl-2820 only instructions</h3>
 <p>The instructions in this group are specific to the Owl-2820.</p>
-<p>Each of them could have been implemented with existing RV32I instructions, but this would be slower to decode and dispatch. You might recall that we <a href="https://badlydrawnrod.github.io/posts/2024/04/02/lbavm-001/#comparing-risc-v-encoding-with-owl-encoding">compared RISC-V encoding with Owl encoding in part 1</a> and learned that an encoding that is simple to decode in hardware may need multiple steps to decode in software.</p>
+<p>Each of them could have been implemented with existing RV32I instructions, but this would be slower to decode and dispatch. You might recall that we <a href="http://localhost:1313/posts/2024/04/02/lbavm-001/#comparing-risc-v-encoding-with-owl-encoding">compared RISC-V encoding with Owl encoding in part 1</a> and learned that an encoding that is simple to decode in hardware may need multiple steps to decode in software.</p>
 <p>For instance, the <code>call</code> instruction could have been implemented as <code>jal ra, offs20</code>, but in my experience the extra work needed to decode it is measurable, so I gave it its own opcode. The same goes for <code>j</code> which could have been implemented as <code>jal zero, offs20</code>, and <code>ret</code> which could could have been implemented as <code>jalr zero, 0(ra)</code>. Similarly, both <code>li</code> and <code>mv</code> could have been implemented as <code>addi r0, zero, imm12</code> and <code>add r0, r1, zero</code> respectively.</p>
-<p>Another consideration is simply one of readability. For example, <a href="https://badlydrawnrod.github.io/posts/2024/06/11/lbavm-004/">part 4 of this series</a> is much easier to understand in terms of <code>call</code> and <code>ret</code> than it would have been otherwise.</p>
+<p>Another consideration is simply one of readability. For example, <a href="http://localhost:1313/posts/2024/06/11/lbavm-004/">part 4 of this series</a> is much easier to understand in terms of <code>call</code> and <code>ret</code> than it would have been otherwise.</p>
 <table>
   <thead>
       <tr>
@@ -760,7 +760,7 @@ value, <em>imm12</em>, storing the result into register <em>r0</em>.</p>
 <p>You can find <a href="https://godbolt.org/z/c67ThK8bq">the full code for this post</a> on Compiler Explorer.</p>
 <h1 id="summary">Summary</h1>
 <p>In this post we implemented the rest of the Owl-2820 instruction set. This was straightforward, because individual  instructions can be implemented in no more than half a dozen lines of code.</p>
-<p>In theory, since Owl-2820&rsquo;s instruction set is based on RV32I, we have also implemented an emulator for the RV32I instruction set. In practice we&rsquo;re not quite there, because Owl-2820 instructions have a different encoding to RV32I as this <a href="https://badlydrawnrod.github.io/posts/2024/04/02/lbavm-001/#comparing-risc-v-encoding-with-owl-encoding">simplifies decoding them in software</a>.</p>
+<p>In theory, since Owl-2820&rsquo;s instruction set is based on RV32I, we have also implemented an emulator for the RV32I instruction set. In practice we&rsquo;re not quite there, because Owl-2820 instructions have a different encoding to RV32I as this <a href="http://localhost:1313/posts/2024/04/02/lbavm-001/#comparing-risc-v-encoding-with-owl-encoding">simplifies decoding them in software</a>.</p>
 <p>This is limiting, because it means that any programs created for our Owl-2820 VM must be written in Owl-2820 assembly language using our rudimentary assembler.</p>
 <h2 id="coming-soon">Coming soon</h2>
 <p>In the short term it could be interesting to develop a few small programs in Owl-2820 assembly language, and if you&rsquo;re so inclined then I encourage you to try. However, after a while this would become tedious and repetitive.</p>
@@ -789,6 +789,8 @@ value, <em>imm12</em>, storing the result into register <em>r0</em>.</p>
         <div>
             <ul>
                 
+                <li><a href="/posts/2024/11/29/lbavm-012/">Let&#39;s build a virtual machine: Part 12 - Dealing with data</a></li>
+                
                 <li><a href="/posts/2024/10/05/lbavm-011/">Let&#39;s build a virtual machine: Part 11 - Revisiting the instruction handler</a></li>
                 
                 <li><a href="/posts/2024/09/08/lbavm-010/">Let&#39;s build a virtual machine: Part 10 - Running RISC-V directly</a></li>
@@ -797,14 +799,12 @@ value, <em>imm12</em>, storing the result into register <em>r0</em>.</p>
                 
                 <li><a href="/posts/2024/08/20/lbavm-008/">Let&#39;s build a virtual machine: Part 8 - Using a C compiler to target the Owl-2820 CPU</a></li>
                 
-                <li><a href="/posts/2024/07/30/lbavm-007/">Let&#39;s build a virtual machine: Part 7 - Draw the rest of the Owl</a></li>
-                
             </ul>
         </div>
     </div>
 </aside> 
 	<footer class="wrapper">
-	<p>&copy; 2024 <a href="https://badlydrawnrod.github.io/">My Badly Drawn Self</a></p>
+	<p>&copy; 2024 <a href="http://localhost:1313/">My Badly Drawn Self</a></p>
 </footer>
 
 </body>

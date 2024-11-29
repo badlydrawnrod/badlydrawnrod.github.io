@@ -2,94 +2,101 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Owl on My Badly Drawn Self</title>
-    <link>https://badlydrawnrod.github.io/tags/owl/</link>
+    <link>http://localhost:1313/tags/owl/</link>
     <description>Recent content in Owl on My Badly Drawn Self</description>
     <generator>Hugo</generator>
     <language>en</language>
-    <lastBuildDate>Sat, 05 Oct 2024 14:45:00 +0100</lastBuildDate>
-    <atom:link href="https://badlydrawnrod.github.io/tags/owl/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 29 Nov 2024 13:37:00 +0000</lastBuildDate>
+    <atom:link href="http://localhost:1313/tags/owl/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Let&#39;s build a virtual machine: Part 12 - Dealing with data</title>
+      <link>http://localhost:1313/posts/2024/11/29/lbavm-012/</link>
+      <pubDate>Fri, 29 Nov 2024 13:37:00 +0000</pubDate>
+      <guid>http://localhost:1313/posts/2024/11/29/lbavm-012/</guid>
+      <description>&lt;p&gt;How is data represented in an ELF file? And what is this cryptically named &lt;code&gt;bss&lt;/code&gt; section?&lt;/p&gt;</description>
+    </item>
     <item>
       <title>Let&#39;s build a virtual machine: Part 11 - Revisiting the instruction handler</title>
-      <link>https://badlydrawnrod.github.io/posts/2024/10/05/lbavm-011/</link>
+      <link>http://localhost:1313/posts/2024/10/05/lbavm-011/</link>
       <pubDate>Sat, 05 Oct 2024 14:45:00 +0100</pubDate>
-      <guid>https://badlydrawnrod.github.io/posts/2024/10/05/lbavm-011/</guid>
+      <guid>http://localhost:1313/posts/2024/10/05/lbavm-011/</guid>
       <description>&lt;p&gt;Expressing the idea of an instruction handler using C++ concepts.&lt;/p&gt;</description>
     </item>
     <item>
       <title>Let&#39;s build a virtual machine: Part 10 - Running RISC-V directly</title>
-      <link>https://badlydrawnrod.github.io/posts/2024/09/08/lbavm-010/</link>
+      <link>http://localhost:1313/posts/2024/09/08/lbavm-010/</link>
       <pubDate>Sun, 08 Sep 2024 14:30:00 +0100</pubDate>
-      <guid>https://badlydrawnrod.github.io/posts/2024/09/08/lbavm-010/</guid>
+      <guid>http://localhost:1313/posts/2024/09/08/lbavm-010/</guid>
       <description>&lt;p&gt;Modfiying the Owl-2820 VM to decode RISC-V instructions directly.&lt;/p&gt;</description>
     </item>
     <item>
       <title>Let&#39;s build a virtual machine: Part 9 - Running compiled C on the Owl-2820 CPU</title>
-      <link>https://badlydrawnrod.github.io/posts/2024/09/01/lbavm-009/</link>
+      <link>http://localhost:1313/posts/2024/09/01/lbavm-009/</link>
       <pubDate>Sat, 31 Aug 2024 14:40:00 +0100</pubDate>
-      <guid>https://badlydrawnrod.github.io/posts/2024/09/01/lbavm-009/</guid>
+      <guid>http://localhost:1313/posts/2024/09/01/lbavm-009/</guid>
       <description>&lt;p&gt;Loading and running a compiled image on an Owl-2820 VM.&lt;/p&gt;</description>
     </item>
     <item>
       <title>Let&#39;s build a virtual machine: Part 8 - Using a C compiler to target the Owl-2820 CPU</title>
-      <link>https://badlydrawnrod.github.io/posts/2024/08/20/lbavm-008/</link>
+      <link>http://localhost:1313/posts/2024/08/20/lbavm-008/</link>
       <pubDate>Tue, 20 Aug 2024 22:30:00 +0100</pubDate>
-      <guid>https://badlydrawnrod.github.io/posts/2024/08/20/lbavm-008/</guid>
+      <guid>http://localhost:1313/posts/2024/08/20/lbavm-008/</guid>
       <description>&lt;p&gt;Using a C compiler to create programs for an Owl-2820 VM.&lt;/p&gt;</description>
     </item>
     <item>
       <title>Let&#39;s build a virtual machine: Part 7 - Draw the rest of the Owl</title>
-      <link>https://badlydrawnrod.github.io/posts/2024/07/30/lbavm-007/</link>
+      <link>http://localhost:1313/posts/2024/07/30/lbavm-007/</link>
       <pubDate>Tue, 30 Jul 2024 20:15:00 +0100</pubDate>
-      <guid>https://badlydrawnrod.github.io/posts/2024/07/30/lbavm-007/</guid>
+      <guid>http://localhost:1313/posts/2024/07/30/lbavm-007/</guid>
       <description>&lt;p&gt;Implementing the remaining instructions in the Owl-2820 instruction set.&lt;/p&gt;</description>
     </item>
     <item>
       <title>Let&#39;s build a virtual machine: Part 6 - System calls</title>
-      <link>https://badlydrawnrod.github.io/posts/2024/07/21/lbavm-006/</link>
+      <link>http://localhost:1313/posts/2024/07/21/lbavm-006/</link>
       <pubDate>Sun, 21 Jul 2024 16:30:00 +0100</pubDate>
-      <guid>https://badlydrawnrod.github.io/posts/2024/07/21/lbavm-006/</guid>
+      <guid>http://localhost:1313/posts/2024/07/21/lbavm-006/</guid>
       <description>&lt;p&gt;Adding system calls.&lt;/p&gt;</description>
     </item>
     <item>
       <title>Let&#39;s build a virtual machine: Part 5 - Memory</title>
-      <link>https://badlydrawnrod.github.io/posts/2024/07/05/lbavm-005/</link>
+      <link>http://localhost:1313/posts/2024/07/05/lbavm-005/</link>
       <pubDate>Fri, 05 Jul 2024 17:30:00 +0100</pubDate>
-      <guid>https://badlydrawnrod.github.io/posts/2024/07/05/lbavm-005/</guid>
+      <guid>http://localhost:1313/posts/2024/07/05/lbavm-005/</guid>
       <description>&lt;p&gt;Implementing memory.&lt;/p&gt;</description>
     </item>
     <item>
       <title>Let&#39;s build a virtual machine: Part 4 - Call, return, and calling conventions</title>
-      <link>https://badlydrawnrod.github.io/posts/2024/06/11/lbavm-004/</link>
+      <link>http://localhost:1313/posts/2024/06/11/lbavm-004/</link>
       <pubDate>Tue, 11 Jun 2024 21:00:00 +0100</pubDate>
-      <guid>https://badlydrawnrod.github.io/posts/2024/06/11/lbavm-004/</guid>
+      <guid>http://localhost:1313/posts/2024/06/11/lbavm-004/</guid>
       <description>&lt;p&gt;In which we implement call and return, then discuss the need for calling conventions.&lt;/p&gt;</description>
     </item>
     <item>
       <title>Let&#39;s build a virtual machine: Part 3 - Adding labels to the assembler</title>
-      <link>https://badlydrawnrod.github.io/posts/2024/05/05/lbavm-003/</link>
+      <link>http://localhost:1313/posts/2024/05/05/lbavm-003/</link>
       <pubDate>Sun, 05 May 2024 22:00:00 +0100</pubDate>
-      <guid>https://badlydrawnrod.github.io/posts/2024/05/05/lbavm-003/</guid>
+      <guid>http://localhost:1313/posts/2024/05/05/lbavm-003/</guid>
       <description>&lt;p&gt;Adding labels to the assembler.&lt;/p&gt;</description>
     </item>
     <item>
       <title>Let&#39;s build a virtual machine: Part 2 - The main loop and assembler</title>
-      <link>https://badlydrawnrod.github.io/posts/2024/04/07/lbavm-002/</link>
+      <link>http://localhost:1313/posts/2024/04/07/lbavm-002/</link>
       <pubDate>Sun, 07 Apr 2024 16:00:00 +0100</pubDate>
-      <guid>https://badlydrawnrod.github.io/posts/2024/04/07/lbavm-002/</guid>
+      <guid>http://localhost:1313/posts/2024/04/07/lbavm-002/</guid>
       <description>&lt;p&gt;Implementing just enough of the Owl-2820 CPU to run Fibonacci.&lt;/p&gt;</description>
     </item>
     <item>
       <title>Let&#39;s build a virtual machine: Part 1 - Registers and instructions</title>
-      <link>https://badlydrawnrod.github.io/posts/2024/04/02/lbavm-001/</link>
+      <link>http://localhost:1313/posts/2024/04/02/lbavm-001/</link>
       <pubDate>Tue, 02 Apr 2024 19:00:00 +0100</pubDate>
-      <guid>https://badlydrawnrod.github.io/posts/2024/04/02/lbavm-001/</guid>
+      <guid>http://localhost:1313/posts/2024/04/02/lbavm-001/</guid>
       <description>&lt;p&gt;Implementing registers and instructions for the Owl-2820 CPU.&lt;/p&gt;</description>
     </item>
     <item>
       <title>Let&#39;s build a virtual machine: Part 0 - Introduction</title>
-      <link>https://badlydrawnrod.github.io/posts/2024/03/17/lbavm-000-intro/</link>
+      <link>http://localhost:1313/posts/2024/03/17/lbavm-000-intro/</link>
       <pubDate>Sun, 17 Mar 2024 00:00:00 +0000</pubDate>
-      <guid>https://badlydrawnrod.github.io/posts/2024/03/17/lbavm-000-intro/</guid>
+      <guid>http://localhost:1313/posts/2024/03/17/lbavm-000-intro/</guid>
       <description>&lt;p&gt;In this series we&amp;rsquo;re going to implement a virtual machine from scratch.&lt;/p&gt;</description>
     </item>
   </channel>

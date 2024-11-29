@@ -2,17 +2,17 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Console on My Badly Drawn Self</title>
-    <link>https://badlydrawnrod.github.io/tags/console/</link>
+    <link>http://localhost:1313/tags/console/</link>
     <description>Recent content in Console on My Badly Drawn Self</description>
     <generator>Hugo</generator>
     <language>en</language>
     <lastBuildDate>Wed, 12 Aug 2020 12:30:00 +0100</lastBuildDate>
-    <atom:link href="https://badlydrawnrod.github.io/tags/console/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="http://localhost:1313/tags/console/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>How to save and restore Windows console modes</title>
-      <link>https://badlydrawnrod.github.io/posts/2020/08/15/</link>
+      <link>http://localhost:1313/posts/2020/08/15/</link>
       <pubDate>Wed, 12 Aug 2020 12:30:00 +0100</pubDate>
-      <guid>https://badlydrawnrod.github.io/posts/2020/08/15/</guid>
+      <guid>http://localhost:1313/posts/2020/08/15/</guid>
       <description>&lt;p&gt;How do you save and restore console modes in Windows?&lt;/p&gt;</description>
     </item>
   </channel>

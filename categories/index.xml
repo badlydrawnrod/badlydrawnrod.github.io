@@ -2,38 +2,38 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Categories on My Badly Drawn Self</title>
-    <link>https://badlydrawnrod.github.io/categories/</link>
+    <link>http://localhost:1313/categories/</link>
     <description>Recent content in Categories on My Badly Drawn Self</description>
     <generator>Hugo</generator>
     <language>en</language>
-    <lastBuildDate>Sat, 05 Oct 2024 14:45:00 +0100</lastBuildDate>
-    <atom:link href="https://badlydrawnrod.github.io/categories/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 29 Nov 2024 13:37:00 +0000</lastBuildDate>
+    <atom:link href="http://localhost:1313/categories/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Series</title>
-      <link>https://badlydrawnrod.github.io/categories/series/</link>
-      <pubDate>Sat, 05 Oct 2024 14:45:00 +0100</pubDate>
-      <guid>https://badlydrawnrod.github.io/categories/series/</guid>
+      <link>http://localhost:1313/categories/series/</link>
+      <pubDate>Fri, 29 Nov 2024 13:37:00 +0000</pubDate>
+      <guid>http://localhost:1313/categories/series/</guid>
       <description></description>
     </item>
     <item>
       <title>Notes</title>
-      <link>https://badlydrawnrod.github.io/categories/notes/</link>
+      <link>http://localhost:1313/categories/notes/</link>
       <pubDate>Sun, 27 Feb 2022 15:00:00 +0000</pubDate>
-      <guid>https://badlydrawnrod.github.io/categories/notes/</guid>
+      <guid>http://localhost:1313/categories/notes/</guid>
       <description></description>
     </item>
     <item>
       <title>Articles</title>
-      <link>https://badlydrawnrod.github.io/categories/articles/</link>
+      <link>http://localhost:1313/categories/articles/</link>
       <pubDate>Sun, 28 Nov 2021 16:02:20 +0000</pubDate>
-      <guid>https://badlydrawnrod.github.io/categories/articles/</guid>
+      <guid>http://localhost:1313/categories/articles/</guid>
       <description></description>
     </item>
     <item>
       <title>Howto</title>
-      <link>https://badlydrawnrod.github.io/categories/howto/</link>
+      <link>http://localhost:1313/categories/howto/</link>
       <pubDate>Wed, 12 Aug 2020 12:30:00 +0100</pubDate>
-      <guid>https://badlydrawnrod.github.io/categories/howto/</guid>
+      <guid>http://localhost:1313/categories/howto/</guid>
       <description></description>
     </item>
   </channel>

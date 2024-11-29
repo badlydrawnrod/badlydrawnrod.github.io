@@ -2,17 +2,17 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Vcpkg on My Badly Drawn Self</title>
-    <link>https://badlydrawnrod.github.io/tags/vcpkg/</link>
+    <link>http://localhost:1313/tags/vcpkg/</link>
     <description>Recent content in Vcpkg on My Badly Drawn Self</description>
     <generator>Hugo</generator>
     <language>en</language>
     <lastBuildDate>Mon, 18 May 2020 21:27:46 +0100</lastBuildDate>
-    <atom:link href="https://badlydrawnrod.github.io/tags/vcpkg/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="http://localhost:1313/tags/vcpkg/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>How to find the CMake targets for a vcpkg package</title>
-      <link>https://badlydrawnrod.github.io/posts/2020/05/18/cmake-target-packages-from-vcpkg/</link>
+      <link>http://localhost:1313/posts/2020/05/18/cmake-target-packages-from-vcpkg/</link>
       <pubDate>Mon, 18 May 2020 21:27:46 +0100</pubDate>
-      <guid>https://badlydrawnrod.github.io/posts/2020/05/18/cmake-target-packages-from-vcpkg/</guid>
+      <guid>http://localhost:1313/posts/2020/05/18/cmake-target-packages-from-vcpkg/</guid>
       <description>&lt;h1 id=&#34;problem&#34;&gt;Problem&lt;/h1&gt;&#xA;&lt;p&gt;When you install a package with &lt;code&gt;vcpkg&lt;/code&gt; it tells you the &lt;strong&gt;CMake&lt;/strong&gt; targets. But if you didn&amp;rsquo;t make a note of them at the time, how do you find out what they are?&lt;/p&gt;&#xA;&lt;p&gt;And what if you want the &lt;strong&gt;CMake&lt;/strong&gt; targets for a package&amp;rsquo;s dependencies?&lt;/p&gt;</description>
     </item>
   </channel>

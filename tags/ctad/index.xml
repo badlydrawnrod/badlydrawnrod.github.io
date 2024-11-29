@@ -2,17 +2,17 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Ctad on My Badly Drawn Self</title>
-    <link>https://badlydrawnrod.github.io/tags/ctad/</link>
+    <link>http://localhost:1313/tags/ctad/</link>
     <description>Recent content in Ctad on My Badly Drawn Self</description>
     <generator>Hugo</generator>
     <language>en</language>
     <lastBuildDate>Sun, 23 Jan 2022 14:25:00 +0000</lastBuildDate>
-    <atom:link href="https://badlydrawnrod.github.io/tags/ctad/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="http://localhost:1313/tags/ctad/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>CTAD and Deduction Guides in C&#43;&#43;</title>
-      <link>https://badlydrawnrod.github.io/posts/2022/01/23/ctad/</link>
+      <link>http://localhost:1313/posts/2022/01/23/ctad/</link>
       <pubDate>Sun, 23 Jan 2022 14:25:00 +0000</pubDate>
-      <guid>https://badlydrawnrod.github.io/posts/2022/01/23/ctad/</guid>
+      <guid>http://localhost:1313/posts/2022/01/23/ctad/</guid>
       <description>&lt;p&gt;A brief look at CTAD and deduction guides.&lt;/p&gt;</description>
     </item>
   </channel>

@@ -2,206 +2,209 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://badlydrawnrod.github.io/categories/</loc>
+    <loc>http://localhost:1313/categories/</loc>
+    <lastmod>2024-11-29T13:37:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/posts/2024/11/29/lbavm-012/</loc>
+    <lastmod>2024-11-29T13:37:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/</loc>
+    <lastmod>2024-11-29T13:37:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/tags/owl/</loc>
+    <lastmod>2024-11-29T13:37:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/posts/</loc>
+    <lastmod>2024-11-29T13:37:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/categories/series/</loc>
+    <lastmod>2024-11-29T13:37:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/tags/</loc>
+    <lastmod>2024-11-29T13:37:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/tags/vm/</loc>
+    <lastmod>2024-11-29T13:37:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/posts/2024/10/05/lbavm-011/</loc>
     <lastmod>2024-10-05T14:45:00+01:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/posts/2024/10/05/lbavm-011/</loc>
-    <lastmod>2024-10-05T14:45:00+01:00</lastmod>
-  </url><url>
-    <loc>https://badlydrawnrod.github.io/</loc>
-    <lastmod>2024-10-05T14:45:00+01:00</lastmod>
-  </url><url>
-    <loc>https://badlydrawnrod.github.io/tags/owl/</loc>
-    <lastmod>2024-10-05T14:45:00+01:00</lastmod>
-  </url><url>
-    <loc>https://badlydrawnrod.github.io/posts/</loc>
-    <lastmod>2024-10-05T14:45:00+01:00</lastmod>
-  </url><url>
-    <loc>https://badlydrawnrod.github.io/categories/series/</loc>
-    <lastmod>2024-10-05T14:45:00+01:00</lastmod>
-  </url><url>
-    <loc>https://badlydrawnrod.github.io/tags/</loc>
-    <lastmod>2024-10-05T14:45:00+01:00</lastmod>
-  </url><url>
-    <loc>https://badlydrawnrod.github.io/tags/vm/</loc>
-    <lastmod>2024-10-05T14:45:00+01:00</lastmod>
-  </url><url>
-    <loc>https://badlydrawnrod.github.io/posts/2024/09/08/lbavm-010/</loc>
+    <loc>http://localhost:1313/posts/2024/09/08/lbavm-010/</loc>
     <lastmod>2024-09-08T14:30:00+01:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/posts/2024/09/01/lbavm-009/</loc>
+    <loc>http://localhost:1313/posts/2024/09/01/lbavm-009/</loc>
     <lastmod>2024-08-31T14:40:00+01:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/posts/2024/08/20/lbavm-008/</loc>
+    <loc>http://localhost:1313/posts/2024/08/20/lbavm-008/</loc>
     <lastmod>2024-08-20T22:30:00+01:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/posts/2024/07/30/lbavm-007/</loc>
+    <loc>http://localhost:1313/posts/2024/07/30/lbavm-007/</loc>
     <lastmod>2024-07-30T20:15:00+01:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/posts/2024/07/21/lbavm-006/</loc>
+    <loc>http://localhost:1313/posts/2024/07/21/lbavm-006/</loc>
     <lastmod>2024-07-21T16:30:00+01:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/posts/2024/07/05/lbavm-005/</loc>
+    <loc>http://localhost:1313/posts/2024/07/05/lbavm-005/</loc>
     <lastmod>2024-07-05T17:30:00+01:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/posts/2024/06/11/lbavm-004/</loc>
+    <loc>http://localhost:1313/posts/2024/06/11/lbavm-004/</loc>
     <lastmod>2024-06-11T21:00:00+01:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/posts/2024/05/05/lbavm-003/</loc>
+    <loc>http://localhost:1313/posts/2024/05/05/lbavm-003/</loc>
     <lastmod>2024-05-05T22:00:00+01:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/posts/2024/04/07/lbavm-002/</loc>
+    <loc>http://localhost:1313/posts/2024/04/07/lbavm-002/</loc>
     <lastmod>2024-04-07T16:00:00+01:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/posts/2024/04/02/lbavm-001/</loc>
+    <loc>http://localhost:1313/posts/2024/04/02/lbavm-001/</loc>
     <lastmod>2024-04-02T19:00:00+01:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/posts/2024/03/17/lbavm-000-intro/</loc>
+    <loc>http://localhost:1313/posts/2024/03/17/lbavm-000-intro/</loc>
     <lastmod>2024-03-17T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/tags/c&#43;&#43;/</loc>
+    <loc>http://localhost:1313/tags/c&#43;&#43;/</loc>
     <lastmod>2023-04-07T18:28:49+01:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/posts/2023/04/07/time-to-learn-rust/</loc>
+    <loc>http://localhost:1313/posts/2023/04/07/time-to-learn-rust/</loc>
     <lastmod>2023-04-07T18:28:49+01:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/tags/rust/</loc>
+    <loc>http://localhost:1313/tags/rust/</loc>
     <lastmod>2023-04-07T18:28:49+01:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/tags/copy-elision/</loc>
+    <loc>http://localhost:1313/tags/copy-elision/</loc>
     <lastmod>2022-02-27T15:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/posts/2022/02/27/mandatory-copy-elision/</loc>
+    <loc>http://localhost:1313/posts/2022/02/27/mandatory-copy-elision/</loc>
     <lastmod>2022-02-27T15:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/categories/notes/</loc>
+    <loc>http://localhost:1313/categories/notes/</loc>
     <lastmod>2022-02-27T15:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/tags/ctad/</loc>
+    <loc>http://localhost:1313/tags/ctad/</loc>
     <lastmod>2022-01-23T14:25:00+00:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/posts/2022/01/23/ctad/</loc>
+    <loc>http://localhost:1313/posts/2022/01/23/ctad/</loc>
     <lastmod>2022-01-23T14:25:00+00:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/posts/2022/01/16/git/</loc>
+    <loc>http://localhost:1313/posts/2022/01/16/git/</loc>
     <lastmod>2022-01-16T16:07:39+00:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/tags/git/</loc>
+    <loc>http://localhost:1313/tags/git/</loc>
     <lastmod>2022-01-16T16:07:39+00:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/tags/allocators/</loc>
+    <loc>http://localhost:1313/tags/allocators/</loc>
     <lastmod>2021-12-30T16:30:00+00:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/posts/2021/12/30/monotonic_buffer_resource/</loc>
+    <loc>http://localhost:1313/posts/2021/12/30/monotonic_buffer_resource/</loc>
     <lastmod>2021-12-30T16:30:00+00:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/posts/2021/12/28/allocators/</loc>
+    <loc>http://localhost:1313/posts/2021/12/28/allocators/</loc>
     <lastmod>2021-12-28T14:15:00+00:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/tags/c&#43;&#43;20/</loc>
+    <loc>http://localhost:1313/tags/c&#43;&#43;20/</loc>
     <lastmod>2021-12-18T16:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/posts/2021/12/19/cpp-modules-2/</loc>
+    <loc>http://localhost:1313/posts/2021/12/19/cpp-modules-2/</loc>
     <lastmod>2021-12-18T16:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/tags/modules/</loc>
+    <loc>http://localhost:1313/tags/modules/</loc>
     <lastmod>2021-12-18T16:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/posts/2021/12/12/cpp-modules/</loc>
+    <loc>http://localhost:1313/posts/2021/12/12/cpp-modules/</loc>
     <lastmod>2021-12-12T11:47:42+00:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/categories/articles/</loc>
+    <loc>http://localhost:1313/categories/articles/</loc>
     <lastmod>2021-11-28T16:02:20+00:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/tags/arviss/</loc>
+    <loc>http://localhost:1313/tags/arviss/</loc>
     <lastmod>2021-11-28T16:02:20+00:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/tags/c/</loc>
+    <loc>http://localhost:1313/tags/c/</loc>
     <lastmod>2021-11-28T16:02:20+00:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/tags/emulators/</loc>
+    <loc>http://localhost:1313/tags/emulators/</loc>
     <lastmod>2021-11-28T16:02:20+00:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/tags/risc-v/</loc>
+    <loc>http://localhost:1313/tags/risc-v/</loc>
     <lastmod>2021-11-28T16:02:20+00:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/posts/2021/11/28/why_arviss/</loc>
+    <loc>http://localhost:1313/posts/2021/11/28/why_arviss/</loc>
     <lastmod>2021-11-28T16:02:20+00:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/posts/2021/11/15/how-i-went-to-c/</loc>
+    <loc>http://localhost:1313/posts/2021/11/15/how-i-went-to-c/</loc>
     <lastmod>2021-11-15T23:01:38+00:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/tags/humour/</loc>
+    <loc>http://localhost:1313/tags/humour/</loc>
     <lastmod>2021-11-12T22:45:31+00:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/posts/2021/11/12/in-the-beginning/</loc>
+    <loc>http://localhost:1313/posts/2021/11/12/in-the-beginning/</loc>
     <lastmod>2021-11-12T22:45:31+00:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/tags/handles/</loc>
+    <loc>http://localhost:1313/tags/handles/</loc>
     <lastmod>2020-08-23T20:00:00+01:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/posts/2020/08/23/handles/</loc>
+    <loc>http://localhost:1313/posts/2020/08/23/handles/</loc>
     <lastmod>2020-08-23T20:00:00+01:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/tags/typesafe/</loc>
+    <loc>http://localhost:1313/tags/typesafe/</loc>
     <lastmod>2020-08-23T20:00:00+01:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/tags/console/</loc>
+    <loc>http://localhost:1313/tags/console/</loc>
     <lastmod>2020-08-12T12:30:00+01:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/posts/2020/08/15/</loc>
+    <loc>http://localhost:1313/posts/2020/08/15/</loc>
     <lastmod>2020-08-12T12:30:00+01:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/tags/howto/</loc>
+    <loc>http://localhost:1313/tags/howto/</loc>
     <lastmod>2020-08-12T12:30:00+01:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/categories/howto/</loc>
+    <loc>http://localhost:1313/categories/howto/</loc>
     <lastmod>2020-08-12T12:30:00+01:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/tags/windows/</loc>
+    <loc>http://localhost:1313/tags/windows/</loc>
     <lastmod>2020-08-12T12:30:00+01:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/tags/cmake/</loc>
+    <loc>http://localhost:1313/tags/cmake/</loc>
     <lastmod>2020-07-05T15:43:00+01:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/tags/emscripten/</loc>
+    <loc>http://localhost:1313/tags/emscripten/</loc>
     <lastmod>2020-07-05T15:43:00+01:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/posts/2020/07/05/cmake-detect-emscripten/</loc>
+    <loc>http://localhost:1313/posts/2020/07/05/cmake-detect-emscripten/</loc>
     <lastmod>2020-07-05T15:43:00+01:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/posts/2020/06/07/emscripten-indexeddb/</loc>
+    <loc>http://localhost:1313/posts/2020/06/07/emscripten-indexeddb/</loc>
     <lastmod>2020-06-07T12:00:00+01:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/tags/idbfs/</loc>
+    <loc>http://localhost:1313/tags/idbfs/</loc>
     <lastmod>2020-06-07T12:00:00+01:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/tags/indexeddb/</loc>
+    <loc>http://localhost:1313/tags/indexeddb/</loc>
     <lastmod>2020-06-07T12:00:00+01:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/tags/clion/</loc>
+    <loc>http://localhost:1313/tags/clion/</loc>
     <lastmod>2020-05-30T10:20:00+01:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/posts/2020/05/30/emscripten-project-in-clion/</loc>
+    <loc>http://localhost:1313/posts/2020/05/30/emscripten-project-in-clion/</loc>
     <lastmod>2020-05-30T10:20:00+01:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/posts/2020/05/19/emcmake-with-emscripten/</loc>
+    <loc>http://localhost:1313/posts/2020/05/19/emcmake-with-emscripten/</loc>
     <lastmod>2020-05-19T21:57:44+01:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/tags/mingw/</loc>
+    <loc>http://localhost:1313/tags/mingw/</loc>
     <lastmod>2020-05-19T21:57:44+01:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/tags/ninja/</loc>
+    <loc>http://localhost:1313/tags/ninja/</loc>
     <lastmod>2020-05-19T21:57:44+01:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/posts/2020/05/18/cmake-target-packages-from-vcpkg/</loc>
+    <loc>http://localhost:1313/posts/2020/05/18/cmake-target-packages-from-vcpkg/</loc>
     <lastmod>2020-05-18T21:27:46+01:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/tags/vcpkg/</loc>
+    <loc>http://localhost:1313/tags/vcpkg/</loc>
     <lastmod>2020-05-18T21:27:46+01:00</lastmod>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/page/about/</loc>
+    <loc>http://localhost:1313/page/about/</loc>
   </url><url>
-    <loc>https://badlydrawnrod.github.io/page/</loc>
+    <loc>http://localhost:1313/page/</loc>
   </url>
 </urlset>
